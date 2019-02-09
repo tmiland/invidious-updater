@@ -133,13 +133,6 @@ function restart {
   echo -e "${GREEN} Invidious has been restarted ${NC}"
 }
 
-function clone {
-  printf "\n-- cloning Invidious\n"
-  git clone https://github.com/omarroth/invidious
-  printf "\n"
-  echo -e "${GREEN} Invidious has been cloned ${NC}"
-}
-
 for Dir in $repo
 do
   while true
