@@ -40,6 +40,7 @@ show_banner () {
   echo ' ####                    Invidious Update.sh                       ####'
   echo ' ####     Automatic update script for Invidious - Invidio.us       ####'
   echo ' ####                   Maintained by @tmiland                     ####'
+  echo ' ####                       version: 0.6                           ####'
   echo ' ####                                                              ####'
   echo ' ######################################################################'
   echo -e "${NC}\n"
