@@ -9,13 +9,14 @@
 
 download and execute the script :
 ```bash
-cd /path/to/invidious/repo
+cd /home/invidious
 wget https://github.com/tmiland/Invidious-Updater/raw/master/invidious_update.sh
 chmod +x invidious_update.sh
 ./invidious_update.sh
 ```
 
 ## Usage
+* No arguments (Default) Will use branch "Master" and prompt user for each step.
 * -f FORCE YES (Force yes, update, rebuild and restart Invidious)
 * -p Prune remote. (Deletes all stale remote-tracking branches)
 * -l Latest release. (Fetch latest release from remote repo.)
