@@ -1,9 +1,11 @@
 # Invidious-Updater
 
 ## Script to update [Invidious](https://github.com/omarroth/invidious) git repository
-![screenshot](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Screenshot%20at%2013-14-09.png)
 
 * Automatically update git repo, rebuild and restart service
+
+## Screenshot
+![screenshot](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Screenshot%20at%2013-14-09.png)
 
 ## Installation
 
