@@ -165,6 +165,7 @@ do
       break
     fi
   done
+
   while true; do
     # Update without prompt if yes forced
     if [ "$force_yes" = true ] ; then
