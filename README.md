@@ -29,7 +29,6 @@ chmod +x invidious_update.sh
   * ###### Exits the script
 
 ## Compatibility
-* x86, x64, arm*
 * Debian 8 and later
 * Ubuntu 16.04 and later
 
