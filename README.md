@@ -34,7 +34,7 @@ chmod +x invidious_update.sh
   * Exits the script
 
 ## Testing
-* Tested extensively on Debian 9
+- [x] Tested extensively on Debian 9
 
 ## Todo
 - [ ] Rewrite the update procedure 
