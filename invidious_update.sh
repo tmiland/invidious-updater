@@ -8,7 +8,7 @@
 #                                                         #
 ###########################################################
 
-version='0.9'
+version='1.1.0'
 
 # Colors used for printing
 RED='\033[0;31m'
@@ -41,14 +41,16 @@ show_banner () {
   echo "   2) Update Invidious"
   echo "   3) Update Script"
   echo "   4) Install Invidious service for systemd"
-  echo "   5) Exit"
+  echo "   5) Run Database Maintenance"
+  echo "   6) Run Database Migration"
+  echo "   7) Exit"
   echo ""
   echo -e "Documentation for this script is available here: ${ORANGE}\n https://github.com/tmiland/Invidious-Updater${NC}\n"
 }
 
 show_banner
-while [[ $OPTION !=  "1" && $OPTION != "2" && $OPTION != "3" && $OPTION != "4" && $OPTION != "5" ]]; do
-  read -p "Select an option [1-5]: " OPTION
+while [[ $OPTION !=  "1" && $OPTION != "2" && $OPTION != "3" && $OPTION != "4" && $OPTION != "5" && $OPTION != "6" && $OPTION != "7" ]]; do
+  read -p "Select an option [1-7]: " OPTION
 done
 case $OPTION in
   1) # Install Invidious
@@ -172,6 +174,8 @@ case $OPTION in
       sudo -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/channel_videos.sql
       echo "Running users.sql"
       sudo -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/users.sql
+      echo "Running session_ids.sql"
+      sudo -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/session_ids.sql
       echo "Running nonces.sql"
       sudo -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/nonces.sql
       echo "Finished Database section"
@@ -180,7 +184,7 @@ case $OPTION in
     # Setup Invidious
     ######################
     if [[ "$SetupInvidious" = 'y' ]]; then
-      # Lets change the default password
+      # Lets change the default domain
       OLD="domain: invidio.us"
       NEW="domain: $domain"
       DPATH="$USER_DIR/invidious/config/config.yml"
@@ -248,24 +252,24 @@ case $OPTION in
     exit
     ;;
   2) # Update Invidious
-  if [[ "$EUID" -ne 0 ]]; then
-    echo -e "Sorry, you need to run this as root"
-    exit 1
-  fi
-  # Set default branch
-  branch=master
+    if [[ "$EUID" -ne 0 ]]; then
+      echo -e "Sorry, you need to run this as root"
+      exit 1
+    fi
+    # Set default branch
+    branch=master
 
-  # Set repo Dir (Place script in same root folder as repo)
-  repo_dir=$USER_DIR/invidious
+    # Set repo Dir (Place script in same root folder as repo)
+    repo_dir=$USER_DIR/invidious
 
-  # Service name
-  service_name=invidious.service
-  # Stop here
+    # Service name
+    service_name=invidious.service
+    # Stop here
 
-  repo=`ls -d $repo_dir`
+    repo=`ls -d $repo_dir`
 
-  # Store user argument to force all repo update
-  force_yes=false
+    # Store user argument to force all repo update
+    force_yes=false
     usage() {
       echo -e "${BLUE}\nUsage: $0 [-f] [-p] [-l] \n${NC}" 1>&2  # Echo usage string to standard error
       echo 'Arguments:'
@@ -331,6 +335,7 @@ case $OPTION in
       cd -
       printf "\n"
       echo -e "${GREEN} Done Updating $Dir ${NC}"
+      sleep 3
     }
 
     function rebuild {
@@ -342,15 +347,17 @@ case $OPTION in
       cd -
       printf "\n"
       echo -e "${GREEN} Done Rebuilding $Dir ${NC}"
+      sleep 3
     }
 
     function restart {
       printf "\n-- restarting Invidious\n"
       sudo systemctl restart $service_name
       sleep 2
-      sudo systemctl status $service_name
+      sudo systemctl status $service_name --no-pager
       printf "\n"
       echo -e "${GREEN} Invidious has been restarted ${NC}"
+      sleep 3
     }
 
     for Dir in $repo
@@ -455,7 +462,138 @@ case $OPTION in
     sleep 5
     exit
     ;;
-  5) # Exit
+  5) # Database maintenance
+    psqldb="invidious"   # Database name
+    if [[ "$EUID" -ne 0 ]]; then
+      echo -e "Sorry, you need to run this as root"
+      exit 1
+    fi
+    read -p "Are you sure you want to run Database Maintenance the PostgreSQL database? " answer
+    echo "You entered: $answer"
+    read -p "Are you sure? Enter y or n: " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
+    if [[ "$answer" = 'y' ]]; then
+      if ( systemctl -q is-active postgresql.service)
+      then
+        echo -e "${RED}stopping Invidious..."
+        sudo systemctl stop invidious
+        echo "Running Maintenance on $psqldb"
+        sudo -u postgres psql $psqldb -c "DELETE FROM nonces * WHERE expire < current_timestamp;"
+        sudo -u postgres psql $psqldb -c "TRUNCATE TABLE videos;"
+        echo -e "${GREEN}Maintenance on $psqldb done."
+        # Restart Invidious
+        echo -e "${GREEN}Restarting Invidious..."
+        sudo systemctl restart invidious
+        echo -e "${GREEN}Restarting Invidious done."
+        sudo systemctl status invidious --no-pager
+        sleep 1
+        # Restart postgresql
+        echo -e "${GREEN}Restarting postgresql..."
+        sudo systemctl restart postgresql
+        echo -e "${GREEN}Restarting postgresql done."
+        sudo systemctl status postgresql --no-pager
+        sleep 5
+      else
+        echo -e "${RED}Database Maintenance failed. Is PostgreSQL running?"
+        # Restart postgresql
+        echo -e "${GREEN}trying to start postgresql..."
+        sudo systemctl start postgresql
+        echo -e "${GREEN}Postgresql started successfully"
+        sudo systemctl status postgresql --no-pager
+        sleep 5
+        echo -e "${ORANGE}Restarting script. Please try again..."
+        sleep 5
+        ./invidious_update.sh
+        exit
+      fi
+    fi
+    show_maintenance_banner () {
+      clear
+      echo -e "${GREEN}\n"
+      echo ' ######################################################################'
+      echo ' ####                    Invidious Update.sh                       ####'
+      echo ' ####            Automatic update script for Invidio.us            ####'
+      echo ' ####                   Maintained by @tmiland                     ####'
+      echo ' ####                        version: '${version}'                          ####'
+      echo ' ######################################################################'
+      echo -e "${NC}\n"
+      echo "Thank you for using the Invidious Update.sh script."
+      echo ""
+      echo "Invidious maintenance done. Now visit http://localhost:3000"
+      echo ""
+      echo -e "Documentation for this script is available here: ${ORANGE}\n https://github.com/tmiland/Invidious-Updater${NC}\n"
+    }
+    show_maintenance_banner
+    sleep 5
+    exit
+    ;;
+  6) # Database migration
+    psqldb="invidious"   # Database name
+    if [[ "$EUID" -ne 0 ]]; then
+      echo -e "Sorry, you need to run this as root"
+      exit 1
+    fi
+    read -p "Are you sure you want to migrate the PostgreSQL database? " answer
+    echo "You entered: $answer"
+    read -p "Are you sure? Enter y or n: " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
+    if [[ "$answer" = 'y' ]]; then
+      if ( systemctl -q is-active postgresql.service)
+      then
+        echo -e "${RED}stopping Invidious..."
+        sudo systemctl stop invidious
+        echo "Running Migration on $psqldb"
+        sudo -u postgres psql $psqldb -c "ALTER TABLE channels ADD COLUMN deleted bool;"
+        sudo -u postgres psql $psqldb -c "UPDATE channels SET deleted = false;"
+        sudo -u postgres psql $psqldb -c "INSERT INTO session_ids (SELECT unnest(id), email, CURRENT_TIMESTAMP FROM users) ON CONFLICT (id) DO NOTHING;"
+        echo "Running session_ids.sql"
+        sudo -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/session_ids.sql
+        echo -e "${GREEN}Migration on $psqldb done."
+        # Restart Invidious
+        echo -e "${GREEN}Restarting Invidious..."
+        sudo systemctl restart invidious
+        echo -e "${GREEN}Restarting Invidious done."
+        sudo systemctl status invidious --no-pager
+        sleep 1
+        # Restart postgresql
+        echo -e "${GREEN}Restarting postgresql..."
+        sudo systemctl restart postgresql
+        echo -e "${GREEN}Restarting postgresql done."
+        sudo systemctl status postgresql --no-pager
+        sleep 5
+      else
+        echo -e "${RED}Database Migration failed. Is PostgreSQL running?"
+        # Restart postgresql
+        echo -e "${GREEN}trying to start postgresql..."
+        sudo systemctl start postgresql
+        echo -e "${GREEN}Postgresql started successfully"
+        sudo systemctl status postgresql --no-pager
+        sleep 5
+        echo -e "${ORANGE}Restarting script. Please try again..."
+        sleep 5
+        ./invidious_update.sh
+        exit
+      fi
+    fi
+    show_migration_banner () {
+
+      echo -e "${GREEN}\n"
+      echo ' ######################################################################'
+      echo ' ####                    Invidious Update.sh                       ####'
+      echo ' ####            Automatic update script for Invidio.us            ####'
+      echo ' ####                   Maintained by @tmiland                     ####'
+      echo ' ####                        version: '${version}'                          ####'
+      echo ' ######################################################################'
+      echo -e "${NC}\n"
+      echo "Thank you for using the Invidious Update.sh script."
+      echo ""
+      echo "Invidious migration done. Now visit http://localhost:3000"
+      echo ""
+      echo -e "Documentation for this script is available here: ${ORANGE}\n https://github.com/tmiland/Invidious-Updater${NC}\n"
+    }
+    show_migration_banner
+    sleep 5
+    exit
+    ;;
+  7) # Exit
     echo -e "${ORANGE}Goodbye."
     exit
     ;;
