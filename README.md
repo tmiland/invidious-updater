@@ -11,7 +11,6 @@
 
 download and execute the script :
 ```bash
-cd /home/invidious
 wget https://github.com/tmiland/Invidious-Updater/raw/master/invidious_update.sh
 chmod +x invidious_update.sh
 ./invidious_update.sh
@@ -25,12 +24,30 @@ chmod +x invidious_update.sh
   * -l Latest release. (Fetch latest release from remote repo.)
 2. Update the Script
   * Downloads and executes the script from this repo.
+3. Install Invidious service for Systemd
+4. Install invidious
+  * Add invidious user and clone repository [y/n]
+  * Setup PostgresSQL [y/n]
+  * Setup Invidious [y/n]
+  * Setup Systemd Service [y/n]
 3. Exit
   * Exits the script
 
-## Compatibility
+## Testing
+* Tested extensively on Debian 9
+
+## Todo
+[] Rewrite the update procedure 
+[] Add database maintenance option [Database Information and Maintenance](https://github.com/omarroth/invidious/wiki/Database-Information-and-Maintenance)
+[] Add option to compile imagemagick from source [Issues with Captcha on Debian and Ubuntu](https://github.com/omarroth/invidious/wiki/Issues-with-Captcha-on-Debian-and-Ubuntu)
+
+## Compatibility and Requirements
 * Debian 8 and later
 * Ubuntu 16.04 and later
 
-## Requirements
-* [Invidious](https://github.com/omarroth/invidious#linux)
+## Credits
+- Code is mixed and and customized from these sources:
+  * [Invidious](https://github.com/omarroth/invidious#linux)
+  * [nginx-autoinstall](https://github.com/angristan/nginx-autoinstall)
+  * [Git-Repo-Update](https://github.com/KillianKemps/Git-Repo-Update)
+  * [ghacks user.js updater.sh](https://github.com/ghacksuserjs/ghacks-user.js/blob/master/updater.sh)
