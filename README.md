@@ -6,6 +6,8 @@
 * Update git repo, rebuild and restart service
 * Update the Script
 * Install Invidious service for Systemd
+* Run database maintenance
+* Run database migration
 
 
 ## Screenshot
