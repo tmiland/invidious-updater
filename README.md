@@ -25,7 +25,7 @@ su \
 
 ## Usage
 
-1. Install invidious
+1. ### Install invidious
    * Add invidious user and clone repository [y/n]
    * Setup PostgresSQL [y/n]
    * Setup Invidious [y/n]
