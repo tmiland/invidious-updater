@@ -52,7 +52,9 @@ su
 - Captcha is not working, issue with [imagemagick](https://github.com/omarroth/invidious/wiki/Issues-with-Captcha-on-Debian-and-Ubuntu)
 
 ## Todo
-- [ ] Rewrite the update procedure 
+- [ ] Rewrite the update procedure
+- [ ] Add Uninstallation option
+- [ ] Add database migration option [migrate-scripts](https://github.com/omarroth/invidious/tree/master/config/migrate-scripts)
 - [ ] Add database maintenance option [Database Information and Maintenance](https://github.com/omarroth/invidious/wiki/Database-Information-and-Maintenance)
 - [ ] Add option to compile imagemagick from source [Issues with Captcha on Debian and Ubuntu](https://github.com/omarroth/invidious/wiki/Issues-with-Captcha-on-Debian-and-Ubuntu)
 
@@ -66,3 +68,6 @@ su
   * [nginx-autoinstall](https://github.com/angristan/nginx-autoinstall)
   * [Git-Repo-Update](https://github.com/KillianKemps/Git-Repo-Update)
   * [ghacks user.js updater.sh](https://github.com/ghacksuserjs/ghacks-user.js/blob/master/updater.sh)
+
+## Feedback
+- [create an issue](https://github.com/tmiland/Invidious-Updater/issues/new)
