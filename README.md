@@ -27,7 +27,7 @@ chmod +x invidious_update.sh
   * Downloads and executes the script from this repo.
 
 3. Install Invidious service for Systemd
-  * 
+  * Setup Systemd Service
   
 4. Install invidious
    * Add invidious user and clone repository [y/n]
