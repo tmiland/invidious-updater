@@ -1,11 +1,12 @@
-# Invidious-Updater
+# Invidious-Updater (And Installer)
 
-## Script to update [Invidious](https://github.com/omarroth/invidious) git repository
+## Script to install and update [Invidious](https://github.com/omarroth/invidious)
 
-* Automatically update git repo, rebuild and restart service
+* Install invidious
+* Update git repo, rebuild and restart service
 * Update the Script
 * Install Invidious service for Systemd
-* Install invidious
+
 
 ## Screenshot
 ![screenshot](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Screenshot%20at%2019-32-11.png)
@@ -16,33 +17,39 @@ download and execute the script :
 ```bash
 wget https://github.com/tmiland/Invidious-Updater/raw/master/invidious_update.sh
 chmod +x invidious_update.sh
+su
 ./invidious_update.sh
 ```
 
 ## Usage
-1. Update Invidious
+
+1. Install invidious
+   * Add invidious user and clone repository [y/n]
+   * Setup PostgresSQL [y/n]
+   * Setup Invidious [y/n]
+   * Setup Systemd Service [y/n]
+
+2. Update Invidious
   * No arguments (Default) Will use branch "Master" and prompt user for each step.
   * -f FORCE YES (Force yes, update, rebuild and restart Invidious)
   * -p Prune remote. (Deletes all stale remote-tracking branches)
   * -l Latest release. (Fetch latest release from remote repo.)
 
-2. Update the Script
-  * Downloads and executes the script from this repo.
+3. Update the Script
+  * Downloads and executes the script from this repo with the latest version.
 
-3. Install Invidious service for Systemd
+4. Install Invidious service for Systemd
   * Setup Systemd Service
-  
-4. Install invidious
-   * Add invidious user and clone repository [y/n]
-   * Setup PostgresSQL [y/n]
-   * Setup Invidious [y/n]
-   * Setup Systemd Service [y/n]
 
 5. Exit
   * Exits the script
 
 ## Testing
 - [x] Tested extensively on Debian 9
+
+## Issues
+
+- Captcha is not working, issue with [imagemagick](https://github.com/omarroth/invidious/wiki/Issues-with-Captcha-on-Debian-and-Ubuntu)
 
 ## Todo
 - [ ] Rewrite the update procedure 
