@@ -3,6 +3,9 @@
 ## Script to update [Invidious](https://github.com/omarroth/invidious) git repository
 
 * Automatically update git repo, rebuild and restart service
+* Update the Script
+* Install Invidious service for Systemd
+* Install invidious
 
 ## Screenshot
 ![screenshot](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Screenshot%20at%2011-31-38.png)
