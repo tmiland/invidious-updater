@@ -43,7 +43,13 @@ su \
 4. Install Invidious service for Systemd
   * Setup Systemd Service
 
-5. Exit
+5. Run database maintenance
+  * Database maintenance option [Database Information and Maintenance](https://github.com/omarroth/invidious/wiki/Database-Information-and-Maintenance)
+
+6. Run database migration
+  * Database migration option [migrate-scripts](https://github.com/omarroth/invidious/tree/master/config/migrate-scripts)
+
+7. Exit
   * Exits the script
 
 ## Testing
