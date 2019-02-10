@@ -32,25 +32,25 @@ su \
    * Setup Systemd Service [y/n]
 
 2. Update Invidious
-  * No arguments (Default) Will use branch "Master" and prompt user for each step.
-  * -f FORCE YES (Force yes, update, rebuild and restart Invidious)
-  * -p Prune remote. (Deletes all stale remote-tracking branches)
-  * -l Latest release. (Fetch latest release from remote repo.)
+   * No arguments (Default) Will use branch "Master" and prompt user for each step.
+   * -f FORCE YES (Force yes, update, rebuild and restart Invidious)
+   * -p Prune remote. (Deletes all stale remote-tracking branches)
+   * -l Latest release. (Fetch latest release from remote repo.)
 
 3. Update the Script
-  * Downloads and executes the script from this repo with the latest version.
+   * Downloads and executes the script from this repo with the latest version.
 
 4. Install Invidious service for Systemd
-  * Setup Systemd Service
+   * Setup Systemd Service
 
 5. Run database maintenance
-  * Database maintenance option [Database Information and Maintenance](https://github.com/omarroth/invidious/wiki/Database-Information-and-Maintenance)
+   * Database maintenance option [Database Information and Maintenance](https://github.com/omarroth/invidious/wiki/Database-Information-and-Maintenance)
 
 6. Run database migration
-  * Database migration option [migrate-scripts](https://github.com/omarroth/invidious/tree/master/config/migrate-scripts)
+   * Database migration option [migrate-scripts](https://github.com/omarroth/invidious/tree/master/config/migrate-scripts)
 
 7. Exit
-  * Exits the script
+   * Exits the script
 
 ## Testing
 - [x] Tested extensively on Debian 9
