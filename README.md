@@ -17,20 +17,25 @@ chmod +x invidious_update.sh
 ```
 
 ## Usage
-1. Update Invidious
+1. 
+- Update Invidious
   * No arguments (Default) Will use branch "Master" and prompt user for each step.
   * -f FORCE YES (Force yes, update, rebuild and restart Invidious)
   * -p Prune remote. (Deletes all stale remote-tracking branches)
   * -l Latest release. (Fetch latest release from remote repo.)
-2. Update the Script
+2. 
+- Update the Script
   * Downloads and executes the script from this repo.
-3. Install Invidious service for Systemd
-4. Install invidious
+3. 
+- Install Invidious service for Systemd
+4. 
+- Install invidious
   * Add invidious user and clone repository [y/n]
   * Setup PostgresSQL [y/n]
   * Setup Invidious [y/n]
   * Setup Systemd Service [y/n]
-3. Exit
+3. 
+- Exit
   * Exits the script
 
 ## Testing
