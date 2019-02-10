@@ -5,7 +5,7 @@
 * Automatically update git repo, rebuild and restart service
 
 ## Screenshot
-![screenshot](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Screenshot%20at%2016-18-02.png)
+![screenshot](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Screenshot%20at%2011-31-38.png)
 
 ## Installation
 
