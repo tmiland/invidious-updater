@@ -17,34 +17,29 @@ chmod +x invidious_update.sh
 ```
 
 ## Usage
-1. 
-- Update Invidious
+1. Update Invidious
   * No arguments (Default) Will use branch "Master" and prompt user for each step.
   * -f FORCE YES (Force yes, update, rebuild and restart Invidious)
   * -p Prune remote. (Deletes all stale remote-tracking branches)
   * -l Latest release. (Fetch latest release from remote repo.)
-2. 
-- Update the Script
+2. Update the Script
   * Downloads and executes the script from this repo.
-3. 
-- Install Invidious service for Systemd
-4. 
-- Install invidious
+3. Install Invidious service for Systemd
+4. Install invidious
   * Add invidious user and clone repository [y/n]
   * Setup PostgresSQL [y/n]
   * Setup Invidious [y/n]
   * Setup Systemd Service [y/n]
-3. 
-- Exit
+3. Exit
   * Exits the script
 
 ## Testing
 * Tested extensively on Debian 9
 
 ## Todo
-[] Rewrite the update procedure 
-[] Add database maintenance option [Database Information and Maintenance](https://github.com/omarroth/invidious/wiki/Database-Information-and-Maintenance)
-[] Add option to compile imagemagick from source [Issues with Captcha on Debian and Ubuntu](https://github.com/omarroth/invidious/wiki/Issues-with-Captcha-on-Debian-and-Ubuntu)
+[ ] Rewrite the update procedure 
+[ ] Add database maintenance option [Database Information and Maintenance](https://github.com/omarroth/invidious/wiki/Database-Information-and-Maintenance)
+[ ] Add option to compile imagemagick from source [Issues with Captcha on Debian and Ubuntu](https://github.com/omarroth/invidious/wiki/Issues-with-Captcha-on-Debian-and-Ubuntu)
 
 ## Compatibility and Requirements
 * Debian 8 and later
