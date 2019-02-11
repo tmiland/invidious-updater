@@ -31,7 +31,7 @@ show_banner () {
   echo ' ####                    Invidious Update.sh                       ####'
   echo ' ####            Automatic update script for Invidio.us            ####'
   echo ' ####                   Maintained by @tmiland                     ####'
-  echo ' ####                        version: '${version}'                     ####'
+  echo ' ####                        version: '${version}'                        ####'
   echo ' ######################################################################'
   echo -e "${NC}\n"
   echo "Welcome to the Invidious Update.sh script."
@@ -238,7 +238,7 @@ case $OPTION in
       echo ' ####                    Invidious Update.sh                       ####'
       echo ' ####            Automatic update script for Invidio.us            ####'
       echo ' ####                   Maintained by @tmiland                     ####'
-      echo ' ####                        version: '${version}'                          ####'
+      echo ' ####                        version: '${version}'                        ####'
       echo ' ######################################################################'
       echo -e "${NC}\n"
       echo "Thank you for using the Invidious Update.sh script."
@@ -513,7 +513,7 @@ case $OPTION in
       echo ' ####                    Invidious Update.sh                       ####'
       echo ' ####            Automatic update script for Invidio.us            ####'
       echo ' ####                   Maintained by @tmiland                     ####'
-      echo ' ####                        version: '${version}'                          ####'
+      echo ' ####                        version: '${version}'                        ####'
       echo ' ######################################################################'
       echo -e "${NC}\n"
       echo "Thank you for using the Invidious Update.sh script."
@@ -580,7 +580,7 @@ case $OPTION in
       echo ' ####                    Invidious Update.sh                       ####'
       echo ' ####            Automatic update script for Invidio.us            ####'
       echo ' ####                   Maintained by @tmiland                     ####'
-      echo ' ####                        version: '${version}'                          ####'
+      echo ' ####                        version: '${version}'                        ####'
       echo ' ######################################################################'
       echo -e "${NC}\n"
       echo "Thank you for using the Invidious Update.sh script."
