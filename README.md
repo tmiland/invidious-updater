@@ -17,9 +17,9 @@
 
 download and execute the script :
 ```bash
-wget https://github.com/tmiland/Invidious-Updater/raw/master/invidious_update.sh \
-chmod +x invidious_update.sh \
-su \
+wget https://github.com/tmiland/Invidious-Updater/raw/master/invidious_update.sh
+chmod +x invidious_update.sh
+su
 ./invidious_update.sh
 ```
 
