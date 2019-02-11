@@ -8,7 +8,7 @@
 #                                                         #
 ###########################################################
 
-version='1.1.0'
+version='1.1.1'
 
 # Colors used for printing
 RED='\033[0;31m'
@@ -541,11 +541,11 @@ case $OPTION in
         echo -e "${RED}stopping Invidious..."
         sudo systemctl stop invidious
         echo "Running Migration on $psqldb"
+        echo "Running session_ids.sql"
+        sudo -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/session_ids.sql
         sudo -u postgres psql $psqldb -c "ALTER TABLE channels ADD COLUMN deleted bool;"
         sudo -u postgres psql $psqldb -c "UPDATE channels SET deleted = false;"
         sudo -u postgres psql $psqldb -c "INSERT INTO session_ids (SELECT unnest(id), email, CURRENT_TIMESTAMP FROM users) ON CONFLICT (id) DO NOTHING;"
-        echo "Running session_ids.sql"
-        sudo -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/session_ids.sql
         echo -e "${GREEN}Migration on $psqldb done."
         # Restart Invidious
         echo -e "${GREEN}Restarting Invidious..."
