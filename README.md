@@ -24,14 +24,27 @@
 
 ## Installation
 
-download and execute the script :
+#### download and execute the script :
 ```bash
-wget https://github.com/tmiland/Invidious-Updater/raw/master/invidious_update.sh
-chmod +x invidious_update.sh
-su
-./invidious_update.sh
+$ wget https://github.com/tmiland/Invidious-Updater/raw/master/invidious_update.sh
+$ chmod +x invidious_update.sh
+$ su
+$ ./invidious_update.sh
 ```
-
+#### Or : 
+ ```bash
+$ cd /home/invidious
+$ git clone https://github.com/tmiland/Invidious-Updater.git
+$ cd Invidious-Updater
+$ chmod +x invidious_update.sh
+$ su
+$ ./invidious_update.sh
+```
+#### Optionally
+ ```bash
+$ ln -s /home/invidious/Invidious-Updater/invidious_update.sh /usr/bin/invidious_update
+$ invidious_update
+```
 ## Usage
 
 1. ### Install invidious
