@@ -8,7 +8,7 @@
 #                                                         #
 ###########################################################
 
-version='1.1.2'
+version='1.1.3'
 
 # Colors used for printing
 RED='\033[0;31m'
@@ -68,13 +68,13 @@ case $OPTION in
     echo -e "${BLUE}Let's go through some configuration options.${NC}"
     echo ""
     # Here's where the user is going to enter the Invidious database user, as it appears in the GUI:
-    read -p "Enter the desired user of your Invidious PostgreSQL database: " psqluser
+    #read -p "Enter the desired user of your Invidious PostgreSQL database: " psqluser
     # Here's where the user is going to enter the Invidious database password, as it appears in the GUI:
     read -p "Enter the desired password of your Invidious PostgreSQL database: " psqlpass
     # Here's where the user is going to enter the Invidious database name, as it appears in the GUI:
     read -p "Enter the desired database name of your Invidious PostgreSQL database: " psqldb
     # Let's allow the user to confirm that what they've typed in is correct:
-    echo "You entered: user: $psqluser password: $psqlpass name: $psqldb"
+    echo "You entered: password: $psqlpass name: $psqldb"
     read -p "Is that correct? Enter y or n: " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
     # Here's where the user is going to enter the Invidious domain name, as it appears in the GUI:
     read -p "Enter the desired domain name of your Invidious instance: " domain
@@ -97,7 +97,7 @@ case $OPTION in
       echo "deb https://dist.crystal-lang.org/apt crystal main" | sudo tee /etc/apt/sources.list.d/crystal.list
     fi
     apt-get update
-    apt install crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev postgresql imagemagick libsqlite3-dev -y --allow-unauthenticated
+    apt install crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev postgresql imagemagick libsqlite3-dev -y #--allow-unauthenticated
     ######################
     # Setup Repository
     ######################
@@ -117,43 +117,57 @@ case $OPTION in
       cd $USER_DIR || exit 1
       echo -e "${GREEN}Downloading Invidious from GitHub${NC}"
       git clone https://github.com/omarroth/invidious
+      # Make sure we are running a stable release
+      cd $USER_DIR/invidious
+      # Get new tags from remote
+      git fetch --tags
+      # Get latest tag name
+      latestTag=$(git describe --tags `git rev-list --tags --max-count=1`)
+      # Checkout latest tag
+      git checkout $latestTag
+      # Set user permissions (just in case)
       chown -R $USER_NAME:$USER_NAME $USER_DIR/invidious
+      cd -
     fi
     systemctl enable postgresql
     systemctl start postgresql
     # Create users and set privileges
     echo "Creating user kemal with password $psqlpass"
     sudo -u postgres psql -c "CREATE USER kemal WITH PASSWORD '$psqlpass';"
-    echo "Creating user $psqluser with password $psqlpass"
-    sudo -u postgres psql -c "CREATE USER $psqluser WITH PASSWORD '$psqlpass';"
+    #echo "Creating user $psqluser with password $psqlpass"
+    #sudo -u postgres psql -c "CREATE USER $psqluser WITH PASSWORD '$psqlpass';"
     echo "Creating user $USER_NAME with password $psqlpass"
     sudo -u postgres psql -c "CREATE USER $USER_NAME WITH PASSWORD '$psqlpass';"
     echo "Creating database $psqldb with owner kemal"
     sudo -u postgres psql -c "CREATE DATABASE $psqldb WITH OWNER kemal;"
-    echo "Grant all on database $psqldb to user $psqluser"
-    sudo -u postgres psql -c "GRANT ALL ON DATABASE $psqldb TO $psqluser;"
+    echo "Grant all on database $psqldb to user kemal"
+    sudo -u postgres psql -c "GRANT ALL ON DATABASE $psqldb TO kemal;"
+    #echo "Grant all on database $psqldb to user $psqluser"
+    #sudo -u postgres psql -c "GRANT ALL ON DATABASE $psqldb TO $psqluser;"
     echo "Grant all on database $psqldb to user $USER_NAME"
     sudo -u postgres psql -c "GRANT ALL ON DATABASE $psqldb TO $USER_NAME;"
     # Import db files
     echo "Running channels.sql"
-    sudo -u $USER_NAME psql -d $psqldb -f $USER_DIR/invidious/config/sql/channels.sql
+    sudo -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/channels.sql
     echo "Running videos.sql"
-    sudo -u $USER_NAME psql -d $psqldb -f $USER_DIR/invidious/config/sql/videos.sql
+    sudo -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/videos.sql
     echo "Running channel_videos.sql"
-    sudo -u $USER_NAME psql -d $psqldb -f $USER_DIR/invidious/config/sql/channel_videos.sql
+    sudo -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/channel_videos.sql
     echo "Running users.sql"
-    sudo -u $USER_NAME psql -d $psqldb -f $USER_DIR/invidious/config/sql/users.sql
-    echo "Running session_ids.sql"
-    sudo -u $USER_NAME psql -d $psqldb -f $USER_DIR/invidious/config/sql/session_ids.sql
+    sudo -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/users.sql
+    if [[ -e $USER_DIR/invidious/config/sql/session_ids.sql ]]; then
+      echo "Running session_ids.sql"
+      sudo -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/session_ids.sql
+    fi
     echo "Running nonces.sql"
-    sudo -u $USER_NAME psql -d $psqldb -f $USER_DIR/invidious/config/sql/nonces.sql
+    sudo -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/nonces.sql
     echo "Finished Database section"
     ######################
     # Update config.yml with new info from user input
     ######################
     # Lets change the default user
-    OLDUSER="user: kemal"
-    NEWUSER="user: $psqluser"
+    #OLDUSER="user: kemal"
+    #NEWUSER="user: $psqluser"
     # Lets change the default password
     OLDPASS="password: kemal"
     NEWPASS="password: $psqlpass"
@@ -175,7 +189,7 @@ case $OPTION in
       if [ -f $f -a -r $f ]; then
         /bin/cp -f $f $BPATH
         echo -e "${GREEN}Updating config.yml with new info...${NC}"
-        sed "s/$OLDUSER/$NEWUSER/g; s/$OLDPASS/$NEWPASS/g; s/$OLDDBNAME/$NEWDBNAME/g; s/$OLDDOMAIN/$NEWDOMAIN/g; s/$OLDHTTPS/$NEWHTTPS/g" "$f" > $TFILE &&
+        sed "s/$OLDPASS/$NEWPASS/g; s/$OLDDBNAME/$NEWDBNAME/g; s/$OLDDOMAIN/$NEWDOMAIN/g; s/$OLDHTTPS/$NEWHTTPS/g" "$f" > $TFILE &&
         mv $TFILE "$f"
       else
         echo -e "${RED}Error: Cannot read $f"
@@ -560,10 +574,17 @@ case $OPTION in
         sudo systemctl stop invidious
         echo "Running Migration..."
         cd $USER_DIR/invidious
-        for script in ./config/migrate-scripts/*.sh
+        currentVersion=$(git rev-list --max-count=1 --abbrev-commit HEAD)
+        latestVersion=$(git describe --tags `git rev-list --tags --max-count=1`)
+        git checkout $latestVersion
+        for i in `git rev-list --abbrev-commit $currentVersion..HEAD` ; 
         do
-          sudo -u $USER_NAME bash "$script"
+          file=./config/migrate-scripts/migrate-db-$i.sh ; [ -f $file ] && $file ; 
         done
+        #for script in ./config/migrate-scripts/*.sh
+        #do
+        #  sudo -u $USER_NAME bash "$script"
+        #done
         cd -
         echo -e "${GREEN}Migration Done ${NC}"
         # Restart Invidious
