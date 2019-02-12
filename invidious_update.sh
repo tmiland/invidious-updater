@@ -8,7 +8,7 @@
 #                                                         #
 ###########################################################
 
-version='1.1.1'
+version='1.1.2'
 
 # Colors used for printing
 RED='\033[0;31m'
@@ -21,8 +21,14 @@ NC='\033[0m' # No Color
 
 # Set username
 USER_NAME=invidious
+
 # Set userdir
 USER_DIR="/home/invidious"
+
+# Set default Database info
+#psqluser=kemal
+#psqlpass=kemal
+#psqldb=invidious
 
 show_banner () {
   clear
@@ -59,180 +65,157 @@ case $OPTION in
       exit 1
     fi
     echo ""
-    echo "Please tell me what you want to install."
-    echo "If you select none, Invidious will be installed with its default setup."
+    echo -e "${BLUE}Let's go through some configuration options.${NC}"
     echo ""
-    echo "Chose what to install :"
-
-    while [[ $Repository != "y" && $Repository != "n" ]]; do
-      read -p " Add invidious user and clone repository? [y/n]: " -e Repository
-    done
-    while [[ $PostgresSQL != "y" && $PostgresSQL != "n" ]]; do
-      read -p " Setup PostgresSQL? [y/n]: " -e PostgresSQL
-      if [[ "$PostgresSQL" = 'y' ]]; then
-        # Here's where the user is going to enter the Invidious database password, as it appears in the GUI:
-        read -p "Enter the desired password of your Invidious PostgreSQL database: " dbpass
-        # Let's allow the user to confirm that what they've typed in is correct:
-        echo "You entered: $dbpass"
-        read -p "Is that correct? Enter y or n: " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
-      fi
-    done
-    while [[ $SetupInvidious != "y" && $SetupInvidious != "n" ]]; do
-      read -p " Setup Invidious? [y/n]: " -e SetupInvidious
-      if [[ "$SetupInvidious" = 'y' ]]; then
-        # Here's where the user is going to enter the Invidious domain name, as it appears in the GUI:
-        read -p "Enter the desired domain name of your Invidious instance: " domain
-        # Let's allow the user to confirm that what they've typed in is correct:
-        echo "You entered: $domain"
-        read -p "Is that correct? Enter y or n: " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
-      fi
-    done
-    while [[ $SystemdService != "y" && $SystemdService != "n" ]]; do
-      read -p " Setup Systemd Service? [y/n]: " -e SystemdService
-    done
+    # Here's where the user is going to enter the Invidious database user, as it appears in the GUI:
+    read -p "Enter the desired user of your Invidious PostgreSQL database: " psqluser
+    # Here's where the user is going to enter the Invidious database password, as it appears in the GUI:
+    read -p "Enter the desired password of your Invidious PostgreSQL database: " psqlpass
+    # Here's where the user is going to enter the Invidious database name, as it appears in the GUI:
+    read -p "Enter the desired database name of your Invidious PostgreSQL database: " psqldb
+    # Let's allow the user to confirm that what they've typed in is correct:
+    echo "You entered: user: $psqluser password: $psqlpass name: $psqldb"
+    read -p "Is that correct? Enter y or n: " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
+    # Here's where the user is going to enter the Invidious domain name, as it appears in the GUI:
+    read -p "Enter the desired domain name of your Invidious instance: " domain
+    # Here's where the user is going to enter the Invidious https only settings, as it appears in the GUI:
+    read -p "Are you going to serve your Invidious instance on https only? Type true or false: " https_only
+    # Let's allow the user to confirm that what they've typed in is correct:
+    echo "You entered: Domain: $domain https only: $https_only"
+    read -p "Is that correct? Enter y or n: " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
     echo ""
     read -n1 -r -p "Invidious is ready to be installed, press any key to continue..."
     echo ""
     ######################
     # Setup Dependencies
     ######################
-    if [[ "$SetupInvidious" = 'y' && "$PostgresSQL" = 'y' ]]; then
-      apt-get update
-      apt install apt-transport-https git curl sudo -y
-      if [[ ! -e /etc/apt/sources.list.d/crystal.list ]]; then
-        #apt-key adv --keyserver keys.gnupg.net --recv-keys 09617FD37CC06B54
-        curl -sL "https://keybase.io/crystal/pgp_keys.asc" | sudo apt-key add -
-        echo "deb https://dist.crystal-lang.org/apt crystal main" | sudo tee /etc/apt/sources.list.d/crystal.list
-      fi
-      apt-get update
-      apt install crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev postgresql imagemagick libsqlite3-dev -y --allow-unauthenticated
+    apt-get update
+    apt install apt-transport-https git curl sudo -y
+    if [[ ! -e /etc/apt/sources.list.d/crystal.list ]]; then
+      #apt-key adv --keyserver keys.gnupg.net --recv-keys 09617FD37CC06B54
+      curl -sL "https://keybase.io/crystal/pgp_keys.asc" | sudo apt-key add -
+      echo "deb https://dist.crystal-lang.org/apt crystal main" | sudo tee /etc/apt/sources.list.d/crystal.list
     fi
+    apt-get update
+    apt install crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev postgresql imagemagick libsqlite3-dev -y --allow-unauthenticated
     ######################
     # Setup Repository
     ######################
-    if [[ "$Repository" = 'y' ]]; then
-      # https://stackoverflow.com/a/51894266
-      grep $USER_NAME /etc/passwd >/dev/null 2>&1
-      if [ ! $? -eq 0 ] ; then
-        echo "User Not Found, adding user"
-        /usr/sbin/useradd -m $USER_NAME
-      fi
-      adduser $USER_NAME sudo
-      # If directory is not created
-      if [[ ! -d $USER_DIR ]]; then
-        echo "Folder Not Found, adding folder"
-        mkdir -p $USER_DIR
-      fi
-      if [[ ! -d $USER_DIR/invidious ]]; then
-        cd $USER_DIR || exit 1
-        echo "Downloading Invidious from GitHub"
-        git clone https://github.com/omarroth/invidious
-        chown -R $USER_NAME:$USER_NAME $USER_DIR/invidious
-      fi
+    # https://stackoverflow.com/a/51894266
+    grep $USER_NAME /etc/passwd >/dev/null 2>&1
+    if [ ! $? -eq 0 ] ; then
+      echo -e "${ORANGE}User Not Found, adding user${NC}"
+      /usr/sbin/useradd -m $USER_NAME
     fi
-    ######################
-    # Setup PostgresSQL
-    ######################
-    if [[ "$PostgresSQL" = 'y' ]]; then
-      # Lets change the default password
-      OLD="password: kemal"
-      NEW="password: $dbpass"
-      DPATH="$USER_DIR/invidious/config/config.yml"
-      BPATH="$USER_DIR/backup/invidious"
-      TFILE="/tmp/config.yml.tmp.$$"
-      [ ! -d $BPATH ] && mkdir -p $BPATH || :
-      for f in $DPATH
-      do
-        if [ -f $f -a -r $f ]; then
-          /bin/cp -f $f $BPATH
-          echo "Updating config.yml with new password"
-          sed "s/$OLD/$NEW/g" "$f" > $TFILE && mv $TFILE "$f"
-        else
-          echo "Error: Cannot read $f"
-        fi
-      done
-      /bin/rm $TFILE
-      ######################
-      # Done changing password
-      # Source: https://www.cyberciti.biz/faq/unix-linux-replace-string-words-in-many-files/
-      ######################
-      psqluser="kemal"   # Database username
-      psqlpass="$dbpass"  # Database password
-      psqldb="invidious"   # Database name
-      systemctl enable postgresql
-      systemctl start postgresql
-
-      echo "Creating user $psqluser with password $psqlpass"
-      sudo -u postgres psql -c "CREATE USER $psqluser WITH PASSWORD '$psqlpass';"
-      echo "Creating database $psqldb with owner $psqluser"
-      sudo -u postgres psql -c "CREATE DATABASE $psqldb WITH OWNER $psqluser;"
-      echo "Running channels.sql"
-      sudo -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/channels.sql
-      echo "Running videos.sql"
-      sudo -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/videos.sql
-      echo "Running channel_videos.sql"
-      sudo -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/channel_videos.sql
-      echo "Running users.sql"
-      sudo -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/users.sql
-      echo "Running session_ids.sql"
-      sudo -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/session_ids.sql
-      echo "Running nonces.sql"
-      sudo -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/nonces.sql
-      echo "Finished Database section"
+    adduser $USER_NAME sudo
+    # If directory is not created
+    if [[ ! -d $USER_DIR ]]; then
+      echo -e "${ORANGE}Folder Not Found, adding folder${NC}"
+      mkdir -p $USER_DIR
     fi
-    ######################
-    # Setup Invidious
-    ######################
-    if [[ "$SetupInvidious" = 'y' ]]; then
-      # Lets change the default domain
-      OLD="domain: invidio.us"
-      NEW="domain: $domain"
-      DPATH="$USER_DIR/invidious/config/config.yml"
-      BPATH="$USER_DIR/backup/invidious"
-      TFILE="/tmp/config.yml.tmp.$$"
-      [ ! -d $BPATH ] && mkdir -p $BPATH || :
-      for f in $DPATH
-      do
-        if [ -f $f -a -r $f ]; then
-          /bin/cp -f $f $BPATH
-          echo "Updating config.yml with new domain"
-          sed "s/$OLD/$NEW/g" "$f" > $TFILE && mv $TFILE "$f"
-        else
-          echo "Error: Cannot read $f"
-        fi
-      done
-      if [[ -e $TFILE ]]; then
-        /bin/rm $TFILE
-      else
-        echo "Done updating config.yml"
-      fi
-
-      cd $USER_DIR/invidious || exit 1
-      shards
-      crystal build src/invidious.cr --release
+    if [[ ! -d $USER_DIR/invidious ]]; then
+      cd $USER_DIR || exit 1
+      echo -e "${GREEN}Downloading Invidious from GitHub${NC}"
+      git clone https://github.com/omarroth/invidious
       chown -R $USER_NAME:$USER_NAME $USER_DIR/invidious
     fi
+    systemctl enable postgresql
+    systemctl start postgresql
+    # Create users and set privileges
+    echo "Creating user kemal with password $psqlpass"
+    sudo -u postgres psql -c "CREATE USER kemal WITH PASSWORD '$psqlpass';"
+    echo "Creating user $psqluser with password $psqlpass"
+    sudo -u postgres psql -c "CREATE USER $psqluser WITH PASSWORD '$psqlpass';"
+    echo "Creating user $USER_NAME with password $psqlpass"
+    sudo -u postgres psql -c "CREATE USER $USER_NAME WITH PASSWORD '$psqlpass';"
+    echo "Creating database $psqldb with owner kemal"
+    sudo -u postgres psql -c "CREATE DATABASE $psqldb WITH OWNER kemal;"
+    echo "Grant all on database $psqldb to user $psqluser"
+    sudo -u postgres psql -c "GRANT ALL ON DATABASE $psqldb TO $psqluser;"
+    echo "Grant all on database $psqldb to user $USER_NAME"
+    sudo -u postgres psql -c "GRANT ALL ON DATABASE $psqldb TO $USER_NAME;"
+    # Import db files
+    echo "Running channels.sql"
+    sudo -u $USER_NAME psql -d $psqldb -f $USER_DIR/invidious/config/sql/channels.sql
+    echo "Running videos.sql"
+    sudo -u $USER_NAME psql -d $psqldb -f $USER_DIR/invidious/config/sql/videos.sql
+    echo "Running channel_videos.sql"
+    sudo -u $USER_NAME psql -d $psqldb -f $USER_DIR/invidious/config/sql/channel_videos.sql
+    echo "Running users.sql"
+    sudo -u $USER_NAME psql -d $psqldb -f $USER_DIR/invidious/config/sql/users.sql
+    echo "Running session_ids.sql"
+    sudo -u $USER_NAME psql -d $psqldb -f $USER_DIR/invidious/config/sql/session_ids.sql
+    echo "Running nonces.sql"
+    sudo -u $USER_NAME psql -d $psqldb -f $USER_DIR/invidious/config/sql/nonces.sql
+    echo "Finished Database section"
+    ######################
+    # Update config.yml with new info from user input
+    ######################
+    # Lets change the default user
+    OLDUSER="user: kemal"
+    NEWUSER="user: $psqluser"
+    # Lets change the default password
+    OLDPASS="password: kemal"
+    NEWPASS="password: $psqlpass"
+    # Lets change the default database name
+    OLDDBNAME="dbname: invidious"
+    NEWDBNAME="dbname: $psqldb"
+    # Lets change the default domain
+    OLDDOMAIN="domain: invidio.us"
+    NEWDOMAIN="domain: $domain"
+    # Lets change https_only value
+    OLDHTTPS="https_only: false"
+    NEWHTTPS="https_only: $https_only"
+    DPATH="$USER_DIR/invidious/config/config.yml"
+    BPATH="$USER_DIR/backup/invidious"
+    TFILE="/tmp/config.yml"
+    [ ! -d $BPATH ] && mkdir -p $BPATH || :
+    for f in $DPATH
+    do
+      if [ -f $f -a -r $f ]; then
+        /bin/cp -f $f $BPATH
+        echo -e "${GREEN}Updating config.yml with new info...${NC}"
+        sed "s/$OLDUSER/$NEWUSER/g; s/$OLDPASS/$NEWPASS/g; s/$OLDDBNAME/$NEWDBNAME/g; s/$OLDDOMAIN/$NEWDOMAIN/g; s/$OLDHTTPS/$NEWHTTPS/g" "$f" > $TFILE &&
+        mv $TFILE "$f"
+      else
+        echo -e "${RED}Error: Cannot read $f"
+      fi
+    done
+    if [[ -e $TFILE ]]; then
+      /bin/rm $TFILE
+    else
+      echo -e "${GREEN}Done updating config.yml with new info!${NC}"
+    fi
+    ######################
+    # Done updating config.yml with new info!
+    # Source: https://www.cyberciti.biz/faq/unix-linux-replace-string-words-in-many-files/
+    ######################
+    cd $USER_DIR/invidious || exit 1
+    shards
+    crystal build src/invidious.cr --release
+    chown -R $USER_NAME:$USER_NAME $USER_DIR/invidious
     ######################
     # Setup Systemd Service
     ######################
-    if [[ "$SystemdService" = 'y' && ! -e /lib/systemd/system/invidious.service ]]; then
-      cd /lib/systemd/system/ || exit 1
-      wget https://github.com/omarroth/invidious/raw/master/invidious.service
-      # Enable invidious start at boot
-      sudo systemctl enable invidious
-      # Restart Invidious
-      sudo systemctl restart invidious
-    fi
+    cp $USER_DIR/invidious/invidious.service /lib/systemd/system/invidious.service
+    #wget https://github.com/omarroth/invidious/raw/master/invidious.service
+    # Enable invidious start at boot
+    sudo systemctl enable invidious
+    # Reload Systemd
+    sudo systemctl daemon-reload
+    # Restart Invidious
+    sudo systemctl start invidious
     if ( systemctl -q is-active invidious.service)
     then
-      echo -e "${GREEN}Invidious service has been successfully installed"
+      echo -e "${GREEN}Invidious service has been successfully installed!${NC}"
+      sudo systemctl status invidious
       sleep 5
     else
-      echo -e "${RED}Invidious service installation failed."
+      echo -e "${RED}Invidious service installation failed...${NC}"
       sleep 5
     fi
     show_install_banner () {
-      clear
+      #clear
       echo -e "${GREEN}\n"
       echo ' ######################################################################'
       echo ' ####                    Invidious Update.sh                       ####'
@@ -451,34 +434,70 @@ case $OPTION in
       echo -e "Sorry, you need to run this as root"
       exit 1
     fi
-    if [[ ! -e /lib/systemd/system/invidious.service ]]; then
-      cd /lib/systemd/system/ || exit 1
-      wget https://github.com/omarroth/invidious/raw/master/invidious.service
+    ######################
+    # Setup Systemd Service
+    ######################
+    if ( ! systemctl -q is-active invidious.service)
+    then
+      cp $USER_DIR/invidious/invidious.service /lib/systemd/system/invidious.service
+      #wget https://github.com/omarroth/invidious/raw/master/invidious.service
       # Enable invidious start at boot
-      systemctl enable invidious
+      sudo systemctl enable invidious
+      # Reload Systemd
+      sudo systemctl daemon-reload
+      # Restart Invidious
+      sudo systemctl start invidious
     fi
-    echo ""
-    echo "Invidious service done."
+    if ( systemctl -q is-active invidious.service)
+    then
+      echo -e "${GREEN}Invidious service has been successfully installed!${NC}"
+      sudo systemctl status invidious --no-pager
+      sleep 5
+    else
+      echo -e "${RED}Invidious service installation failed...${NC}"
+      sleep 5
+    fi
+    show_systemd_install_banner () {
+      #clear
+      echo -e "${GREEN}\n"
+      echo ' ######################################################################'
+      echo ' ####                    Invidious Update.sh                       ####'
+      echo ' ####            Automatic update script for Invidio.us            ####'
+      echo ' ####                   Maintained by @tmiland                     ####'
+      echo ' ####                        version: '${version}'                        ####'
+      echo ' ######################################################################'
+      echo -e "${NC}\n"
+      echo "Thank you for using the Invidious Update.sh script."
+      echo ""
+      echo "Invidious systemd install done. Now visit http://localhost:3000"
+      echo ""
+      echo -e "Documentation for this script is available here: ${ORANGE}\n https://github.com/tmiland/Invidious-Updater${NC}\n"
+    }
+    show_systemd_install_banner
     sleep 5
     exit
     ;;
   5) # Database maintenance
-    psqldb="invidious"   # Database name
+    #psqldb="invidious"   # Database name
     if [[ "$EUID" -ne 0 ]]; then
       echo -e "Sorry, you need to run this as root"
       exit 1
     fi
     read -p "Are you sure you want to run Database Maintenance the PostgreSQL database? " answer
     echo "You entered: $answer"
-    read -p "Are you sure? Enter y or n: " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
+    # Here's where the user is going to enter the Invidious database name, as it appears in the GUI:
+    read -p "Enter database name of your Invidious PostgreSQL database: " psqldb
+    # Let's allow the user to confirm that what they've typed in is correct:
+    echo "You entered: $psqldb"
+    read -p "Is that correct? Enter y or n: " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
     if [[ "$answer" = 'y' ]]; then
       if ( systemctl -q is-active postgresql.service)
       then
         echo -e "${RED}stopping Invidious..."
         sudo systemctl stop invidious
         echo "Running Maintenance on $psqldb"
-        sudo -u postgres psql $psqldb -c "DELETE FROM nonces * WHERE expire < current_timestamp;"
-        sudo -u postgres psql $psqldb -c "TRUNCATE TABLE videos;"
+        sudo -u invidious psql $psqldb -c "DELETE FROM nonces * WHERE expire < current_timestamp;"
+        sudo -u invidious psql $psqldb -c "TRUNCATE TABLE videos;"
         echo -e "${GREEN}Maintenance on $psqldb done."
         # Restart Invidious
         echo -e "${GREEN}Restarting Invidious..."
@@ -527,54 +546,53 @@ case $OPTION in
     exit
     ;;
   6) # Database migration
-    psqldb="invidious"   # Database name
     if [[ "$EUID" -ne 0 ]]; then
       echo -e "Sorry, you need to run this as root"
       exit 1
     fi
     read -p "Are you sure you want to migrate the PostgreSQL database? " answer
     echo "You entered: $answer"
-    read -p "Are you sure? Enter y or n: " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
+
     if [[ "$answer" = 'y' ]]; then
       if ( systemctl -q is-active postgresql.service)
       then
-        echo -e "${RED}stopping Invidious..."
+        echo -e "${ORANGE}stopping Invidious...${NC}"
         sudo systemctl stop invidious
-        echo "Running Migration on $psqldb"
-        echo "Running session_ids.sql"
-        sudo -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/session_ids.sql
-        sudo -u postgres psql $psqldb -c "ALTER TABLE channels ADD COLUMN deleted bool;"
-        sudo -u postgres psql $psqldb -c "UPDATE channels SET deleted = false;"
-        sudo -u postgres psql $psqldb -c "INSERT INTO session_ids (SELECT unnest(id), email, CURRENT_TIMESTAMP FROM users) ON CONFLICT (id) DO NOTHING;"
-        echo -e "${GREEN}Migration on $psqldb done."
+        echo "Running Migration..."
+        cd $USER_DIR/invidious
+        for script in ./config/migrate-scripts/*.sh
+        do
+          sudo -u $USER_NAME bash "$script"
+        done
+        cd -
+        echo -e "${GREEN}Migration Done ${NC}"
         # Restart Invidious
-        echo -e "${GREEN}Restarting Invidious..."
+        echo -e "${GREEN}Restarting Invidious...${NC}"
         sudo systemctl restart invidious
-        echo -e "${GREEN}Restarting Invidious done."
+        echo -e "${GREEN}Restarting Invidious done.${NC}"
         sudo systemctl status invidious --no-pager
         sleep 1
         # Restart postgresql
-        echo -e "${GREEN}Restarting postgresql..."
+        echo -e "${GREEN}Restarting postgresql...${NC}"
         sudo systemctl restart postgresql
-        echo -e "${GREEN}Restarting postgresql done."
+        echo -e "${GREEN}Restarting postgresql done.${NC}"
         sudo systemctl status postgresql --no-pager
         sleep 5
       else
-        echo -e "${RED}Database Migration failed. Is PostgreSQL running?"
+        echo -e "${RED}Database Migration failed. Is PostgreSQL running?${NC}"
         # Restart postgresql
-        echo -e "${GREEN}trying to start postgresql..."
+        echo -e "${GREEN}trying to start postgresql...${NC}"
         sudo systemctl start postgresql
-        echo -e "${GREEN}Postgresql started successfully"
+        echo -e "${GREEN}Postgresql started successfully${NC}"
         sudo systemctl status postgresql --no-pager
         sleep 5
-        echo -e "${ORANGE}Restarting script. Please try again..."
+        echo -e "${ORANGE}Restarting script. Please try again...${NC}"
         sleep 5
         ./invidious_update.sh
         exit
       fi
     fi
     show_migration_banner () {
-
       echo -e "${GREEN}\n"
       echo ' ######################################################################'
       echo ' ####                    Invidious Update.sh                       ####'
@@ -590,11 +608,13 @@ case $OPTION in
       echo -e "Documentation for this script is available here: ${ORANGE}\n https://github.com/tmiland/Invidious-Updater${NC}\n"
     }
     show_migration_banner
-    sleep 5
+    sleep 3
     exit
     ;;
   7) # Exit
-    echo -e "${ORANGE}Goodbye."
+    echo -e "${ORANGE}In 3..2..1...${NC}"
+    sleep 3
+    echo -e "${ORANGE}Goodbye.${NC}"
     exit
     ;;
 
