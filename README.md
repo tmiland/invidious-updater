@@ -1,12 +1,12 @@
 # Invidious-Updater (And Installer)
 
 ```
-          ######################################################################
-          ####                    Invidious Update.sh                       ####
-          ####            Automatic update script for Invidio.us            ####
-          ####                   Maintained by @tmiland                     ####
-          ####                       version: 1.1.3                         ####
-          ######################################################################
+              ######################################################################
+              ####                    Invidious Update.sh                       ####
+              ####            Automatic update script for Invidio.us            ####
+              ####                   Maintained by @tmiland                     ####
+              ####                       version: 1.1.3                         ####
+              ######################################################################
 ```
 
 ## Script to install and update [Invidious](https://github.com/omarroth/invidious)
