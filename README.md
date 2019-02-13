@@ -5,7 +5,7 @@
                   ####                    Invidious Update.sh                       ####
                   ####            Automatic update script for Invidio.us            ####
                   ####                   Maintained by @tmiland                     ####
-                  ####                       version: 1.1.3                         ####
+                  ####                       version: 1.1.4                         ####
                   ######################################################################
 ```
 
@@ -96,7 +96,7 @@ $ invidious_update
 ## Testing
 - [x] Tested extensively on Debian 9
 
-#### Latest install log - version: 1.1.3
+#### Latest install log - version: 1.1.4
 
 <details><summary>*truncated* **click to view**</summary><p>
 
