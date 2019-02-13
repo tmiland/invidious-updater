@@ -8,7 +8,7 @@
 #                                                         #
 ###########################################################
 
-version='1.1.3'
+version='1.1.4'
 
 # Colors used for printing
 RED='\033[0;31m'
@@ -49,24 +49,63 @@ show_banner () {
   echo "   4) Install Invidious service for systemd"
   echo "   5) Run Database Maintenance"
   echo "   6) Run Database Migration"
-  echo "   7) Exit"
+  echo "   7) Uninstall Invidious"
+  echo "   8) Exit"
   echo ""
   echo -e "Documentation for this script is available here: ${ORANGE}\n https://github.com/tmiland/Invidious-Updater${NC}\n"
 }
 
 show_banner
-while [[ $OPTION !=  "1" && $OPTION != "2" && $OPTION != "3" && $OPTION != "4" && $OPTION != "5" && $OPTION != "6" && $OPTION != "7" ]]; do
-  read -p "Select an option [1-7]: " OPTION
+while [[ $OPTION !=  "1" && $OPTION != "2" && $OPTION != "3" && $OPTION != "4" && $OPTION != "5" && $OPTION != "6" && $OPTION != "7" && $OPTION != "8" ]]; do
+  read -p "Select an option [1-8]: " OPTION
 done
 case $OPTION in
   1) # Install Invidious
     if [[ "$EUID" -ne 0 ]]; then
-      echo -e "Sorry, you need to run this as root"
+      echo -e "${RED}Sorry, you need to run this as root${NC}"
       exit 1
     fi
-    echo ""
-    echo -e "${BLUE}Let's go through some configuration options.${NC}"
-    echo ""
+    # Check if Debian/Ubuntu
+    if [[ ! $(lsb_release -si) == "Debian" && ! $(lsb_release -si) == "Ubuntu" ]]
+    then
+      echo -e "${RED}Sorry, This script only runs on Debian/Ubuntu${NC}"
+      exit 1
+    fi
+
+    # Check if the folder is a git repo and systemdservice is installed
+    if [[ -d "$USER_DIR/invidious/.git" ]]; then
+      #if (systemctl -q is-active invidious.service) && -d "$USER_DIR/invidious/.git" then
+      echo ""
+      echo -e "${RED}Looks like Invidious is already installed!${NC}"
+      echo ""
+      echo -e "${ORANGE}If you want to reinstall, please choose option 7 to Uninstall Invidious first!${NC}"
+      echo ""
+      sleep 3
+      ./invidious_update.sh
+      exit 1
+    fi
+    show_preinstall_banner () {
+      clear
+      echo -e "${GREEN}\n"
+      echo ' ######################################################################'
+      echo ' ####                    Invidious Update.sh                       ####'
+      echo ' ####            Automatic update script for Invidio.us            ####'
+      echo ' ####                   Maintained by @tmiland                     ####'
+      echo ' ####                        version: '${version}'                        ####'
+      echo ' ######################################################################'
+      echo -e "${NC}\n"
+      echo "Thank you for using the Invidious Update.sh script."
+      echo ""
+      echo ""
+      echo ""
+      echo "Let's go through some configuration options."
+      echo ""
+      echo ""
+      echo ""
+      echo ""
+      echo -e "Documentation for this script is available here: ${ORANGE}\n https://github.com/tmiland/Invidious-Updater${NC}\n"
+    }
+    show_preinstall_banner
     # Here's where the user is going to enter the Invidious database user, as it appears in the GUI:
     #read -p "Enter the desired user of your Invidious PostgreSQL database: " psqluser
     # Here's where the user is going to enter the Invidious database password, as it appears in the GUI:
@@ -96,8 +135,23 @@ case $OPTION in
       curl -sL "https://keybase.io/crystal/pgp_keys.asc" | sudo apt-key add -
       echo "deb https://dist.crystal-lang.org/apt crystal main" | sudo tee /etc/apt/sources.list.d/crystal.list
     fi
-    apt-get update
-    apt install crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev postgresql imagemagick libsqlite3-dev -y #--allow-unauthenticated
+    sudo apt-get update # postgresql-9.6 postgresql-client-9.6 postgresql-contrib-9.6 # Don't touch PostgreSQL
+    INSTALL_PKGS="apt-transport-https git curl sudo remove crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev postgresql imagemagick libsqlite3-dev"
+    for i in $INSTALL_PKGS; do
+      sudo apt install -y $i #--allow-unauthenticated
+    done
+    ######################
+    # Add user postgres if not already present
+    ######################
+    grep postgres /etc/passwd >/dev/null 2>&1
+    if [ ! $? -eq 0 ] ; then
+      echo -e "${ORANGE}User postgres Found, adding user${NC}"
+      /usr/sbin/useradd -m postgres \
+        rm -r /home/postgres
+    fi
+    #sudo pg_createcluster -- start 9.6 main \
+      #  sudo chown root.postgres /var/log/postgresql \
+      #  sudo chmod g+wx /var/log/postgresql
     ######################
     # Setup Repository
     ######################
@@ -126,12 +180,17 @@ case $OPTION in
       # Checkout latest tag
       git checkout $latestTag
       # Set user permissions (just in case)
-      chown -R $USER_NAME:$USER_NAME $USER_DIR/invidious
+      sudo chown -R $USER_NAME:$USER_NAME $USER_DIR/invidious
       cd -
     fi
     systemctl enable postgresql
     systemctl start postgresql
+    sleep 1
     # Create users and set privileges
+    echo "Creating user postgres with no password"
+    sudo -u postgres psql -c "CREATE USER postgres;"
+    echo "Grant all on database postgres to user postgres"
+    sudo -u postgres psql -c "GRANT ALL ON DATABASE postgres TO postgres;"
     echo "Creating user kemal with password $psqlpass"
     sudo -u postgres psql -c "CREATE USER kemal WITH PASSWORD '$psqlpass';"
     #echo "Creating user $psqluser with password $psqlpass"
@@ -207,7 +266,7 @@ case $OPTION in
     cd $USER_DIR/invidious || exit 1
     shards
     crystal build src/invidious.cr --release
-    chown -R $USER_NAME:$USER_NAME $USER_DIR/invidious
+    sudo chown -R $USER_NAME:$USER_NAME $USER_DIR/invidious
     ######################
     # Setup Systemd Service
     ######################
@@ -222,7 +281,7 @@ case $OPTION in
     if ( systemctl -q is-active invidious.service)
     then
       echo -e "${GREEN}Invidious service has been successfully installed!${NC}"
-      sudo systemctl status invidious
+      sudo systemctl status invidious --no-pager
       sleep 5
     else
       echo -e "${RED}Invidious service installation failed...${NC}"
@@ -308,7 +367,7 @@ case $OPTION in
       cd $Dir
       git stash > $USER_DIR/invidious_tmp
       editedFiles=`cat $USER_DIR/invidious_tmp`
-      chown -R $USER_NAME:$USER_NAME $USER_DIR/invidious_tmp
+      sudo chown -R $USER_NAME:$USER_NAME $USER_DIR/invidious_tmp
       printf "\n"
       echo $editedFiles
       git fetch;
@@ -328,7 +387,7 @@ case $OPTION in
       then
         git stash pop
       fi
-      chown -R $USER_NAME:$USER_NAME $USER_DIR/invidious
+      sudo chown -R $USER_NAME:$USER_NAME $USER_DIR/invidious
       cd -
       printf "\n"
       echo -e "${GREEN} Done Updating $Dir ${NC}"
@@ -340,7 +399,7 @@ case $OPTION in
       cd $Dir
       shards
       crystal build src/invidious.cr --release
-      chown -R $USER_NAME:$USER_NAME $USER_DIR/invidious
+      sudo chown -R $USER_NAME:$USER_NAME $USER_DIR/invidious
       cd -
       printf "\n"
       echo -e "${GREEN} Done Rebuilding $Dir ${NC}"
@@ -438,7 +497,8 @@ case $OPTION in
     wget https://github.com/tmiland/Invidious-Updater/raw/master/invidious_update.sh -O invidious_update.sh
     chmod +x invidious_update.sh
     echo ""
-    echo "Update done."
+    echo "${GREEN}Update done.${NC}"
+    echo ""
     sleep 2
     ./invidious_update.sh
     exit
@@ -527,7 +587,7 @@ case $OPTION in
         sleep 5
       else
         echo -e "${RED}Database Maintenance failed. Is PostgreSQL running?"
-        # Restart postgresql
+        # Try to restart postgresql
         echo -e "${GREEN}trying to start postgresql..."
         sudo systemctl start postgresql
         echo -e "${GREEN}Postgresql started successfully"
@@ -577,9 +637,9 @@ case $OPTION in
         currentVersion=$(git rev-list --max-count=1 --abbrev-commit HEAD)
         latestVersion=$(git describe --tags `git rev-list --tags --max-count=1`)
         git checkout $latestVersion
-        for i in `git rev-list --abbrev-commit $currentVersion..HEAD` ; 
+        for i in `git rev-list --abbrev-commit $currentVersion..HEAD` ;
         do
-          file=./config/migrate-scripts/migrate-db-$i.sh ; [ -f $file ] && $file ; 
+          file=./config/migrate-scripts/migrate-db-$i.sh ; [ -f $file ] && $file ;
         done
         #for script in ./config/migrate-scripts/*.sh
         #do
@@ -632,10 +692,135 @@ case $OPTION in
     sleep 3
     exit
     ;;
-  7) # Exit
+  7) # Uninstall Invidious
+    while [[ $RM_PostgreSQL !=  "y" && $RM_PostgreSQL != "n" ]]; do
+      read -p "       Remove PostgreSQL database for Invidious ? [y/n]: " -e RM_PostgreSQL
+      read -p "       Enter Invidious PostgreSQL database name: " RM_PSQLDB
+      echo -e "       ${ORANGE}(( A backup will be placed in your current folder ))${NC}"
+      # Let's allow the user to confirm that what they've typed in is correct:
+      echo "          You entered: database name: $RM_PSQLDB"
+      read -p "       Is that correct? Enter y or n: " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
+    done
+    while [[ $RM_PACKAGES !=  "y" && $RM_PACKAGES != "n" ]]; do
+      read -p "       Remove Packages ? [y/n]: " -e RM_PACKAGES
+    done
+    while [[ $RM_PURGE !=  "y" && $RM_PURGE != "n" ]]; do
+      read -p "       Purge Package configuration files ? [y/n]: " -e RM_PURGE
+    done
+    while [[ $RM_USER !=  "y" && $RM_USER != "n" ]]; do
+      read -p "       Remove user and files ? [y/n]: " -e RM_USER
+    done
+    echo ""
+    read -n1 -r -p "Invidious is ready to be uninstalled, press any key to continue..."
+    echo ""
+    # Stop invidious & PostgreSQL
+    systemctl stop invidious
+    sleep 1
+    systemctl disable invidious
+    # Lets dump the db
+    PgDbBakPath="/home/backup/$RM_PSQLDB/$RM_PSQLDB.sql"
+    # Remove PostgreSQL
+    if [[ "$RM_PostgreSQL" = 'y' ]]; then
+      #   pg_dump -U $username --format=c --file=$mydatabase.sqlc $dbname
+      sudo pg_dump -U postgres --format=c --file=$PgDbBakPath $RM_PSQLDB
+      echo ""
+      echo -e "${GREEN}Database backed up to $PgDbBakPath ${NC}"
+      echo ""
+      sleep 2
+      echo ""
+      echo -e "${RED}Dropping Invidious PostgreSQL database${NC}"
+      echo ""
+      sudo -u postgres psql -c "DROP DATABASE $RM_PSQLDB;"
+      echo ""
+      echo -e "${ORANGE}Database dropped and backed up to $PgDbBakPath ${NC}"
+      echo ""
+      #systemctl stop postgresql
+      #sleep 1
+      #systemctl disable postgresql
+      #sleep 1
+      #pg_dropcluster --stop 9.6 main
+      #sleep 1
+      #/usr/sbin/userdel -r postgres \
+        #groupdel postgres
+      #rm -r \
+        #  /usr/lib/postgresql \
+        #  /etc/postgresql \
+        #  /usr/share/postgresql \
+        #  /usr/share/postgresql-common \
+        #  /var/cache/postgresql \
+        #  /var/log/postgresql \
+        #  /run/postgresql \
+        #  /etc/postgresql-common
+    fi
+    # Reload Systemd
+    sudo systemctl daemon-reload
+
+    if [[ "$RM_PACKAGES" = 'y' ]]; then
+      # Remove packages installed during installation
+      echo ""
+      echo -e "${ORANGE}Removing packages installed during installation.${NC}"
+      echo ""
+      # postgresql postgresql-9.6 postgresql-client-9.6 postgresql-contrib-9.6 # Dont touch PostgreSQL
+      UNINSTALL_PKGS="apt-transport-https git curl sudo remove crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev imagemagick libsqlite3-dev"
+      for i in $UNINSTALL_PKGS; do
+        apt-get remove -y $i
+      done
+
+      echo ""
+      echo -e "${GREEN}done."
+      echo ""
+    fi
+
+    # Remove conf files
+    if [[ "$RM_PURGE" = 'y' ]]; then
+      # Removing invidious files and modules files
+      echo ""
+      echo -e "${ORANGE}Removing invidious files and modules files.${NC}"
+      echo ""
+      rm -r \
+        /lib/systemd/system/invidious.service \
+        /etc/apt/sources.list.d/crystal.list
+      # postgresql postgresql-9.6 postgresql-client-9.6 postgresql-contrib-9.6 # Don't touch PostgreSQL
+      PURGE_PKGS="apt-transport-https git curl sudo remove crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev imagemagick libsqlite3-dev"
+      for i in $PURGE_PKGS; do
+        apt-get purge -y $i
+      done
+      echo ""
+      echo -e "cleaning up."
+      echo ""
+      apt-get clean
+      apt-get autoremove
+      echo ""
+      echo -e "${GREEN}done.${NC}"
+      echo ""
+    fi
+
+    # Remove user and settings
+    if [[ "$RM_USER" = 'y' ]]; then
+      grep $USER_NAME /etc/passwd >/dev/null 2>&1
+      if [ $? -eq 0 ] ; then
+        echo ""
+        echo -e "${ORANGE}User $USER_NAME Found, removing user and files${NC}"
+        echo ""
+        /usr/sbin/userdel -r $USER_NAME
+      fi
+    fi
+
+    # We're done !
+    echo ""
+    echo -e "${GREEN}Un-installation done.${NC}"
+    echo ""
+
+    exit
+    ;;
+  8) # Exit
+    echo ""
     echo -e "${ORANGE}In 3..2..1...${NC}"
+    echo ""
     sleep 3
+    echo ""
     echo -e "${ORANGE}Goodbye.${NC}"
+    echo ""
     exit
     ;;
 
