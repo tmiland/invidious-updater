@@ -17,6 +17,7 @@
 * Install Invidious service for Systemd
 * Run database maintenance
 * Run database migration
+* Uninstall Invidious
 
 
 ## Screenshot
