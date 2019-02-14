@@ -8,7 +8,7 @@
 #                                                         #
 ###########################################################
 
-version='1.1.4'
+version='1.1.5'
 
 # Colors used for printing
 RED='\033[0;31m'
@@ -30,6 +30,12 @@ USER_DIR="/home/invidious"
 #psqlpass=kemal
 #psqldb=invidious
 
+PRE_INSTALL_PKGS="apt-transport-https git curl sudo"
+
+INSTALL_PKGS="crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev postgresql imagemagick libsqlite3-dev"
+
+UNINSTALL_PKGS="crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev imagemagick libsqlite3-dev" # Don't touch postgresql
+
 show_banner () {
   clear
   echo -e "${GREEN}\n"
@@ -46,7 +52,7 @@ show_banner () {
   echo "   1) Install Invidious"
   echo "   2) Update Invidious"
   echo "   3) Update Script"
-  echo "   4) Install Invidious service for systemd"
+  echo "   4) Install Invidious service"
   echo "   5) Run Database Maintenance"
   echo "   6) Run Database Migration"
   echo "   7) Uninstall Invidious"
@@ -72,6 +78,9 @@ case $OPTION in
       exit 1
     fi
 
+    IN_MASTER=master
+
+    IN_RELEASE=release
     # Check if the folder is a git repo and systemdservice is installed
     if [[ -d "$USER_DIR/invidious/.git" ]]; then
       #if (systemctl -q is-active invidious.service) && -d "$USER_DIR/invidious/.git" then
@@ -98,57 +107,83 @@ case $OPTION in
       echo ""
       echo ""
       echo ""
-      echo "Let's go through some configuration options."
-      echo ""
-      echo ""
-      echo ""
-      echo ""
       echo -e "Documentation for this script is available here: ${ORANGE}\n https://github.com/tmiland/Invidious-Updater${NC}\n"
     }
     show_preinstall_banner
+    echo ""
+    echo "Let's go through some configuration options."
+    echo ""
+    echo "Do you want to install Invidious release or master?"
+    echo "   1) $IN_RELEASE"
+    echo "   2) $IN_MASTER"
+    echo ""
+    while [[ $IN_BRANCH != "1" && $IN_BRANCH != "2" ]]; do
+      read -p "Select an option [1-2]: " IN_BRANCH
+    done
+    case $IN_BRANCH in
+      1)
+        IN_BRANCH=$IN_RELEASE
+        ;;
+      2)
+        IN_BRANCH=$IN_MASTER
+        ;;
+    esac
+    #read -p "Enter the desired branch of your Invidious installation: " branch
     # Here's where the user is going to enter the Invidious database user, as it appears in the GUI:
     #read -p "Enter the desired user of your Invidious PostgreSQL database: " psqluser
-    # Here's where the user is going to enter the Invidious database password, as it appears in the GUI:
-    read -p "Enter the desired password of your Invidious PostgreSQL database: " psqlpass
     # Here's where the user is going to enter the Invidious database name, as it appears in the GUI:
-    read -p "Enter the desired database name of your Invidious PostgreSQL database: " psqldb
+    read -p "       Select database name:" psqldb
+    # Here's where the user is going to enter the Invidious database password, as it appears in the GUI:
+    read -p "       Select database password:" psqlpass
     # Let's allow the user to confirm that what they've typed in is correct:
-    echo "You entered: password: $psqlpass name: $psqldb"
-    read -p "Is that correct? Enter y or n: " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
+    #echo "You entered: password: $psqlpass name: $psqldb"
+    #read -p "Is that correct? Enter y or n: " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
     # Here's where the user is going to enter the Invidious domain name, as it appears in the GUI:
-    read -p "Enter the desired domain name of your Invidious instance: " domain
+    read -p "       Enter the desired domain name:" domain
     # Here's where the user is going to enter the Invidious https only settings, as it appears in the GUI:
-    read -p "Are you going to serve your Invidious instance on https only? Type true or false: " https_only
+    read -p "       Are you going to use https only? [true/false]:" https_only
     # Let's allow the user to confirm that what they've typed in is correct:
-    echo "You entered: Domain: $domain https only: $https_only"
-    read -p "Is that correct? Enter y or n: " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
+    echo -e "${GREEN}\n"
+    echo -e "You entered: \n"
+    echo -e "     branch: $IN_BRANCH"
+    echo -e "     domain: $domain"
+    echo -e " https only: $https_only"
+    echo -e "       name: $psqldb"
+    echo -e "   password: $psqlpass"
+    echo -e "${NC}"
+
+    #read -p "Is that correct? Enter y or n: " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
     echo ""
     read -n1 -r -p "Invidious is ready to be installed, press any key to continue..."
     echo ""
     ######################
     # Setup Dependencies
     ######################
-    apt-get update
-    apt install apt-transport-https git curl sudo -y
+    apt-get update  || exit 1
+
+    for i in $PRE_INSTALL_PKGS; do
+      apt install -y $i  || exit 1
+    done
+
     if [[ ! -e /etc/apt/sources.list.d/crystal.list ]]; then
       #apt-key adv --keyserver keys.gnupg.net --recv-keys 09617FD37CC06B54
       curl -sL "https://keybase.io/crystal/pgp_keys.asc" | sudo apt-key add -
       echo "deb https://dist.crystal-lang.org/apt crystal main" | sudo tee /etc/apt/sources.list.d/crystal.list
     fi
-    sudo apt-get update # postgresql-9.6 postgresql-client-9.6 postgresql-contrib-9.6 # Don't touch PostgreSQL
-    INSTALL_PKGS="apt-transport-https git curl sudo remove crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev postgresql imagemagick libsqlite3-dev"
+    sudo apt-get update  || exit 1 # postgresql-9.6 postgresql-client-9.6 postgresql-contrib-9.6 # Don't touch PostgreSQL
+    #INSTALL_PKGS="crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev postgresql imagemagick libsqlite3-dev"
     for i in $INSTALL_PKGS; do
-      sudo apt install -y $i #--allow-unauthenticated
+      sudo apt install -y $i  || exit 1 #--allow-unauthenticated
     done
     ######################
     # Add user postgres if not already present
     ######################
-    grep postgres /etc/passwd >/dev/null 2>&1
-    if [ ! $? -eq 0 ] ; then
-      echo -e "${ORANGE}User postgres Found, adding user${NC}"
-      /usr/sbin/useradd -m postgres \
-        rm -r /home/postgres
-    fi
+    #grep postgres /etc/passwd >/dev/null 2>&1
+    #if [ ! $? -eq 0 ] ; then
+    #   echo -e "${ORANGE}User postgres not found, adding user${NC}"
+    #  /usr/sbin/useradd -m postgres \
+      #    rm -r /home/postgres
+    #fi
     #sudo pg_createcluster -- start 9.6 main \
       #  sudo chown root.postgres /var/log/postgresql \
       #  sudo chmod g+wx /var/log/postgresql
@@ -158,53 +193,71 @@ case $OPTION in
     # https://stackoverflow.com/a/51894266
     grep $USER_NAME /etc/passwd >/dev/null 2>&1
     if [ ! $? -eq 0 ] ; then
-      echo -e "${ORANGE}User Not Found, adding user${NC}"
-      /usr/sbin/useradd -m $USER_NAME
+      echo -e "${ORANGE}User $USER_NAME Not Found, adding user${NC}"
+      #/usr/sbin/useradd -m $USER_NAME
+      sudo useradd -m $USER_NAME
     fi
-    adduser $USER_NAME sudo
     # If directory is not created
     if [[ ! -d $USER_DIR ]]; then
       echo -e "${ORANGE}Folder Not Found, adding folder${NC}"
       mkdir -p $USER_DIR
     fi
-    if [[ ! -d $USER_DIR/invidious ]]; then
-      cd $USER_DIR || exit 1
-      echo -e "${GREEN}Downloading Invidious from GitHub${NC}"
-      git clone https://github.com/omarroth/invidious
-      # Make sure we are running a stable release
-      cd $USER_DIR/invidious
+
+    function GetMaster {
+      master=$(git rev-list --max-count=1 --abbrev-commit HEAD)
+      # Checkout master
+      git checkout $master
+    }
+
+    function GetRelease {
       # Get new tags from remote
       git fetch --tags
       # Get latest tag name
-      latestTag=$(git describe --tags `git rev-list --tags --max-count=1`)
-      # Checkout latest tag
-      git checkout $latestTag
+      releaseTag=$(git describe --tags `git rev-list --tags --max-count=1`)
+      # Checkout latest release tag
+      git checkout $releaseTag
+    }
+
+    if [[ ! -d $USER_DIR/invidious ]]; then
+      cd $USER_DIR || exit 1
+      echo -e "${GREEN}Downloading Invidious from GitHub${NC}"
+      sudo -i -u invidious \
+        git clone https://github.com/omarroth/invidious
+      # Make sure we are running a stable release
+      cd $USER_DIR/invidious || exit 1
       # Set user permissions (just in case)
-      sudo chown -R $USER_NAME:$USER_NAME $USER_DIR/invidious
+      #sudo chown -R 1000:$USER_NAME $USER_DIR
+      # Checkout
+      if [[ ! "$IN_BRANCH" = 'master' ]]; then
+        GetRelease
+      fi
+    else
+      GetMaster
       cd -
     fi
     systemctl enable postgresql
+    sleep 1
     systemctl start postgresql
     sleep 1
     # Create users and set privileges
-    echo "Creating user postgres with no password"
-    sudo -u postgres psql -c "CREATE USER postgres;"
-    echo "Grant all on database postgres to user postgres"
-    sudo -u postgres psql -c "GRANT ALL ON DATABASE postgres TO postgres;"
+    #echo "Creating user postgres with no password"
+    #sudo -u postgres psql -c "CREATE USER postgres;"
+    #echo "Grant all on database postgres to user postgres"
+    #sudo -u postgres psql -c "GRANT ALL ON DATABASE postgres TO postgres;"
     echo "Creating user kemal with password $psqlpass"
     sudo -u postgres psql -c "CREATE USER kemal WITH PASSWORD '$psqlpass';"
     #echo "Creating user $psqluser with password $psqlpass"
     #sudo -u postgres psql -c "CREATE USER $psqluser WITH PASSWORD '$psqlpass';"
-    echo "Creating user $USER_NAME with password $psqlpass"
-    sudo -u postgres psql -c "CREATE USER $USER_NAME WITH PASSWORD '$psqlpass';"
+    #echo "Creating user $USER_NAME with password $psqlpass"
+    #sudo -u postgres psql -c "CREATE USER $USER_NAME WITH PASSWORD '$psqlpass';"
     echo "Creating database $psqldb with owner kemal"
     sudo -u postgres psql -c "CREATE DATABASE $psqldb WITH OWNER kemal;"
-    echo "Grant all on database $psqldb to user kemal"
-    sudo -u postgres psql -c "GRANT ALL ON DATABASE $psqldb TO kemal;"
+    #echo "Grant all on database $psqldb to user kemal"
+    #sudo -u postgres psql -c "GRANT ALL ON DATABASE $psqldb TO kemal;"
     #echo "Grant all on database $psqldb to user $psqluser"
     #sudo -u postgres psql -c "GRANT ALL ON DATABASE $psqldb TO $psqluser;"
-    echo "Grant all on database $psqldb to user $USER_NAME"
-    sudo -u postgres psql -c "GRANT ALL ON DATABASE $psqldb TO $USER_NAME;"
+    #echo "Grant all on database $psqldb to user $USER_NAME"
+    #sudo -u postgres psql -c "GRANT ALL ON DATABASE $psqldb TO $USER_NAME;"
     # Import db files
     echo "Running channels.sql"
     sudo -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/channels.sql
@@ -227,6 +280,7 @@ case $OPTION in
     # Lets change the default user
     #OLDUSER="user: kemal"
     #NEWUSER="user: $psqluser"
+    BAKPATH="/home/backup/$USER_NAME/config"
     # Lets change the default password
     OLDPASS="password: kemal"
     NEWPASS="password: $psqlpass"
@@ -240,7 +294,7 @@ case $OPTION in
     OLDHTTPS="https_only: false"
     NEWHTTPS="https_only: $https_only"
     DPATH="$USER_DIR/invidious/config/config.yml"
-    BPATH="$USER_DIR/backup/invidious"
+    BPATH="$BAKPATH"
     TFILE="/tmp/config.yml"
     [ ! -d $BPATH ] && mkdir -p $BPATH || :
     for f in $DPATH
@@ -254,6 +308,7 @@ case $OPTION in
         echo -e "${RED}Error: Cannot read $f"
       fi
     done
+
     if [[ -e $TFILE ]]; then
       /bin/rm $TFILE
     else
@@ -264,9 +319,10 @@ case $OPTION in
     # Source: https://www.cyberciti.biz/faq/unix-linux-replace-string-words-in-many-files/
     ######################
     cd $USER_DIR/invidious || exit 1
-    shards
+    #sudo -i -u invidious \
+      shards
     crystal build src/invidious.cr --release
-    sudo chown -R $USER_NAME:$USER_NAME $USER_DIR/invidious
+    sudo chown -R $USER_NAME:$USER_NAME $USER_DIR
     ######################
     # Setup Systemd Service
     ######################
@@ -364,10 +420,10 @@ case $OPTION in
 
     function update {
       printf "\n-- Updating $Dir"
-      cd $Dir
+      cd $Dir || exit 1
       git stash > $USER_DIR/invidious_tmp
       editedFiles=`cat $USER_DIR/invidious_tmp`
-      sudo chown -R $USER_NAME:$USER_NAME $USER_DIR/invidious_tmp
+      #sudo chown -R 1000:$USER_NAME $USER_DIR/invidious_tmp
       printf "\n"
       echo $editedFiles
       git fetch;
@@ -387,7 +443,7 @@ case $OPTION in
       then
         git stash pop
       fi
-      sudo chown -R $USER_NAME:$USER_NAME $USER_DIR/invidious
+      #sudo chown -R 1000:$USER_NAME $USER_DIR
       cd -
       printf "\n"
       echo -e "${GREEN} Done Updating $Dir ${NC}"
@@ -396,10 +452,10 @@ case $OPTION in
 
     function rebuild {
       printf "\n-- Rebuilding $Dir\n"
-      cd $Dir
+      cd $Dir || exit 1
       shards
       crystal build src/invidious.cr --release
-      sudo chown -R $USER_NAME:$USER_NAME $USER_DIR/invidious
+      #sudo chown -R 1000:$USER_NAME $USER_DIR
       cd -
       printf "\n"
       echo -e "${GREEN} Done Rebuilding $Dir ${NC}"
@@ -557,50 +613,57 @@ case $OPTION in
       echo -e "Sorry, you need to run this as root"
       exit 1
     fi
-    read -p "Are you sure you want to run Database Maintenance the PostgreSQL database? " answer
-    echo "You entered: $answer"
-    # Here's where the user is going to enter the Invidious database name, as it appears in the GUI:
-    read -p "Enter database name of your Invidious PostgreSQL database: " psqldb
-    # Let's allow the user to confirm that what they've typed in is correct:
-    echo "You entered: $psqldb"
-    read -p "Is that correct? Enter y or n: " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
-    if [[ "$answer" = 'y' ]]; then
-      if ( systemctl -q is-active postgresql.service)
-      then
-        echo -e "${RED}stopping Invidious..."
-        sudo systemctl stop invidious
-        echo "Running Maintenance on $psqldb"
-        sudo -u invidious psql $psqldb -c "DELETE FROM nonces * WHERE expire < current_timestamp;"
-        sudo -u invidious psql $psqldb -c "TRUNCATE TABLE videos;"
-        echo -e "${GREEN}Maintenance on $psqldb done."
-        # Restart Invidious
-        echo -e "${GREEN}Restarting Invidious..."
-        sudo systemctl restart invidious
-        echo -e "${GREEN}Restarting Invidious done."
-        sudo systemctl status invidious --no-pager
-        sleep 1
-        # Restart postgresql
-        echo -e "${GREEN}Restarting postgresql..."
-        sudo systemctl restart postgresql
-        echo -e "${GREEN}Restarting postgresql done."
-        sudo systemctl status postgresql --no-pager
-        sleep 5
-      else
-        echo -e "${RED}Database Maintenance failed. Is PostgreSQL running?"
-        # Try to restart postgresql
-        echo -e "${GREEN}trying to start postgresql..."
-        sudo systemctl start postgresql
-        echo -e "${GREEN}Postgresql started successfully"
-        sudo systemctl status postgresql --no-pager
-        sleep 5
-        echo -e "${ORANGE}Restarting script. Please try again..."
-        sleep 5
-        ./invidious_update.sh
-        exit
+    read -p "Are you sure you want to run Database Maintenance? Enter [y/n]: " answer
+    #echo "You entered: $answer"
+    if [[ ! "$answer" = 'n' ]]; then
+      # Here's where the user is going to enter the Invidious database name, as it appears in the GUI:
+      read -p "Enter database name of your Invidious PostgreSQL database: " psqldb
+
+      # Let's allow the user to confirm that what they've typed in is correct:
+      echo ""
+      echo "You entered: $psqldb"
+      echo ""
+      read -p "Is that correct? Enter [y/n]: " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
+      if [[ "$answer" = 'y' ]]; then
+        if ( systemctl -q is-active postgresql.service)
+        then
+          echo -e "${RED}stopping Invidious..."
+          sudo systemctl stop invidious
+          sleep 3
+          echo "Running Maintenance on $psqldb"
+          sudo -u postgres psql $psqldb -c "DELETE FROM nonces * WHERE expire < current_timestamp;"
+          sudo -u postgres psql $psqldb -c "TRUNCATE TABLE videos;"
+          sleep 3
+          echo -e "${GREEN}Maintenance on $psqldb done."
+          # Restart Invidious
+          echo -e "${GREEN}Restarting Invidious..."
+          sudo systemctl restart invidious
+          echo -e "${GREEN}Restarting Invidious done."
+          sudo systemctl status invidious --no-pager
+          sleep 1
+          # Restart postgresql
+          echo -e "${GREEN}Restarting postgresql..."
+          sudo systemctl restart postgresql
+          echo -e "${GREEN}Restarting postgresql done."
+          sudo systemctl status postgresql --no-pager
+          sleep 5
+        else
+          echo -e "${RED}Database Maintenance failed. Is PostgreSQL running?"
+          # Try to restart postgresql
+          echo -e "${GREEN}trying to start postgresql..."
+          sudo systemctl start postgresql
+          echo -e "${GREEN}Postgresql started successfully"
+          sudo systemctl status postgresql --no-pager
+          sleep 5
+          echo -e "${ORANGE}Restarting script. Please try again..."
+          sleep 5
+          ./invidious_update.sh
+          exit
+        fi
       fi
     fi
     show_maintenance_banner () {
-      clear
+      #clear
       echo -e "${GREEN}\n"
       echo ' ######################################################################'
       echo ' ####                    Invidious Update.sh                       ####'
@@ -611,12 +674,15 @@ case $OPTION in
       echo -e "${NC}\n"
       echo "Thank you for using the Invidious Update.sh script."
       echo ""
+      echo ""
       echo "Invidious maintenance done. Now visit http://localhost:3000"
+      echo ""
       echo ""
       echo -e "Documentation for this script is available here: ${ORANGE}\n https://github.com/tmiland/Invidious-Updater${NC}\n"
     }
     show_maintenance_banner
     sleep 5
+    ./invidious_update.sh
     exit
     ;;
   6) # Database migration
@@ -633,7 +699,7 @@ case $OPTION in
         echo -e "${ORANGE}stopping Invidious...${NC}"
         sudo systemctl stop invidious
         echo "Running Migration..."
-        cd $USER_DIR/invidious
+        cd $USER_DIR/invidious || exit 1
         currentVersion=$(git rev-list --max-count=1 --abbrev-commit HEAD)
         latestVersion=$(git describe --tags `git rev-list --tags --max-count=1`)
         git checkout $latestVersion
@@ -693,47 +759,68 @@ case $OPTION in
     exit
     ;;
   7) # Uninstall Invidious
-    while [[ $RM_PostgreSQL !=  "y" && $RM_PostgreSQL != "n" ]]; do
-      read -p "       Remove PostgreSQL database for Invidious ? [y/n]: " -e RM_PostgreSQL
-      read -p "       Enter Invidious PostgreSQL database name: " RM_PSQLDB
-      echo -e "       ${ORANGE}(( A backup will be placed in your current folder ))${NC}"
+    # Set db backup path
+    PgDbBakPath="/home/backup/$USER_NAME"
+    # Let's go
+    while [[ $RM_PostgreSQLDB !=  "y" && $RM_PostgreSQLDB != "n" ]]; do
+      read -p "       Remove PostgreSQL database for Invidious ? [y/n]: " -e RM_PostgreSQLDB
+      if [[ ! $RM_PostgreSQLDB !=  "y" ]]; then
+        read -p "       Enter Invidious PostgreSQL database name: " RM_PSQLDB
+        echo -e "       ${ORANGE}(( A backup will be placed in $PgDbBakPath ))${NC}"
+      fi
       # Let's allow the user to confirm that what they've typed in is correct:
-      echo "          You entered: database name: $RM_PSQLDB"
-      read -p "       Is that correct? Enter y or n: " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
+      #echo "          You entered: database name: $RM_PSQLDB"
+      #read -p "       Is that correct? Enter y or n: " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
     done
     while [[ $RM_PACKAGES !=  "y" && $RM_PACKAGES != "n" ]]; do
       read -p "       Remove Packages ? [y/n]: " -e RM_PACKAGES
     done
-    while [[ $RM_PURGE !=  "y" && $RM_PURGE != "n" ]]; do
-      read -p "       Purge Package configuration files ? [y/n]: " -e RM_PURGE
-    done
+    if [[ $RM_PACKAGES = "y" ]]; then
+      while [[ $RM_PURGE !=  "y" && $RM_PURGE != "n" ]]; do
+        read -p "       Purge Package configuration files ? [y/n]: " -e RM_PURGE
+      done
+    fi
     while [[ $RM_USER !=  "y" && $RM_USER != "n" ]]; do
       read -p "       Remove user and files ? [y/n]: " -e RM_USER
     done
+    # Let's allow the user to confirm that what they've typed in is correct:
+    read -p "       Is that correct? [y/n]: " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
     echo ""
     read -n1 -r -p "Invidious is ready to be uninstalled, press any key to continue..."
     echo ""
-    # Stop invidious & PostgreSQL
-    systemctl stop invidious
-    sleep 1
-    systemctl disable invidious
-    # Lets dump the db
-    PgDbBakPath="/home/backup/$RM_PSQLDB/$RM_PSQLDB.sql"
-    # Remove PostgreSQL
-    if [[ "$RM_PostgreSQL" = 'y' ]]; then
+
+    # Remove PostgreSQL database if user answer is yes
+    if [[ "$RM_PostgreSQLDB" = 'y' ]]; then
+      systemctl restart postgresql
+      sleep 1
       #   pg_dump -U $username --format=c --file=$mydatabase.sqlc $dbname
-      sudo pg_dump -U postgres --format=c --file=$PgDbBakPath $RM_PSQLDB
+      # If directory is not created
+      if [[ ! -d $PgDbBakPath ]]; then
+        echo -e "${ORANGE}Backup Folder Not Found, adding folder${NC}"
+        sudo mkdir -p $PgDbBakPath
+      fi
+
+      #pg_dump --username=postgres \
+        #        --no-password \
+        #        --format=c \
+        #        --file=$PgDbBakPath/$RM_PSQLDB.sql \
+        #        --dbname=$RM_PSQLDB
       echo ""
-      echo -e "${GREEN}Database backed up to $PgDbBakPath ${NC}"
+      echo -e "${GREEN}Running database backup${NC}"
       echo ""
+      #sudo -u postgres psql ${RM_PSQLDB} > ${PgDbBakPath}/${RM_PSQLDB}.sql || exit 1
+      sudo -u postgres pg_dump ${RM_PSQLDB} > ${PgDbBakPath}/${RM_PSQLDB}.sql
       sleep 2
+      sudo chown -R 1000:1000 "/home/backup"
       echo ""
       echo -e "${RED}Dropping Invidious PostgreSQL database${NC}"
       echo ""
       sudo -u postgres psql -c "DROP DATABASE $RM_PSQLDB;"
       echo ""
-      echo -e "${ORANGE}Database dropped and backed up to $PgDbBakPath ${NC}"
+      echo -e "${ORANGE}Database dropped and backed up to ${PgDbBakPath}/${RM_PSQLDB}.sql ${NC}"
       echo ""
+      echo "Removing user kemal"
+      sudo -u postgres psql -c "DROP ROLE IF EXISTS kemal;"
       #systemctl stop postgresql
       #sleep 1
       #systemctl disable postgresql
@@ -758,10 +845,12 @@ case $OPTION in
     if [[ "$RM_PACKAGES" = 'y' ]]; then
       # Remove packages installed during installation
       echo ""
-      echo -e "${ORANGE}Removing packages installed during installation.${NC}"
+      echo -e "${ORANGE}Removing packages installed during installation.\n"
+      echo ""
+      echo -e "Note: PostgreSQL will not be removed due to unwanted complications${NC}"
       echo ""
       # postgresql postgresql-9.6 postgresql-client-9.6 postgresql-contrib-9.6 # Dont touch PostgreSQL
-      UNINSTALL_PKGS="apt-transport-https git curl sudo remove crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev imagemagick libsqlite3-dev"
+      #UNINSTALL_PKGS="apt-transport-https git curl sudo remove crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev imagemagick libsqlite3-dev"
       for i in $UNINSTALL_PKGS; do
         apt-get remove -y $i
       done
@@ -773,6 +862,10 @@ case $OPTION in
 
     # Remove conf files
     if [[ "$RM_PURGE" = 'y' ]]; then
+      # Stop and disable invidious
+      systemctl stop invidious
+      sleep 1
+      systemctl disable invidious
       # Removing invidious files and modules files
       echo ""
       echo -e "${ORANGE}Removing invidious files and modules files.${NC}"
@@ -781,8 +874,11 @@ case $OPTION in
         /lib/systemd/system/invidious.service \
         /etc/apt/sources.list.d/crystal.list
       # postgresql postgresql-9.6 postgresql-client-9.6 postgresql-contrib-9.6 # Don't touch PostgreSQL
-      PURGE_PKGS="apt-transport-https git curl sudo remove crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev imagemagick libsqlite3-dev"
-      for i in $PURGE_PKGS; do
+      #PURGE_PKGS="apt-transport-https git curl sudo remove crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev imagemagick libsqlite3-dev"
+      for i in $UNINSTALL_PKGS; do
+        echo ""
+        echo -e "purging packages."
+        echo ""
         apt-get purge -y $i
       done
       echo ""
@@ -802,7 +898,9 @@ case $OPTION in
         echo ""
         echo -e "${ORANGE}User $USER_NAME Found, removing user and files${NC}"
         echo ""
-        /usr/sbin/userdel -r $USER_NAME
+        #/usr/sbin/userdel -r $USER_NAME
+        deluser --remove-home $USER_NAME #&&
+        #delgroup $USER_NAME
       fi
     fi
 
