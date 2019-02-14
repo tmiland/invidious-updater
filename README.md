@@ -5,7 +5,7 @@
                   ####                    Invidious Update.sh                       ####
                   ####            Automatic update script for Invidio.us            ####
                   ####                   Maintained by @tmiland                     ####
-                  ####                       version: 1.1.4                         ####
+                  ####                       version: 1.1.5                         ####
                   ######################################################################
 ```
 
@@ -14,7 +14,7 @@
 * Install invidious
 * Update git repo, rebuild and restart service
 * Update the Script
-* Install Invidious service for Systemd
+* Install Invidious service
 * Run database maintenance
 * Run database migration
 * Uninstall Invidious
@@ -53,19 +53,25 @@ $ invidious_update
    * Select an option [1-8]: 1
 
    * Let's go through some configuration options.
+   
+   * "Do you want to install Invidious release or master?"
+      *  1) release
+      *  2) master
 
-   * Enter the desired password of your Invidious PostgreSQL database: test
-   * Enter the desired database name of your Invidious PostgreSQL database: test
-     * You entered: password: test name: test
-     * Is that correct? Enter y or n: y
-   * Enter the desired domain name of your Invidious instance: localhost
-   * Are you going to serve your Invidious instance on https only? Type true or false: false
-     * You entered: Domain: localhost https only: false
-     * Is that correct? Enter y or n: y
+   * Select database name: invidious
+   * Select database password: invidious
+   * Enter the desired domain name: localhost
+   * Are you going to use https only? [true/false]: false
+     * You entered: 
+     * branch: release/master
+     * domain: localhost
+     * https only: false
+     * name: invidious
+     * password: invidious
 
    * Invidious is ready to be installed, press any key to continue...
 
-2. ### Update Invidious
+2. ### Update Invidious (To be rewritten)
    * No arguments (Default) Will use branch "Master" and prompt user for each step.
    * -f FORCE YES (Force yes, update, rebuild and restart Invidious)
    * -p Prune remote. (Deletes all stale remote-tracking branches)
@@ -85,10 +91,14 @@ $ invidious_update
 
 7. ### Uninstall Invidious
       * Uninstallation of Invidious, and everything installed during setup.
-        * Remove PostgreSQL ? [y/n]
+        * Remove PostgreSQL database for Invidious ? [y/n]
+          * Enter Invidious PostgreSQL database name: invidious
+          * Backup will be placed in /home/backup
         * Remove Packages ? [y/n]
         * Purge Package configuration files ? [y/n]
-        * "Remove user and files" <-- ***This is required for reinstalling.***
+        * Remove user and files ? [y/n]: <-- ***This is required for reinstalling.***
+        * Is that correct? [y/n]:
+      * Invidious is ready to be uninstalled, press any key to continue...
 
 8. ### Exit
    * Exits the script
@@ -779,7 +789,7 @@ Documentation for this script is available here:
 - Issue with folder permissions after reinstalling, Invidious won't start. [bug](https://github.com/tmiland/Invidious-Updater/issues/6#issue-409626197)
 
 ## Todo
-- [ ] Rework the install prompts
+- [X] Rework the install prompts - Done in version 1.1.5
 - [ ] Rewrite the update procedure
 - [X] Add Uninstallation option - Added in version 1.1.4
 - [X] Add database migration option [migrate-scripts](https://github.com/omarroth/invidious/tree/master/config/migrate-scripts)
