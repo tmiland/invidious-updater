@@ -108,7 +108,7 @@ $ invidious_update
 
 #### Latest install log - version: 1.1.4
 
-[install log debian](https://github.com/tmiland/Invidious-Updater/commit/c254b3bfc46bc9621ea6e28902efaf8fa6b91c98)
+[install log debian](https://github.com/tmiland/Invidious-Updater/blob/master/log/install_log_debian.log)
 
 
 ## Issues
