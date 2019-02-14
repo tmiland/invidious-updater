@@ -80,7 +80,7 @@ $ invidious_update
 3. ### Update the Script
    * Downloads and executes the script from this repo with the latest version.
 
-4. ### Install Invidious service for Systemd
+4. ### Install Invidious service
    * Setup Systemd Service
 
 5. ### Run database maintenance
