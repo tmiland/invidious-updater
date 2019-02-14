@@ -120,9 +120,9 @@ Let's go through some configuration options.
 Documentation for this script is available here: 
  https://github.com/tmiland/Invidious-Updater
 
-Enter the desired password of your Invidious PostgreSQL database: 14cc0fc
+Enter the desired password of your Invidious PostgreSQL database: testing
 Enter the desired database name of your Invidious PostgreSQL database: testing
-You entered: password: 14cc0fc name: testing
+You entered: password: testing name: testing
 Is that correct? Enter y or n: y
 Enter the desired domain name of your Invidious instance: localhost
 Are you going to serve your Invidious instance on https only? Type true or false: false
@@ -690,9 +690,9 @@ Creating user postgres with no password
 ERROR:  role "postgres" already exists
 Grant all on database postgres to user postgres
 GRANT
-Creating user kemal with password 14cc0fc
+Creating user kemal with password testing
 ERROR:  role "kemal" already exists
-Creating user invidious with password 14cc0fc
+Creating user invidious with password testing
 ERROR:  role "invidious" already exists
 Creating database testing with owner kemal
 CREATE DATABASE
@@ -776,6 +776,7 @@ Documentation for this script is available here:
 ## Issues
 
 - Captcha is not working, issue with [imagemagick](https://github.com/omarroth/invidious/wiki/Issues-with-Captcha-on-Debian-and-Ubuntu)
+- Issue with folder permissions after reinstalling, Invidious won't start. [bug](https://github.com/tmiland/Invidious-Updater/issues/6#issue-409626197)
 
 ## Todo
 - [ ] Rework the install prompts
