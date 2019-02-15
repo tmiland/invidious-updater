@@ -125,8 +125,8 @@ $ invidious_update
 
 ## Todo
 
+- [ ] Add Imagemagick (source) to Uninstall options
 - [ ] Rewrite the update procedure
-
 - [ ] Add support to deploy in Docker
 
 ## Done
