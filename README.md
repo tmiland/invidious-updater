@@ -112,7 +112,7 @@ $ invidious_update
 
 ## Testing
 - [x] Tested extensively on Debian 9
-- [ ] Tested on Ubuntu 18.04 (LTS)
+- [ ] Tested on Ubuntu 16.04
 
 #### Latest install log - version: 1.1.4
 
@@ -129,6 +129,9 @@ $ invidious_update
 - [ ] Rewrite the update procedure
 - [ ] Add support to deploy in Docker
 
+
+
+
 ## Done
 
 - [X] Add Uninstallation option 
@@ -140,12 +143,15 @@ $ invidious_update
 - [X] Add option to compile imagemagick from source [Issues with Captcha on Debian and Ubuntu](https://github.com/omarroth/invidious/wiki/Issues-with-Captcha-on-Debian-and-Ubuntu)
    - Added in version 1.1.6
    - Added support for Imagemagick 6 and 7, or keep current version.
-   - The captcha clock is working with 6 and 7, not from default pkg.
+   - The captcha clock is working with 6 and 7, not with default pkg.
+- [X] Add Deb Packages
 
 ### Possible options
-- Add support for auto-update check
-- [ ] For Invidious
-- [ ] For Script
+- Support for auto-update check
+  - [ ] For Invidious
+  - [ ] For Script
+- [ ] Support for running own forks
+- [ ] Support for database backup
 
 ## Compatibility and Requirements
 * Debian 8 and later
