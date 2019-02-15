@@ -8,7 +8,7 @@
 #                                                         #
 ###########################################################
 
-version='1.1.5'
+version='1.1.6'
 
 # Colors used for printing
 RED='\033[0;31m'
@@ -32,9 +32,14 @@ USER_DIR="/home/invidious"
 
 PRE_INSTALL_PKGS="apt-transport-https git curl sudo"
 
-INSTALL_PKGS="crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev postgresql imagemagick libsqlite3-dev"
+INSTALL_PKGS="crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev postgresql libsqlite3-dev"
 
-UNINSTALL_PKGS="crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev imagemagick libsqlite3-dev" # Don't touch postgresql
+UNINSTALL_PKGS="crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev libsqlite3-dev" # Don't touch postgresql
+
+BUILD_DEP_PKGS="build-essential ca-certificates wget libpcre3 libpcre3-dev autoconf unzip automake libtool tar zlib1g-dev uuid-dev lsb-release make"
+
+IMAGICK_VER=6.9.10-27
+IMAGICK_SEVEN_VER=7.0.8-27
 
 show_banner () {
   clear
@@ -81,6 +86,17 @@ case $OPTION in
     IN_MASTER=master
 
     IN_RELEASE=release
+
+    IMAGICKPKG=imagemagick
+
+    function chk_imagickpkg {
+      if ! dpkg -s $IMAGICKPKG >/dev/null 2>&1; then
+        apt -qq list $IMAGICKPKG
+      else
+        identify -version
+      fi
+    }
+
     # Check if the folder is a git repo and systemdservice is installed
     if [[ -d "$USER_DIR/invidious/.git" ]]; then
       #if (systemctl -q is-active invidious.service) && -d "$USER_DIR/invidious/.git" then
@@ -128,6 +144,7 @@ case $OPTION in
         IN_BRANCH=$IN_MASTER
         ;;
     esac
+
     #read -p "Enter the desired branch of your Invidious installation: " branch
     # Here's where the user is going to enter the Invidious database user, as it appears in the GUI:
     #read -p "Enter the desired user of your Invidious PostgreSQL database: " psqluser
@@ -151,7 +168,24 @@ case $OPTION in
     echo -e "       name: $psqldb"
     echo -e "   password: $psqlpass"
     echo -e "${NC}"
-
+    echo ""
+    echo "Choose your Imagemagick version :"
+    echo -e "   1) System's Imagemagick\n "
+    echo -e "   ($(chk_imagickpkg)) \n"
+    echo    "   2) Imagemagick $IMAGICK_VER from source"
+    echo    "   3) Imagemagick $IMAGICK_SEVEN_VER from source"
+    echo ""
+    while [[ $IMAGICK != "1" && $IMAGICK != "2" && $IMAGICK != "3" ]]; do
+      read -p "Select an option [1-3]: " IMAGICK
+    done
+    case $IMAGICK in
+      2)
+        IMAGEMAGICK=y
+        ;;
+      3)
+        IMAGEMAGICK_SEVEN=y
+        ;;
+    esac
     #read -p "Is that correct? Enter y or n: " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
     echo ""
     read -n1 -r -p "Invidious is ready to be installed, press any key to continue..."
@@ -161,10 +195,11 @@ case $OPTION in
     ######################
     apt-get update  || exit 1
 
-    for i in $PRE_INSTALL_PKGS; do
-      apt install -y $i  || exit 1
-    done
-
+    if ! dpkg -s $PRE_INSTALL_PKGS >/dev/null 2>&1; then
+      for i in $PRE_INSTALL_PKGS; do
+        apt install -y $i  || exit 1
+      done
+    fi
     if [[ ! -e /etc/apt/sources.list.d/crystal.list ]]; then
       #apt-key adv --keyserver keys.gnupg.net --recv-keys 09617FD37CC06B54
       curl -sL "https://keybase.io/crystal/pgp_keys.asc" | sudo apt-key add -
@@ -172,9 +207,86 @@ case $OPTION in
     fi
     sudo apt-get update  || exit 1 # postgresql-9.6 postgresql-client-9.6 postgresql-contrib-9.6 # Don't touch PostgreSQL
     #INSTALL_PKGS="crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev postgresql imagemagick libsqlite3-dev"
-    for i in $INSTALL_PKGS; do
-      sudo apt install -y $i  || exit 1 #--allow-unauthenticated
-    done
+    if ! dpkg -s $INSTALL_PKGS >/dev/null 2>&1; then
+      for i in $INSTALL_PKGS; do
+        sudo apt install -y $i  || exit 1 #--allow-unauthenticated
+      done
+    fi
+    #################
+    # ImageMagick 6
+    ################
+    if [[ "$IMAGEMAGICK" = 'y' ]]; then
+
+      if ! dpkg -s $BUILD_DEP_PKGS >/dev/null 2>&1; then
+        for i in $BUILD_DEP_PKGS; do
+          apt install -y $i  || exit 1
+        done
+      fi
+      sudo apt purge imagemagick -y
+      sudo apt autoremove
+
+      cd /tmp || exit 1
+      wget https://github.com/ImageMagick/ImageMagick6/archive/${IMAGICK_VER}.tar.gz
+      tar -xvf ${IMAGICK_VER}.tar.gz
+      cd ImageMagick6-${IMAGICK_VER}
+
+      ./configure \
+        --with-rsvg
+
+      make
+      sudo make install
+
+      sudo ldconfig /usr/local/lib
+
+      identify -version
+      sleep 5
+      #if [[ -e /usr/bin/convert ]]; then
+      #  cp /usr/bin/convert /usr/bin/convert.bak
+      #  rm -r /usr/bin/convert
+      #  sudo ln -s /usr/local/bin/convert /usr/bin/convert
+      #fi
+      rm -r /tmp/ImageMagick6-${IMAGICK_VER}
+      rm -r /tmp/${IMAGICK_VER}.tar.gz
+
+    fi
+    #################
+    # ImageMagick 7
+    ################
+    if [[ "$IMAGEMAGICK_SEVEN" = 'y' ]]; then
+      if ! dpkg -s $BUILD_DEP_PKGS >/dev/null 2>&1; then
+        for i in $BUILD_DEP_PKGS; do
+          apt install -y $i
+        done
+      fi
+      sudo apt purge imagemagick -y
+      sudo apt autoremove
+
+      cd /tmp || exit 1
+      wget https://www.imagemagick.org/download/ImageMagick-${IMAGICK_SEVEN_VER}.tar.gz
+      tar -xvf ImageMagick-${IMAGICK_SEVEN_VER}.tar.gz
+      cd ImageMagick-${IMAGICK_SEVEN_VER}
+
+      ./configure \
+        --with-rsvg \
+        #PREFIX          = /usr/local \
+        #EXEC-PREFIX     = /usr/local
+
+      make
+      sudo make install
+
+      sudo ldconfig /usr/local/lib
+
+      identify -version
+      sleep 5
+      rm -r /tmp/ImageMagick-${IMAGICK_SEVEN_VER}
+      rm -r /tmp/ImageMagick-${IMAGICK_SEVEN_VER}.tar.gz
+
+    fi
+
+    if [[ $IMAGEMAGICK_SEVEN != "y" && $IMAGEMAGICK != "y" ]]; then
+      sudo apt install -y imagemagick
+    fi
+
     ######################
     # Add user postgres if not already present
     ######################
@@ -791,6 +903,9 @@ case $OPTION in
 
     # Remove PostgreSQL database if user answer is yes
     if [[ "$RM_PostgreSQLDB" = 'y' ]]; then
+      # Stop and disable invidious
+      systemctl stop invidious
+      sleep 1
       systemctl restart postgresql
       sleep 1
       #   pg_dump -U $username --format=c --file=$mydatabase.sqlc $dbname
@@ -851,10 +966,15 @@ case $OPTION in
       echo ""
       # postgresql postgresql-9.6 postgresql-client-9.6 postgresql-contrib-9.6 # Dont touch PostgreSQL
       #UNINSTALL_PKGS="apt-transport-https git curl sudo remove crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev imagemagick libsqlite3-dev"
-      for i in $UNINSTALL_PKGS; do
-        apt-get remove -y $i
-      done
 
+      if dpkg -s $UNINSTALL_PKGS >/dev/null 2>&1; then
+        for i in $UNINSTALL_PKGS; do
+          echo ""
+          echo -e "removing packages."
+          echo ""
+          apt-get remove -y $i
+        done
+      fi
       echo ""
       echo -e "${GREEN}done."
       echo ""
@@ -862,10 +982,6 @@ case $OPTION in
 
     # Remove conf files
     if [[ "$RM_PURGE" = 'y' ]]; then
-      # Stop and disable invidious
-      systemctl stop invidious
-      sleep 1
-      systemctl disable invidious
       # Removing invidious files and modules files
       echo ""
       echo -e "${ORANGE}Removing invidious files and modules files.${NC}"
@@ -875,12 +991,15 @@ case $OPTION in
         /etc/apt/sources.list.d/crystal.list
       # postgresql postgresql-9.6 postgresql-client-9.6 postgresql-contrib-9.6 # Don't touch PostgreSQL
       #PURGE_PKGS="apt-transport-https git curl sudo remove crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev imagemagick libsqlite3-dev"
-      for i in $UNINSTALL_PKGS; do
-        echo ""
-        echo -e "purging packages."
-        echo ""
-        apt-get purge -y $i
-      done
+
+      if dpkg -s $UNINSTALL_PKGS >/dev/null 2>&1; then
+        for i in $UNINSTALL_PKGS; do
+          echo ""
+          echo -e "purging packages."
+          echo ""
+          apt-get purge -y $i
+        done
+      fi
       echo ""
       echo -e "cleaning up."
       echo ""
@@ -893,6 +1012,13 @@ case $OPTION in
 
     # Remove user and settings
     if [[ "$RM_USER" = 'y' ]]; then
+      # Stop and disable invidious
+      systemctl stop invidious
+      sleep 1
+      systemctl restart postgresql
+      sleep 1
+      systemctl daemon-reload
+      sleep 1
       grep $USER_NAME /etc/passwd >/dev/null 2>&1
       if [ $? -eq 0 ] ; then
         echo ""
