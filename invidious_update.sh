@@ -93,6 +93,31 @@ open_file () { #expects one argument: file_path
 get_updater_version () {
   echo $(sed -n '14 s/[^0-9.]*\([0-9.]*\).*/\1/p' "$1")
 }
+
+show_update_banner () {
+  clear
+  echo -e "${GREEN}\n"
+  echo ' ######################################################################'
+  echo ' ####                    Invidious Update.sh                       ####'
+  echo ' ####            Automatic update script for Invidio.us            ####'
+  echo ' ####                   Maintained by @tmiland                     ####'
+  echo ' ####                        version: '${version}'                        ####'
+  echo ' ######################################################################'
+  echo -e "${NC}\n"
+  echo "Welcome to the Invidious Update.sh script."
+  echo ""
+  echo "There is a newer version of Invidious Update.sh available."
+  echo ""
+  echo ""
+  echo ""
+  echo -e "    ${GREEN}New version:${NC} ${LATEST_VER}"
+  echo ""
+  echo ""
+  echo ""
+  echo ""
+  echo -e "Documentation for this script is available here: ${ORANGE}\n https://github.com/tmiland/Invidious-Updater${NC}\n"
+}
+
 # Update invidious_update.sh
 # Default: Check for update, if available, ask user if they want to execute it
 # Args:
@@ -106,30 +131,6 @@ update_updater () {
   declare -r tmpfile=$(download_file 'https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/invidious_update.sh')
 
   LATEST_VER=$(get_updater_version "${tmpfile}") < $(get_updater_version "${SCRIPT_DIR}/invidious_update.sh")
-
-  show_update_banner () {
-    clear
-    echo -e "${GREEN}\n"
-    echo ' ######################################################################'
-    echo ' ####                    Invidious Update.sh                       ####'
-    echo ' ####            Automatic update script for Invidio.us            ####'
-    echo ' ####                   Maintained by @tmiland                     ####'
-    echo ' ####                        version: '${version}'                        ####'
-    echo ' ######################################################################'
-    echo -e "${NC}\n"
-    echo "Welcome to the Invidious Update.sh script."
-    echo ""
-    echo "There is a newer version of Invidious Update.sh available."
-    echo ""
-    echo ""
-    echo ""
-    echo -e "    ${GREEN}New version:${NC} ${LATEST_VER}"
-    echo ""
-    echo ""
-    echo ""
-    echo ""
-    echo -e "Documentation for this script is available here: ${ORANGE}\n https://github.com/tmiland/Invidious-Updater${NC}\n"
-  }
 
   if [[ $(get_updater_version "${SCRIPT_DIR}/invidious_update.sh") < $(get_updater_version "${tmpfile}") ]]; then
     if [ $UPDATE = 'check' ]; then
@@ -174,6 +175,8 @@ if [ $# != 0 ]; then
     esac
   done
 fi
+update_updater $@
+cd "$CURRDIR"
 
 show_banner () {
   clear
@@ -199,8 +202,6 @@ show_banner () {
   echo ""
   echo -e "Documentation for this script is available here: ${ORANGE}\n https://github.com/tmiland/Invidious-Updater${NC}\n"
 }
-update_updater $@
-cd "$CURRDIR"
 show_banner
 
 while [[ $OPTION !=  "1" && $OPTION != "2" && $OPTION != "3" && $OPTION != "4" && $OPTION != "5" && $OPTION != "6" && $OPTION != "7" && $OPTION != "8" ]]; do
@@ -242,7 +243,7 @@ case $OPTION in
       echo -e "${ORANGE}If you want to reinstall, please choose option 7 to Uninstall Invidious first!${NC}"
       echo ""
       sleep 3
-      ./invidious_update.sh
+      ${SCRIPT_DIR}/invidious_update.sh
       exit 1
     fi
     show_preinstall_banner () {
@@ -280,7 +281,6 @@ case $OPTION in
         IN_BRANCH=$IN_MASTER
         ;;
     esac
-
     #read -p "Enter the desired branch of your Invidious installation: " branch
     # Here's where the user is going to enter the Invidious database user, as it appears in the GUI:
     #read -p "Enter the desired user of your Invidious PostgreSQL database: " psqluser
@@ -804,7 +804,7 @@ case $OPTION in
     echo -e "${GREEN}Update done.${NC}"
     echo ""
     sleep 2
-    ./invidious_update.sh
+    ${SCRIPT_DIR}/invidious_update.sh
     exit
     ;;
   4) # Install Invidious service for systemd
@@ -905,7 +905,7 @@ case $OPTION in
           sleep 5
           echo -e "${ORANGE}Restarting script. Please try again..."
           sleep 5
-          ./invidious_update.sh
+          ${SCRIPT_DIR}/invidious_update.sh
           exit
         fi
       fi
@@ -930,7 +930,7 @@ case $OPTION in
     }
     show_maintenance_banner
     sleep 5
-    ./invidious_update.sh
+    ${SCRIPT_DIR}/invidious_update.sh
     exit
     ;;
   6) # Database migration
@@ -983,7 +983,7 @@ case $OPTION in
         sleep 5
         echo -e "${ORANGE}Restarting script. Please try again...${NC}"
         sleep 5
-        ./invidious_update.sh
+        ${SCRIPT_DIR}/invidious_update.sh
         exit
       fi
     fi
@@ -1174,7 +1174,6 @@ case $OPTION in
     echo ""
     echo -e "${GREEN}Un-installation done.${NC}"
     echo ""
-
     exit
     ;;
   8) # Exit
