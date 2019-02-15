@@ -193,11 +193,11 @@ case $OPTION in
     ######################
     # Setup Dependencies
     ######################
-    apt-get update  || exit 1
+    apt-get update  # || exit 1
 
     if ! dpkg -s $PRE_INSTALL_PKGS >/dev/null 2>&1; then
       for i in $PRE_INSTALL_PKGS; do
-        apt install -y $i  || exit 1
+        apt install -y $i  # || exit 1
       done
     fi
     if [[ ! -e /etc/apt/sources.list.d/crystal.list ]]; then
@@ -205,11 +205,11 @@ case $OPTION in
       curl -sL "https://keybase.io/crystal/pgp_keys.asc" | sudo apt-key add -
       echo "deb https://dist.crystal-lang.org/apt crystal main" | sudo tee /etc/apt/sources.list.d/crystal.list
     fi
-    sudo apt-get update  || exit 1 # postgresql-9.6 postgresql-client-9.6 postgresql-contrib-9.6 # Don't touch PostgreSQL
+    sudo apt-get update  # || exit 1 # postgresql-9.6 postgresql-client-9.6 postgresql-contrib-9.6 # Don't touch PostgreSQL
     #INSTALL_PKGS="crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev postgresql imagemagick libsqlite3-dev"
     if ! dpkg -s $INSTALL_PKGS >/dev/null 2>&1; then
       for i in $INSTALL_PKGS; do
-        sudo apt install -y $i  || exit 1 #--allow-unauthenticated
+        sudo apt install -y $i  # || exit 1 #--allow-unauthenticated
       done
     fi
     #################
@@ -219,7 +219,7 @@ case $OPTION in
 
       if ! dpkg -s $BUILD_DEP_PKGS >/dev/null 2>&1; then
         for i in $BUILD_DEP_PKGS; do
-          apt install -y $i  || exit 1
+          apt install -y $i  # || exit 1
         done
       fi
       sudo apt purge imagemagick -y
@@ -665,7 +665,7 @@ case $OPTION in
     wget https://github.com/tmiland/Invidious-Updater/raw/master/invidious_update.sh -O invidious_update.sh
     chmod +x invidious_update.sh
     echo ""
-    echo "${GREEN}Update done.${NC}"
+    echo -e "${GREEN}Update done.${NC}"
     echo ""
     sleep 2
     ./invidious_update.sh
@@ -871,6 +871,10 @@ case $OPTION in
     exit
     ;;
   7) # Uninstall Invidious
+    if [[ "$EUID" -ne 0 ]]; then
+      echo -e "Sorry, you need to run this as root"
+      exit 1
+    fi
     # Set db backup path
     PgDbBakPath="/home/backup/$USER_NAME"
     # Let's go
