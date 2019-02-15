@@ -84,15 +84,15 @@ open_file () { #expects one argument: file_path
   fi
 }
 
-#########################
-#   Update invidious_update.sh   #
-#########################
+################################################
+## Update invidious_update.sh                 ##
+## ghacks-user.js updater for macOS and Linux ##
+################################################
 
 # Returns the version number of a invidious_update.sh file
 get_updater_version () {
   echo $(sed -n '14 s/[^0-9.]*\([0-9.]*\).*/\1/p' "$1")
 }
-
 # Update invidious_update.sh
 # Default: Check for update, if available, ask user if they want to execute it
 # Args:
@@ -105,9 +105,36 @@ update_updater () {
 
   declare -r tmpfile=$(download_file 'https://raw.githubusercontent.com/tmiland/Invidious-Updater/auto-update/invidious_update.sh')
 
+  LATEST_VER=$(get_updater_version "${tmpfile}") < $(get_updater_version "${SCRIPT_DIR}/invidious_update.sh")
+
+  show_update_banner () {
+    clear
+    echo -e "${GREEN}\n"
+    echo ' ######################################################################'
+    echo ' ####                    Invidious Update.sh                       ####'
+    echo ' ####            Automatic update script for Invidio.us            ####'
+    echo ' ####                   Maintained by @tmiland                     ####'
+    echo ' ####                        version: '${version}'                        ####'
+    echo ' ######################################################################'
+    echo -e "${NC}\n"
+    echo "Welcome to the Invidious Update.sh script."
+    echo ""
+    echo "There is a newer version of Invidious Update.sh available."
+    echo ""
+    echo ""
+    echo ""
+    echo -e "    ${GREEN}New version:${NC} ${LATEST_VER}"
+    echo ""
+    echo ""
+    echo ""
+    echo ""
+    echo -e "Documentation for this script is available here: ${ORANGE}\n https://github.com/tmiland/Invidious-Updater${NC}\n"
+  }
+
   if [[ $(get_updater_version "${SCRIPT_DIR}/invidious_update.sh") < $(get_updater_version "${tmpfile}") ]]; then
     if [ $UPDATE = 'check' ]; then
-      echo -e "There is a newer version of invidious_update.sh available. ${RED}Update and execute Y/N?${NC}"
+      show_update_banner
+      echo -e "${RED}Update and execute [Y/N?]${NC}"
       read -p "" -n 1 -r
       echo -e "\n\n"
       if [[ $REPLY =~ ^[Nn]$ ]]; then
@@ -118,7 +145,7 @@ update_updater () {
     return 0 # No update available
   fi
   mv "${tmpfile}" "${SCRIPT_DIR}/invidious_update.sh"
-  chmod u+x "${SCRIPT_DIR}/invidious_update.sh"
+  chmod +x "${SCRIPT_DIR}/invidious_update.sh"
   "${SCRIPT_DIR}/invidious_update.sh" "$@" -d
   exit 1
 }
@@ -168,7 +195,8 @@ show_banner () {
   echo ""
   echo -e "Documentation for this script is available here: ${ORANGE}\n https://github.com/tmiland/Invidious-Updater${NC}\n"
 }
-
+update_updater $@
+cd "$CURRDIR"
 show_banner
 
 while [[ $OPTION !=  "1" && $OPTION != "2" && $OPTION != "3" && $OPTION != "4" && $OPTION != "5" && $OPTION != "6" && $OPTION != "7" && $OPTION != "8" ]]; do
@@ -1157,6 +1185,3 @@ case $OPTION in
     ;;
 
 esac
-
-update_updater $@
-cd "$CURRDIR"
