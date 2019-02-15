@@ -121,8 +121,7 @@ $ invidious_update
 
 ## Issues
 
-- Captcha is not working, issue with [imagemagick](https://github.com/omarroth/invidious/wiki/Issues-with-Captcha-on-Debian-and-Ubuntu)
-- Issue with folder permissions after reinstalling, Invidious won't start. [bug](https://github.com/tmiland/Invidious-Updater/issues/6#issue-409626197)
+- None (hopefully) ;)
 
 ## Todo
 
