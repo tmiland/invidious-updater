@@ -21,7 +21,7 @@
 
 
 ## Screenshot
-![screenshot](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Screenshot%20at%2016-03-49.png)
+![screenshot](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Screenshot%20at%2006-24-51.png)
 
 ## Installation
 
