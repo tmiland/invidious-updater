@@ -5,7 +5,7 @@
                   ####                    Invidious Update.sh                       ####
                   ####            Automatic update script for Invidio.us            ####
                   ####                   Maintained by @tmiland                     ####
-                  ####                       version: 1.1.5                         ####
+                  ####                       version: 1.1.6                         ####
                   ######################################################################
 ```
 
@@ -69,6 +69,13 @@ $ invidious_update
      * name: invidious
      * password: invidious
 
+   * Choose your Imagemagick version :
+     * 1) System's Imagemagick
+       * (Currently installed version)
+     * 2) Imagemagick 6 from source
+     * 3) Imagemagick 7 from source
+
+
    * Invidious is ready to be installed, press any key to continue...
 
 2. ### Update Invidious (To be rewritten)
@@ -118,13 +125,23 @@ $ invidious_update
 - Issue with folder permissions after reinstalling, Invidious won't start. [bug](https://github.com/tmiland/Invidious-Updater/issues/6#issue-409626197)
 
 ## Todo
-- [X] Rework the install prompts - Done in version 1.1.5
+
 - [ ] Rewrite the update procedure
-- [X] Add Uninstallation option - Added in version 1.1.4
+
+- [ ] Add support to deploy in Docker
+
+## Done
+
+- [X] Add Uninstallation option 
+  - Added in version 1.1.4
+- [X] Rework the install prompts
+    - Done in version 1.1.5
 - [X] Add database migration option [migrate-scripts](https://github.com/omarroth/invidious/tree/master/config/migrate-scripts)
 - [X] Add database maintenance option [Database Information and Maintenance](https://github.com/omarroth/invidious/wiki/Database-Information-and-Maintenance)
-- [ ] Add option to compile imagemagick from source [Issues with Captcha on Debian and Ubuntu](https://github.com/omarroth/invidious/wiki/Issues-with-Captcha-on-Debian-and-Ubuntu)
-- [ ] Add support to deploy in Docker
+- [X] Add option to compile imagemagick from source [Issues with Captcha on Debian and Ubuntu](https://github.com/omarroth/invidious/wiki/Issues-with-Captcha-on-Debian-and-Ubuntu)
+   - Added in version 1.1.6
+   - Added support for Imagemagick 6 and 7, or keep current version.
+   - The captcha clock is working with 6 and 7, not from default pkg.
 
 ### Possible options
 - Add support for auto-update check
