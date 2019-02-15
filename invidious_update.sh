@@ -1,5 +1,8 @@
 #!/bin/bash
 
+
+
+## version: 1.1.6
 ###########################################################
 #               Invidious Update.sh                       #
 #        Script to update or install Invidious            #
