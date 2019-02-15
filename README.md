@@ -105,6 +105,7 @@ $ invidious_update
 
 ## Testing
 - [x] Tested extensively on Debian 9
+- [ ] Tested on Ubuntu 18.04 (LTS)
 
 #### Latest install log - version: 1.1.4
 
