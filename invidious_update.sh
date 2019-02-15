@@ -120,9 +120,6 @@ show_update_banner () {
 
 # Update invidious_update.sh
 # Default: Check for update, if available, ask user if they want to execute it
-# Args:
-#   -donotupdate: New version will not be looked for and update will not occur
-#   -update: Check for update, if available, execute without asking
 update_updater () {
   if [ $UPDATE = 'no' ]; then
     return 0 # User signified not to check for updates
@@ -130,7 +127,7 @@ update_updater () {
 
   declare -r tmpfile=$(download_file 'https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/invidious_update.sh')
 
-  LATEST_VER=$(get_updater_version "${tmpfile}") < $(get_updater_version "${SCRIPT_DIR}/invidious_update.sh")
+  LATEST_VER=$(get_updater_version "${tmpfile}") < $(get_updater_version "${SCRIPT_DIR}/invidious_update.sh");
 
   if [[ $(get_updater_version "${SCRIPT_DIR}/invidious_update.sh") < $(get_updater_version "${tmpfile}") ]]; then
     if [ $UPDATE = 'check' ]; then
@@ -152,7 +149,7 @@ update_updater () {
   echo -e "${GREEN}Update done.${NC}"
   echo ""
   sleep 3
-  exit 1
+  return 0
 }
 
 if [ $# != 0 ]; then
@@ -243,7 +240,7 @@ case $OPTION in
       echo -e "${ORANGE}If you want to reinstall, please choose option 7 to Uninstall Invidious first!${NC}"
       echo ""
       sleep 3
-      ${SCRIPT_DIR}/invidious_update.sh
+      ./invidious_update.sh
       exit 1
     fi
     show_preinstall_banner () {
@@ -281,6 +278,7 @@ case $OPTION in
         IN_BRANCH=$IN_MASTER
         ;;
     esac
+
     #read -p "Enter the desired branch of your Invidious installation: " branch
     # Here's where the user is going to enter the Invidious database user, as it appears in the GUI:
     #read -p "Enter the desired user of your Invidious PostgreSQL database: " psqluser
@@ -804,7 +802,7 @@ case $OPTION in
     echo -e "${GREEN}Update done.${NC}"
     echo ""
     sleep 2
-    ${SCRIPT_DIR}/invidious_update.sh
+    ./invidious_update.sh
     exit
     ;;
   4) # Install Invidious service for systemd
@@ -905,7 +903,7 @@ case $OPTION in
           sleep 5
           echo -e "${ORANGE}Restarting script. Please try again..."
           sleep 5
-          ${SCRIPT_DIR}/invidious_update.sh
+          ./invidious_update.sh
           exit
         fi
       fi
@@ -930,7 +928,7 @@ case $OPTION in
     }
     show_maintenance_banner
     sleep 5
-    ${SCRIPT_DIR}/invidious_update.sh
+    ./invidious_update.sh
     exit
     ;;
   6) # Database migration
@@ -983,7 +981,7 @@ case $OPTION in
         sleep 5
         echo -e "${ORANGE}Restarting script. Please try again...${NC}"
         sleep 5
-        ${SCRIPT_DIR}/invidious_update.sh
+        ./invidious_update.sh
         exit
       fi
     fi
@@ -1174,6 +1172,7 @@ case $OPTION in
     echo ""
     echo -e "${GREEN}Un-installation done.${NC}"
     echo ""
+
     exit
     ;;
   8) # Exit
