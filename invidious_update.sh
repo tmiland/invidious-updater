@@ -103,7 +103,7 @@ update_updater () {
     return 0 # User signified not to check for updates
   fi
 
-  declare -r tmpfile=$(download_file 'https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/invidious_update.sh')
+  declare -r tmpfile=$(download_file 'https://raw.githubusercontent.com/tmiland/Invidious-Updater/auto-update/invidious_update.sh')
 
   if [[ $(get_updater_version "${SCRIPT_DIR}/invidious_update.sh") < $(get_updater_version "${tmpfile}") ]]; then
     if [ $UPDATE = 'check' ]; then
