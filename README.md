@@ -5,7 +5,7 @@
                   ####                    Invidious Update.sh                       ####
                   ####            Automatic update script for Invidio.us            ####
                   ####                   Maintained by @tmiland                     ####
-                  ####                       version: 1.1.6                         ####
+                  ####                       version: 1.1.7                         ####
                   ######################################################################
 ```
 
@@ -129,9 +129,6 @@ $ invidious_update
 - [ ] Rewrite the update procedure
 - [ ] Add support to deploy in Docker
 
-
-
-
 ## Done
 
 - [X] Add Uninstallation option 
@@ -146,10 +143,13 @@ $ invidious_update
    - The captcha clock is working with 6 and 7, not with default pkg.
 - [X] Add Deb Packages
 
+- Support for auto-update check
+  - [X] For Script - Added in 1.1.7
+
 ### Possible options
 - Support for auto-update check
   - [ ] For Invidious
-  - [ ] For Script
+
 - [ ] Support for running own forks
 - [ ] Support for database backup
 

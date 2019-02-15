@@ -1,18 +1,17 @@
 #!/bin/bash
+readonly CURRDIR=$(pwd)
+sfp=$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || greadlink -f "${BASH_SOURCE[0]}" 2>/dev/null)
+if [ -z "$sfp" ]; then sfp=${BASH_SOURCE[0]}; fi
+readonly SCRIPT_DIR=$(dirname "${sfp}")
 
-
-
-## version: 1.1.6
-###########################################################
-#               Invidious Update.sh                       #
-#        Script to update or install Invidious            #
-#                                                         #
-#             Maintained by @tmiland                      #
-#                                                         #
-###########################################################
-
-version='1.1.6'
-
+## Author: Tommy Miland (@tmiland)
+######################################################################
+####                    Invidious Update.sh                       ####
+####            Automatic update script for Invidio.us            ####
+####            Script to update or install Invidious             ####
+####                   Maintained by @tmiland                     ####
+######################################################################
+version='1.1.7'
 # Colors used for printing
 RED='\033[0;31m'
 BLUE='\033[0;34m'
@@ -22,6 +21,7 @@ ORANGE='\033[0;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
+UPDATE='check'
 # Set username
 USER_NAME=invidious
 
@@ -43,6 +43,137 @@ BUILD_DEP_PKGS="build-essential ca-certificates wget libpcre3 libpcre3-dev autoc
 
 IMAGICK_VER=6.9.10-27
 IMAGICK_SEVEN_VER=7.0.8-27
+
+# Download method priority: curl -> wget
+DOWNLOAD_METHOD=''
+if [[ $(command -v 'curl') ]]; then
+  DOWNLOAD_METHOD='curl'
+elif [[ $(command -v 'wget') ]]; then
+  DOWNLOAD_METHOD='wget'
+else
+  echo -e "${RED}This script requires curl or wget.\nProcess aborted${NC}"
+  exit 0
+fi
+
+#########################
+#     File Handling     #
+#########################
+
+# Download files
+download_file () {
+  declare -r url=$1
+  declare -r tf=$(mktemp)
+  local dlcmd=''
+
+  if [ $DOWNLOAD_METHOD = 'curl' ]; then
+    dlcmd="curl -o $tf"
+  else
+    dlcmd="wget -O $tf"
+  fi
+
+  $dlcmd "${url}" &>/dev/null && echo "$tf" || echo '' # return the temp-filename (or empty string on error)
+}
+
+open_file () { #expects one argument: file_path
+  if [ "$(uname)" == 'Darwin' ]; then
+    open "$1"
+  elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
+    xdg-open "$1"
+  else
+    echo -e "${RED}Error: Sorry, opening files is not supported for your OS.${NC}"
+  fi
+}
+
+################################################
+## Update invidious_update.sh                 ##
+## ghacks-user.js updater for macOS and Linux ##
+################################################
+
+# Returns the version number of a invidious_update.sh file
+get_updater_version () {
+  echo $(sed -n '14 s/[^0-9.]*\([0-9.]*\).*/\1/p' "$1")
+}
+# Update invidious_update.sh
+# Default: Check for update, if available, ask user if they want to execute it
+# Args:
+#   -donotupdate: New version will not be looked for and update will not occur
+#   -update: Check for update, if available, execute without asking
+update_updater () {
+  if [ $UPDATE = 'no' ]; then
+    return 0 # User signified not to check for updates
+  fi
+
+  declare -r tmpfile=$(download_file 'https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/invidious_update.sh')
+
+  LATEST_VER=$(get_updater_version "${tmpfile}") < $(get_updater_version "${SCRIPT_DIR}/invidious_update.sh")
+
+  show_update_banner () {
+    clear
+    echo -e "${GREEN}\n"
+    echo ' ######################################################################'
+    echo ' ####                    Invidious Update.sh                       ####'
+    echo ' ####            Automatic update script for Invidio.us            ####'
+    echo ' ####                   Maintained by @tmiland                     ####'
+    echo ' ####                        version: '${version}'                        ####'
+    echo ' ######################################################################'
+    echo -e "${NC}\n"
+    echo "Welcome to the Invidious Update.sh script."
+    echo ""
+    echo "There is a newer version of Invidious Update.sh available."
+    echo ""
+    echo ""
+    echo ""
+    echo -e "    ${GREEN}New version:${NC} ${LATEST_VER}"
+    echo ""
+    echo ""
+    echo ""
+    echo ""
+    echo -e "Documentation for this script is available here: ${ORANGE}\n https://github.com/tmiland/Invidious-Updater${NC}\n"
+  }
+
+  if [[ $(get_updater_version "${SCRIPT_DIR}/invidious_update.sh") < $(get_updater_version "${tmpfile}") ]]; then
+    if [ $UPDATE = 'check' ]; then
+      show_update_banner
+      echo -e "${RED}Update and execute [Y/N?]${NC}"
+      read -p "" -n 1 -r
+      echo -e "\n\n"
+      if [[ $REPLY =~ ^[Nn]$ ]]; then
+        return 0 # Update available, but user chooses not to update
+      fi
+    fi
+  else
+    return 0 # No update available
+  fi
+  mv "${tmpfile}" "${SCRIPT_DIR}/invidious_update.sh"
+  chmod +x "${SCRIPT_DIR}/invidious_update.sh"
+  "${SCRIPT_DIR}/invidious_update.sh" "$@" -d
+  echo ""
+  echo -e "${GREEN}Update done.${NC}"
+  echo ""
+  sleep 3
+  exit 1
+}
+
+if [ $# != 0 ]; then
+  while getopts ":ud" opt; do
+    case $opt in
+      u)
+        UPDATE='yes'
+        ;;
+      d)
+        UPDATE='no'
+        ;;
+      \?)
+        echo -e "${RED}\n Error! Invalid option: -$OPTARG${NC}" >&2
+        usage
+        ;;
+      :)
+        echo -e "${RED}Error! Option -$OPTARG requires an argument.${NC}" >&2
+        exit 1
+        ;;
+    esac
+  done
+fi
 
 show_banner () {
   clear
@@ -68,8 +199,10 @@ show_banner () {
   echo ""
   echo -e "Documentation for this script is available here: ${ORANGE}\n https://github.com/tmiland/Invidious-Updater${NC}\n"
 }
-
+update_updater $@
+cd "$CURRDIR"
 show_banner
+
 while [[ $OPTION !=  "1" && $OPTION != "2" && $OPTION != "3" && $OPTION != "4" && $OPTION != "5" && $OPTION != "6" && $OPTION != "7" && $OPTION != "8" ]]; do
   read -p "Select an option [1-8]: " OPTION
 done
