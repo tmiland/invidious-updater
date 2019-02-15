@@ -114,7 +114,7 @@ $ invidious_update
 - [x] Tested extensively on Debian 9
 - [ ] Tested on Ubuntu 16.04
 
-#### Latest install log - version: 1.1.4
+#### Latest install log - version: 1.1.6
 
 [install log debian](https://github.com/tmiland/Invidious-Updater/blob/master/log/install_log_debian.log)
 
