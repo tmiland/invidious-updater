@@ -134,6 +134,12 @@ update_updater () {
       echo -e "${RED}Do you want to update [Y/N?]${NC}"
       read -p "" -n 1 -r
       echo -e "\n\n"
+      if [[ $REPLY =~ ^[Yy]$ ]]; then
+        mv "${tmpfile}" "${SCRIPT_DIR}/invidious_update.sh"
+        chmod +x "${SCRIPT_DIR}/invidious_update.sh"
+        "${SCRIPT_DIR}/invidious_update.sh" "$@" -d
+        exit 1 # Update available, user chooses to update
+      fi
       if [[ $REPLY =~ ^[Nn]$ ]]; then
         show_banner
         return 1 # Update available, but user chooses not to update
@@ -142,10 +148,6 @@ update_updater () {
   else
     return 0 # No update available
   fi
-  mv "${tmpfile}" "${SCRIPT_DIR}/invidious_update.sh"
-  chmod +x "${SCRIPT_DIR}/invidious_update.sh"
-  "${SCRIPT_DIR}/invidious_update.sh" "$@" -d
-  exit 1
 }
 
 if [ $# != 0 ]; then
