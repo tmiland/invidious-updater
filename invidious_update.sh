@@ -143,7 +143,7 @@ update_updater () {
     return 0 # No update available
   fi
   mv "${tmpfile}" "${SCRIPT_DIR}/invidious_update.sh"
-  chmod u+x "${SCRIPT_DIR}/invidious_update.sh"
+  chmod +x "${SCRIPT_DIR}/invidious_update.sh"
   "${SCRIPT_DIR}/invidious_update.sh" "$@" -d
   exit 1
 }
