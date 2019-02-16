@@ -1,8 +1,8 @@
 #!/bin/bash
-readonly CURRDIR=$(pwd)
+CURRDIR=$(pwd)
 sfp=$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || greadlink -f "${BASH_SOURCE[0]}" 2>/dev/null)
 if [ -z "$sfp" ]; then sfp=${BASH_SOURCE[0]}; fi
-readonly SCRIPT_DIR=$(dirname "${sfp}")
+SCRIPT_DIR=$(dirname "${sfp}")
 
 ## Author: Tommy Miland (@tmiland)
 ######################################################################
@@ -110,7 +110,7 @@ show_update_banner () {
   echo ""
   echo ""
   echo ""
-  echo -e "    ${GREEN}New version:${NC} ${LATEST_VER}"
+  echo -e "    ${GREEN}New version:${NC} "${LV}" "
   echo ""
   echo ""
   echo ""
@@ -127,16 +127,16 @@ update_updater () {
 
   declare -r tmpfile=$(download_file 'https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/invidious_update.sh')
 
-  LATEST_VER=$(get_updater_version "${tmpfile}") < $(get_updater_version "${SCRIPT_DIR}/invidious_update.sh");
-
   if [[ $(get_updater_version "${SCRIPT_DIR}/invidious_update.sh") < $(get_updater_version "${tmpfile}") ]]; then
+    LV=$(get_updater_version "${tmpfile}")
     if [ $UPDATE = 'check' ]; then
       show_update_banner
-      echo -e "${RED}Update and execute [Y/N?]${NC}"
+      echo -e "${RED}Do you want to update [Y/N?]${NC}"
       read -p "" -n 1 -r
       echo -e "\n\n"
       if [[ $REPLY =~ ^[Nn]$ ]]; then
-        return 0 # Update available, but user chooses not to update
+        show_banner
+        return 1 # Update available, but user chooses not to update
       fi
     fi
   else
@@ -145,7 +145,7 @@ update_updater () {
   mv "${tmpfile}" "${SCRIPT_DIR}/invidious_update.sh"
   chmod u+x "${SCRIPT_DIR}/invidious_update.sh"
   "${SCRIPT_DIR}/invidious_update.sh" "$@" -d
-  return 0
+  exit 1
 }
 
 if [ $# != 0 ]; then
@@ -167,31 +167,33 @@ if [ $# != 0 ]; then
         ;;
     esac
   done
-
-  show_banner () {
-    clear
-    echo -e "${GREEN}\n"
-    echo ' ######################################################################'
-    echo ' ####                    Invidious Update.sh                       ####'
-    echo ' ####            Automatic update script for Invidio.us            ####'
-    echo ' ####                   Maintained by @tmiland                     ####'
-    echo ' ####                        version: '${version}'                        ####'
-    echo ' ######################################################################'
-    echo -e "${NC}\n"
-    echo "Welcome to the Invidious Update.sh script."
-    echo ""
-    echo "What do you want to do?"
-    echo "   1) Install Invidious"
-    echo "   2) Update Invidious"
-    echo "   3) Update Script"
-    echo "   4) Install Invidious service"
-    echo "   5) Run Database Maintenance"
-    echo "   6) Run Database Migration"
-    echo "   7) Uninstall Invidious"
-    echo "   8) Exit"
-    echo ""
-    echo -e "Documentation for this script is available here: ${ORANGE}\n https://github.com/tmiland/Invidious-Updater${NC}\n"
-  }
+fi
+update_updater $@
+cd "$CURRDIR"
+show_banner () {
+  clear
+  echo -e "${GREEN}\n"
+  echo ' ######################################################################'
+  echo ' ####                    Invidious Update.sh                       ####'
+  echo ' ####            Automatic update script for Invidio.us            ####'
+  echo ' ####                   Maintained by @tmiland                     ####'
+  echo ' ####                        version: '${version}'                        ####'
+  echo ' ######################################################################'
+  echo -e "${NC}\n"
+  echo "Welcome to the Invidious Update.sh script."
+  echo ""
+  echo "What do you want to do?"
+  echo "   1) Install Invidious"
+  echo "   2) Update Invidious"
+  echo "   3) Update Script"
+  echo "   4) Install Invidious service"
+  echo "   5) Run Database Maintenance"
+  echo "   6) Run Database Migration"
+  echo "   7) Uninstall Invidious"
+  echo "   8) Exit"
+  echo ""
+  echo -e "Documentation for this script is available here: ${ORANGE}\n https://github.com/tmiland/Invidious-Updater${NC}\n"
+}
   show_banner
 
   while [[ $OPTION !=  "1" && $OPTION != "2" && $OPTION != "3" && $OPTION != "4" && $OPTION != "5" && $OPTION != "6" && $OPTION != "7" && $OPTION != "8" ]]; do
@@ -1175,6 +1177,3 @@ if [ $# != 0 ]; then
       exit
       ;;
   esac
-fi
-update_updater $@
-cd "$CURRDIR"
