@@ -11,7 +11,7 @@ SCRIPT_DIR=$(dirname "${sfp}")
 ####            Script to update or install Invidious             ####
 ####                   Maintained by @tmiland                     ####
 ######################################################################
-version='1.1.9'
+version='1.2.0'
 # Colors used for printing
 RED='\033[0;31m'
 BLUE='\033[0;34m'
@@ -289,7 +289,17 @@ case $OPTION in
     # Here's where the user is going to enter the Invidious domain name, as it appears in the GUI:
     read -p "       Enter the desired domain name:" domain
     # Here's where the user is going to enter the Invidious https only settings, as it appears in the GUI:
-    read -p "       Are you going to use https only? [true/false]:" https_only
+    while [[ $https_only != "y" && $https_only != "n" ]]; do
+      read -p "Are you going to use https only? [y/n]: " https_only
+    done
+    case $https_only in
+      y)
+        https_only=true
+        ;;
+      n)
+        https_only=false
+        ;;
+    esac
     # Let's allow the user to confirm that what they've typed in is correct:
     echo -e "${GREEN}\n"
     echo -e "You entered: \n"
