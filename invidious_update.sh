@@ -11,7 +11,7 @@ SCRIPT_DIR=$(dirname "${sfp}")
 ####            Script to update or install Invidious             ####
 ####                   Maintained by @tmiland                     ####
 ######################################################################
-version='1.2.0'
+version='1.2.1'
 # Colors used for printing
 RED='\033[0;31m'
 BLUE='\033[0;34m'
@@ -334,9 +334,10 @@ case $OPTION in
     ######################
     # Setup Dependencies
     ######################
-    apt-get update  # || exit 1
+
 
     if ! dpkg -s $PRE_INSTALL_PKGS >/dev/null 2>&1; then
+      apt-get update
       for i in $PRE_INSTALL_PKGS; do
         apt install -y $i  # || exit 1
       done
@@ -346,9 +347,10 @@ case $OPTION in
       curl -sL "https://keybase.io/crystal/pgp_keys.asc" | sudo apt-key add -
       echo "deb https://dist.crystal-lang.org/apt crystal main" | sudo tee /etc/apt/sources.list.d/crystal.list
     fi
-    sudo apt-get update  # || exit 1 # postgresql-9.6 postgresql-client-9.6 postgresql-contrib-9.6 # Don't touch PostgreSQL
+    # || exit 1 # postgresql-9.6 postgresql-client-9.6 postgresql-contrib-9.6 # Don't touch PostgreSQL
     #INSTALL_PKGS="crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev postgresql imagemagick libsqlite3-dev"
     if ! dpkg -s $INSTALL_PKGS >/dev/null 2>&1; then
+      sudo apt-get update
       for i in $INSTALL_PKGS; do
         sudo apt install -y $i  # || exit 1 #--allow-unauthenticated
       done
@@ -460,6 +462,7 @@ case $OPTION in
       master=$(git rev-list --max-count=1 --abbrev-commit HEAD)
       # Checkout master
       git checkout $master
+      git pull
     }
 
     function GetRelease {
@@ -469,25 +472,29 @@ case $OPTION in
       releaseTag=$(git describe --tags `git rev-list --tags --max-count=1`)
       # Checkout latest release tag
       git checkout $releaseTag
+      git pull
     }
 
-    if [[ ! -d $USER_DIR/invidious ]]; then
-      cd $USER_DIR || exit 1
-      echo -e "${GREEN}Downloading Invidious from GitHub${NC}"
-      sudo -i -u invidious \
-        git clone https://github.com/omarroth/invidious
-      # Make sure we are running a stable release
-      cd $USER_DIR/invidious || exit 1
-      # Set user permissions (just in case)
-      #sudo chown -R 1000:$USER_NAME $USER_DIR
-      # Checkout
-      if [[ ! "$IN_BRANCH" = 'master' ]]; then
-        GetRelease
-      fi
-    else
-      GetMaster
-      cd -
+    #if [[ ! -d $USER_DIR/invidious ]]; then
+
+    echo -e "${GREEN}Downloading Invidious from GitHub${NC}"
+    #sudo -i -u $USER_NAME
+    cd $USER_DIR || exit 1
+    git clone https://github.com/omarroth/invidious
+    # Set user permissions (just in case)
+    sudo chown -R $USER_NAME:$USER_NAME $USER_DIR/invidious
+    sudo chmod -R 755 $USER_DIR/invidious/config/sql/*.sql
+    cd $USER_DIR/invidious || exit 1
+    # Checkout
+    if [[ ! "$IN_BRANCH" = 'master' ]]; then
+      GetRelease
     fi
+    if [[ ! "$IN_BRANCH" = 'release' ]]; then
+      GetMaster
+    fi
+
+    cd -
+    #fi
     systemctl enable postgresql
     sleep 1
     systemctl start postgresql
@@ -505,8 +512,8 @@ case $OPTION in
     #sudo -u postgres psql -c "CREATE USER $USER_NAME WITH PASSWORD '$psqlpass';"
     echo "Creating database $psqldb with owner kemal"
     sudo -u postgres psql -c "CREATE DATABASE $psqldb WITH OWNER kemal;"
-    #echo "Grant all on database $psqldb to user kemal"
-    #sudo -u postgres psql -c "GRANT ALL ON DATABASE $psqldb TO kemal;"
+    echo "Grant all on database $psqldb to user kemal"
+    sudo -u postgres psql -c "GRANT ALL ON DATABASE $psqldb TO kemal;"
     #echo "Grant all on database $psqldb to user $psqluser"
     #sudo -u postgres psql -c "GRANT ALL ON DATABASE $psqldb TO $psqluser;"
     #echo "Grant all on database $psqldb to user $USER_NAME"
@@ -573,7 +580,7 @@ case $OPTION in
     ######################
     cd $USER_DIR/invidious || exit 1
     #sudo -i -u invidious \
-      shards
+    shards
     crystal build src/invidious.cr --release
     sudo chown -R $USER_NAME:$USER_NAME $USER_DIR
     ######################
@@ -1048,7 +1055,7 @@ case $OPTION in
       read -p "       Remove files ? [y/n]: " -e RM_FILES
       if [[ "$RM_FILES" = 'y' ]]; then
         while [[ $RM_USER !=  "y" && $RM_USER != "n" ]]; do
-          echo -e "       ${ORANGE}(( This option will remove $USER_DIR ))\n"
+          echo -e "       ${RED}(( This option will remove $USER_DIR ))"
           echo -e "       (( Not needed for reinstall ))${NC}"
           read -p "       Remove user ? [y/n]: " -e RM_USER
         done
@@ -1143,7 +1150,7 @@ case $OPTION in
           echo -e "removing packages."
           echo ""
           apt-get remove -y $i
-          
+
         done
       fi
       echo ""
@@ -1160,7 +1167,7 @@ case $OPTION in
       rm -r \
         /lib/systemd/system/invidious.service \
         /etc/apt/sources.list.d/crystal.list
-      
+
       # postgresql postgresql-9.6 postgresql-client-9.6 postgresql-contrib-9.6 # Don't touch PostgreSQL
       #PURGE_PKGS="apt-transport-https git curl sudo remove crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev imagemagick libsqlite3-dev"
 
