@@ -5,7 +5,7 @@
                   ####                    Invidious Update.sh                       ####
                   ####            Automatic update script for Invidio.us            ####
                   ####                   Maintained by @tmiland                     ####
-                  ####                       version: 1.2.1                         ####
+                  ####                       version: 1.2.2                         ####
                   ######################################################################
 ```
 
@@ -78,11 +78,16 @@ $ invidious_update
 
    * Invidious is ready to be installed, press any key to continue...
 
-2. ### Update Invidious (To be rewritten)
-   * No arguments (Default) Will use branch "Master" and prompt user for each step.
-   * -f FORCE YES (Force yes, update, rebuild and restart Invidious)
-   * -p Prune remote. (Deletes all stale remote-tracking branches)
-   * -l Latest release. (Fetch latest release from remote repo.)
+2. ### Update Invidious
+   * Let's go through some configuration options.
+
+   * Do you want to checkout Invidious release or master?
+     * 1) release
+     * 2) master
+   * Select an option [1-2]: 1
+   * You entered: 
+     * branch: release
+   * Invidious is ready to be updated, press any key to continue...
 
 3. ### Update the Script
    * Downloads and executes the script from this repo with the latest version.
@@ -127,7 +132,6 @@ $ invidious_update
 ## Todo
 
 - [ ] Add Imagemagick (source) to Uninstall options
-- [ ] Rewrite the update procedure
 - [ ] Add support to deploy in Docker
 
 ## Done
@@ -146,6 +150,8 @@ $ invidious_update
 
 - Support for auto-update check
   - [X] For Script - Added in 1.1.7
+  
+- [X] Rewrite the update procedure - Done in 1.2.2
 
 ### Possible options
 - Support for auto-update check
