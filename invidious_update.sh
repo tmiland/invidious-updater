@@ -1,17 +1,17 @@
 #!/bin/bash
+
 CURRDIR=$(pwd)
 sfp=$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || greadlink -f "${BASH_SOURCE[0]}" 2>/dev/null)
 if [ -z "$sfp" ]; then sfp=${BASH_SOURCE[0]}; fi
 SCRIPT_DIR=$(dirname "${sfp}")
-
-## Author: Tommy Miland (@tmiland)
+## Author: Tommy Miland (@tmiland) - 2019
 ######################################################################
 ####                    Invidious Update.sh                       ####
 ####            Automatic update script for Invidio.us            ####
 ####            Script to update or install Invidious             ####
 ####                   Maintained by @tmiland                     ####
 ######################################################################
-version='1.2.1'
+version='1.2.2' # Must stay on line 14 for updater to fetch the numbers
 # Colors used for printing
 RED='\033[0;31m'
 BLUE='\033[0;34m'
@@ -20,30 +20,73 @@ GREEN='\033[0;32m'
 ORANGE='\033[0;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
-
+# Set update check
 UPDATE='check'
 # Set username
 USER_NAME=invidious
-
 # Set userdir
 USER_DIR="/home/invidious"
-
-# Set default Database info
-#psqluser=kemal
-#psqlpass=kemal
-#psqldb=invidious
-
+# Master branch
+IN_MASTER=master
+# Release tag
+IN_RELEASE=release
+# Service name
+SERVICE_NAME=invidious.service
+# ImageMagick package name
+IMAGICKPKG=imagemagick
+# Pre-install packages
 PRE_INSTALL_PKGS="apt-transport-https git curl sudo"
-
+# Install packages
 INSTALL_PKGS="crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev postgresql libsqlite3-dev"
-
-UNINSTALL_PKGS="crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev libsqlite3-dev" # Don't touch postgresql
-
+#Uninstall packages
+UNINSTALL_PKGS="crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev libsqlite3-dev"
+# Build-dep packages
 BUILD_DEP_PKGS="build-essential ca-certificates wget libpcre3 libpcre3-dev autoconf unzip automake libtool tar zlib1g-dev uuid-dev lsb-release make"
-
+# ImageMagick 6 version
 IMAGICK_VER=6.9.10-27
+# ImageMagick 7 version
 IMAGICK_SEVEN_VER=7.0.8-27
-
+# Checkout Master branch
+function GetMaster {
+  master=$(git rev-list --max-count=1 --abbrev-commit HEAD)
+  # Checkout master
+  git checkout $master
+  git pull
+  #for i in `git rev-list --abbrev-commit $master..HEAD` ; do file=$USER_DIR/invidious/config/migrate-scripts/migrate-db-$i.sh ; [ -f $file ] && $file ; done
+}
+# Checkout Release Tag
+function GetRelease {
+  # Get new tags from remote
+  git fetch --tags
+  # Get latest tag name
+  latestVersion=$(git describe --tags `git rev-list --tags --max-count=1`)
+  # Checkout latest release tag
+  git checkout $latestVersion
+  git pull
+  #for i in `git rev-list --abbrev-commit $currentVersion..HEAD` ; do file=$USER_DIR/invidious/config/migrate-scripts/migrate-db-$i.sh ; [ -f $file ] && $file ; done
+}
+# Rebuild Invidious
+function rebuild {
+  printf "\n-- Rebuilding $USER_DIR/invidious\n"
+  cd $USER_DIR/invidious || exit 1
+  shards
+  crystal build src/invidious.cr --release
+  #sudo chown -R 1000:$USER_NAME $USER_DIR
+  cd -
+  printf "\n"
+  echo -e "${GREEN} Done Rebuilding $USER_DIR/invidious ${NC}"
+  sleep 3
+}
+# Restart Invidious
+function restart {
+  printf "\n-- restarting Invidious\n"
+  sudo systemctl restart $SERVICE_NAME
+  sleep 2
+  sudo systemctl status $SERVICE_NAME --no-pager
+  printf "\n"
+  echo -e "${GREEN} Invidious has been restarted ${NC}"
+  sleep 3
+}
 # Download method priority: curl -> wget
 DOWNLOAD_METHOD=''
 if [[ $(command -v 'curl') ]]; then
@@ -54,11 +97,9 @@ else
   echo -e "${RED}This script requires curl or wget.\nProcess aborted${NC}"
   exit 0
 fi
-
 #########################
 #     File Handling     #
 #########################
-
 # Download files
 download_file () {
   declare -r url=$1
@@ -73,7 +114,7 @@ download_file () {
 
   $dlcmd "${url}" &>/dev/null && echo "$tf" || echo '' # return the temp-filename (or empty string on error)
 }
-
+# Open files
 open_file () { #expects one argument: file_path
   if [ "$(uname)" == 'Darwin' ]; then
     open "$1"
@@ -83,17 +124,15 @@ open_file () { #expects one argument: file_path
     echo -e "${RED}Error: Sorry, opening files is not supported for your OS.${NC}"
   fi
 }
-
 ################################################
 ## Update invidious_update.sh                 ##
 ## ghacks-user.js updater for macOS and Linux ##
 ################################################
-
 # Returns the version number of a invidious_update.sh file on line 14
 get_updater_version () {
   echo $(sed -n '14 s/[^0-9.]*\([0-9.]*\).*/\1/p' "$1")
 }
-
+# Update banner
 show_update_banner () {
   clear
   echo -e "${GREEN}\n"
@@ -117,16 +156,15 @@ show_update_banner () {
   echo ""
   echo -e "Documentation for this script is available here: ${ORANGE}\n https://github.com/tmiland/Invidious-Updater${NC}\n"
 }
-
 # Update invidious_update.sh
 # Default: Check for update, if available, ask user if they want to execute it
 update_updater () {
   if [ $UPDATE = 'no' ]; then
     return 0 # User signified not to check for updates
   fi
-
+  # Get tmpfile from github
   declare -r tmpfile=$(download_file 'https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/invidious_update.sh')
-
+  # Do the work
   if [[ $(get_updater_version "${SCRIPT_DIR}/invidious_update.sh") < $(get_updater_version "${tmpfile}") ]]; then
     LV=$(get_updater_version "${tmpfile}")
     if [ $UPDATE = 'check' ]; then
@@ -149,7 +187,7 @@ update_updater () {
     return 0 # No update available
   fi
 }
-
+# Ask user to update yes/no
 if [ $# != 0 ]; then
   while getopts ":ud" opt; do
     case $opt in
@@ -213,13 +251,7 @@ case $OPTION in
       echo -e "${RED}Sorry, This script only runs on Debian/Ubuntu${NC}"
       exit 1
     fi
-
-    IN_MASTER=master
-
-    IN_RELEASE=release
-
-    IMAGICKPKG=imagemagick
-
+    # Check which ImageMagick version is installed
     function chk_imagickpkg {
       if ! dpkg -s $IMAGICKPKG >/dev/null 2>&1; then
         apt -qq list $IMAGICKPKG
@@ -227,7 +259,6 @@ case $OPTION in
         identify -version
       fi
     }
-
     # Check if the folder is a git repo and systemdservice is installed
     if [[ -d "$USER_DIR/invidious/.git" ]]; then
       #if (systemctl -q is-active invidious.service) && -d "$USER_DIR/invidious/.git" then
@@ -275,7 +306,6 @@ case $OPTION in
         IN_BRANCH=$IN_MASTER
         ;;
     esac
-
     #read -p "Enter the desired branch of your Invidious installation: " branch
     # Here's where the user is going to enter the Invidious database user, as it appears in the GUI:
     #read -p "Enter the desired user of your Invidious PostgreSQL database: " psqluser
@@ -334,8 +364,6 @@ case $OPTION in
     ######################
     # Setup Dependencies
     ######################
-
-
     if ! dpkg -s $PRE_INSTALL_PKGS >/dev/null 2>&1; then
       apt-get update
       for i in $PRE_INSTALL_PKGS; do
@@ -429,7 +457,6 @@ case $OPTION in
     if [[ $IMAGEMAGICK_SEVEN != "y" && $IMAGEMAGICK != "y" ]]; then
       sudo apt install -y imagemagick
     fi
-
     ######################
     # Add user postgres if not already present
     ######################
@@ -458,25 +485,7 @@ case $OPTION in
       mkdir -p $USER_DIR
     fi
 
-    function GetMaster {
-      master=$(git rev-list --max-count=1 --abbrev-commit HEAD)
-      # Checkout master
-      git checkout $master
-      git pull
-    }
-
-    function GetRelease {
-      # Get new tags from remote
-      git fetch --tags
-      # Get latest tag name
-      releaseTag=$(git describe --tags `git rev-list --tags --max-count=1`)
-      # Checkout latest release tag
-      git checkout $releaseTag
-      git pull
-    }
-
     #if [[ ! -d $USER_DIR/invidious ]]; then
-
     echo -e "${GREEN}Downloading Invidious from GitHub${NC}"
     #sudo -i -u $USER_NAME
     cd $USER_DIR || exit 1
@@ -492,7 +501,6 @@ case $OPTION in
     if [[ ! "$IN_BRANCH" = 'release' ]]; then
       GetMaster
     fi
-
     cd -
     #fi
     systemctl enable postgresql
@@ -537,7 +545,7 @@ case $OPTION in
     ######################
     # Update config.yml with new info from user input
     ######################
-    # Lets change the default user
+    # Lets change the default user # Not a good idea... Invidious uses 'kemal'. Left for reference
     #OLDUSER="user: kemal"
     #NEWUSER="user: $psqluser"
     BAKPATH="/home/backup/$USER_NAME/config"
@@ -568,7 +576,6 @@ case $OPTION in
         echo -e "${RED}Error: Cannot read $f"
       fi
     done
-
     if [[ -e $TFILE ]]; then
       /bin/rm $TFILE
     else
@@ -628,185 +635,47 @@ case $OPTION in
       echo -e "Sorry, you need to run this as root"
       exit 1
     fi
-    # Set default branch
-    branch=master
-
-    # Set repo Dir (Place script in same root folder as repo)
-    repo_dir=$USER_DIR/invidious
-
-    # Service name
-    service_name=invidious.service
-    # Stop here
-
-    repo=`ls -d $repo_dir`
-
-    # Store user argument to force all repo update
-    force_yes=false
-    usage() {
-      echo -e "${BLUE}\nUsage: $0 [-f] [-p] [-l] \n${NC}" 1>&2  # Echo usage string to standard error
-      echo 'Arguments:'
-      echo -e "\t-f FORCE YES,\t Force yes and update, rebuild and restart Invidious"
-      echo -e "\t-p,\t\t Prune remote. Deletes all stale remote-tracking branches"
-      echo -e "\t-l, \t\t Latest release. Fetch latest release from remote repo."
-      echo -e
-      exit 1
-    }
-
-    while :;
-    do
-      case $1
-          in
-        -f|--force-yes) force_yes=true ;;
-        -p|--prune-remote) prune_remote=true ;;
-        -l|--latest-release) latest_release=true ;;
-        -?*)
-          printf 'WARN: Unknown option (ignored): %s\n' "$1" >&2
-          usage
-          ;;
-        *) break
-      esac
-      shift
+    echo ""
+    echo "Let's go through some configuration options."
+    echo ""
+    echo "Do you want to checkout Invidious release or master?"
+    echo "   1) $IN_RELEASE"
+    echo "   2) $IN_MASTER"
+    echo ""
+    while [[ $IN_BRANCH != "1" && $IN_BRANCH != "2" ]]; do
+      read -p "Select an option [1-2]: " IN_BRANCH
     done
-
-    # Get latest release - https://stackoverflow.com/a/22857288
-    function latest {
-      # Get new tags from remote
-      git fetch --tags
-      # Get latest tag name
-      latestTag=$(git describe --tags `git rev-list --tags --max-count=1`)
-      # Checkout latest tag
-      git checkout $latestTag
-    }
-
-    function update {
-      printf "\n-- Updating $Dir"
-      cd $Dir || exit 1
-      git stash > $USER_DIR/invidious_tmp
-      editedFiles=`cat $USER_DIR/invidious_tmp`
-      #sudo chown -R 1000:$USER_NAME $USER_DIR/invidious_tmp
-      printf "\n"
-      echo $editedFiles
-      git fetch;
-      LOCAL=$(git rev-parse HEAD);
-      REMOTE=$(git rev-parse @{u});
-      if [ $LOCAL != $REMOTE ] ; then
-        git pull --rebase
-      fi
-      if [ "$prune_remote" = true ] ; then
-        git remote update --prune
-      fi
-      if [ "$latest_release" = true ] ; then
-        latest
-      fi
-      git checkout $branch
-      if [[ $editedFiles != *"No local changes to save"* ]]
-      then
-        git stash pop
-      fi
-      #sudo chown -R 1000:$USER_NAME $USER_DIR
-      cd -
-      printf "\n"
-      echo -e "${GREEN} Done Updating $Dir ${NC}"
-      sleep 3
-    }
-
-    function rebuild {
-      printf "\n-- Rebuilding $Dir\n"
-      cd $Dir || exit 1
-      shards
-      crystal build src/invidious.cr --release
-      #sudo chown -R 1000:$USER_NAME $USER_DIR
-      cd -
-      printf "\n"
-      echo -e "${GREEN} Done Rebuilding $Dir ${NC}"
-      sleep 3
-    }
-
-    function restart {
-      printf "\n-- restarting Invidious\n"
-      sudo systemctl restart $service_name
-      sleep 2
-      sudo systemctl status $service_name --no-pager
-      printf "\n"
-      echo -e "${GREEN} Invidious has been restarted ${NC}"
-      sleep 3
-    }
-
-    for Dir in $repo
-    do
-      while true
-      do
-        # Check if the folder is a git repo
-        if [[ -d "${Dir}/.git" ]]; then
-
-          # Update without prompt if yes forced
-          if [ "$force_yes" = true ] ; then
-            update
-            break;
-            # Otherwise prompt user asking for repo update
-          else
-            show_banner
-            read -p "Do you wish to update $Dir? [y/n/q] " answer
-
-            case $answer in
-              [yY]* ) update
-                break ;;
-
-              [nN]* ) break ;;
-
-              [qQ]* ) exit ;;
-
-              * )  echo "Enter Y, N or Q, please." ;;
-            esac
-          fi
-        else
-          break
-        fi
-      done
-
-      while true; do
-        # Update without prompt if yes forced
-        if [ "$force_yes" = true ] ; then
-          rebuild
-          break;
-          # Otherwise prompt user asking to rebuild
-        else
-          show_banner
-          read -p "Do you wish to rebuild $Dir? [y/n/q]?" answer
-
-          case $answer in
-            [Yy]* ) rebuild
-              break ;;
-
-            [Nn]* ) break ;;
-
-            [qQ]* ) exit ;;
-
-            * ) echo "Enter Y, N or Q, please." ;;
-          esac
-        fi
-      done
-
-      while true; do
-        # Update without prompt if yes forced
-        if [ "$force_yes" = true ] ; then
-          restart
-          break;
-          # Otherwise prompt user asking to restart
-        else
-          show_banner
-          read -p "Do you wish to restart Invidious? [y/n/q]?" answer
-          case $answer in
-            [Yy]* ) restart
-              break ;;
-
-            [Nn]* ) exit ;;
-
-            * ) echo "Enter Y, N or Q, please." ;;
-          esac
-        fi
-      done
-    done
+    case $IN_BRANCH in
+      1)
+        IN_BRANCH=$IN_RELEASE
+        ;;
+      2)
+        IN_BRANCH=$IN_MASTER
+        ;;
+    esac
+    # Let's allow the user to confirm that what they've typed in is correct:
+    echo -e "${GREEN}\n"
+    echo -e "You entered: \n"
+    echo -e "     branch: $IN_BRANCH"
+    echo -e "${NC}"
+    echo ""
+    read -n1 -r -p "Invidious is ready to be updated, press any key to continue..."
+    echo ""
+    echo -e "${GREEN}Pulling Invidious from GitHub${NC}"
+    #sudo -i -u $USER_NAME
+    #cd $USER_DIR || exit 1
+    cd $USER_DIR/invidious || exit 1
+    # Checkout
+    if [[ ! "$IN_BRANCH" = 'master' ]]; then
+      GetRelease
+    fi
+    if [[ ! "$IN_BRANCH" = 'release' ]]; then
+      GetMaster
+    fi
+    rebuild
+    sudo chown -R $USER_NAME:$USER_NAME $USER_DIR/invidious
+    #cd -
+    restart
     exit
     ;;
   3) # Update Script
@@ -819,7 +688,7 @@ case $OPTION in
     ./invidious_update.sh
     exit
     ;;
-  4) # Install Invidious service for systemd
+  4) # Install Invidious service
     if [[ "$EUID" -ne 0 ]]; then
       echo -e "Sorry, you need to run this as root"
       exit 1
@@ -878,7 +747,6 @@ case $OPTION in
     if [[ ! "$answer" = 'n' ]]; then
       # Here's where the user is going to enter the Invidious database name, as it appears in the GUI:
       read -p "Enter database name of your Invidious PostgreSQL database: " psqldb
-
       # Let's allow the user to confirm that what they've typed in is correct:
       echo ""
       echo "You entered: $psqldb"
@@ -1066,7 +934,6 @@ case $OPTION in
     echo ""
     read -n1 -r -p "Invidious is ready to be uninstalled, press any key to continue..."
     echo ""
-
     # Remove PostgreSQL database if user answer is yes
     if [[ "$RM_PostgreSQLDB" = 'y' ]]; then
       # Stop and disable invidious
@@ -1080,7 +947,6 @@ case $OPTION in
         echo -e "${ORANGE}Backup Folder Not Found, adding folder${NC}"
         sudo mkdir -p $PgDbBakPath
       fi
-
       #pg_dump --username=postgres \
         #        --no-password \
         #        --format=c \
@@ -1133,9 +999,8 @@ case $OPTION in
     fi
     # Reload Systemd
     sudo systemctl daemon-reload
-
+    # Remove packages installed during installation
     if [[ "$RM_PACKAGES" = 'y' ]]; then
-      # Remove packages installed during installation
       echo ""
       echo -e "${ORANGE}Removing packages installed during installation."
       echo ""
@@ -1143,21 +1008,18 @@ case $OPTION in
       echo ""
       # postgresql postgresql-9.6 postgresql-client-9.6 postgresql-contrib-9.6 # Dont touch PostgreSQL
       #UNINSTALL_PKGS="apt-transport-https git curl sudo remove crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev imagemagick libsqlite3-dev"
-
       if dpkg -s $UNINSTALL_PKGS >/dev/null 2>&1; then
         for i in $UNINSTALL_PKGS; do
           echo ""
           echo -e "removing packages."
           echo ""
           apt-get remove -y $i
-
         done
       fi
       echo ""
       echo -e "${GREEN}done."
       echo ""
     fi
-
     # Remove conf files
     if [[ "$RM_PURGE" = 'y' ]]; then
       # Removing invidious files and modules files
@@ -1167,10 +1029,8 @@ case $OPTION in
       rm -r \
         /lib/systemd/system/invidious.service \
         /etc/apt/sources.list.d/crystal.list
-
       # postgresql postgresql-9.6 postgresql-client-9.6 postgresql-contrib-9.6 # Don't touch PostgreSQL
       #PURGE_PKGS="apt-transport-https git curl sudo remove crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev imagemagick libsqlite3-dev"
-
       if dpkg -s $UNINSTALL_PKGS >/dev/null 2>&1; then
         for i in $UNINSTALL_PKGS; do
           echo ""
@@ -1188,7 +1048,6 @@ case $OPTION in
       echo -e "${GREEN}done.${NC}"
       echo ""
     fi
-
     if [[ "$RM_FILES" = 'y' ]]; then
       # If directory is present, remove
       if [[ -d $USER_DIR/invidious ]]; then
@@ -1196,7 +1055,6 @@ case $OPTION in
         rm -r $USER_DIR/invidious
       fi
     fi
-
     # Remove user and settings
     if [[ "$RM_USER" = 'y' ]]; then
       # Stop and disable invidious
@@ -1215,12 +1073,10 @@ case $OPTION in
         deluser --remove-home $USER_NAME
       fi
     fi
-
     # We're done !
     echo ""
     echo -e "${GREEN}Un-installation done.${NC}"
     echo ""
-
     exit
     ;;
   8) # Exit
