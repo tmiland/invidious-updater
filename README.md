@@ -5,7 +5,7 @@
                   ####                    Invidious Update.sh                       ####
                   ####            Automatic update script for Invidio.us            ####
                   ####                   Maintained by @tmiland                     ####
-                  ####                       version: 1.1.7                         ####
+                  ####                       version: 1.1.8                         ####
                   ######################################################################
 ```
 
@@ -103,7 +103,8 @@ $ invidious_update
           * Backup will be placed in /home/backup
         * Remove Packages ? [y/n]
         * Purge Package configuration files ? [y/n]
-        * Remove user and files ? [y/n]: <-- ***This is required for reinstalling.***
+        * Remove files ? [y/n]: <-- ***This is required for reinstalling.***
+        * Remove user ? [y/n]: <-- ***This is not required for reinstalling.***
         * Is that correct? [y/n]:
       * Invidious is ready to be uninstalled, press any key to continue...
 
