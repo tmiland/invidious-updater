@@ -11,7 +11,7 @@ SCRIPT_DIR=$(dirname "${sfp}")
 ####            Script to update or install Invidious             ####
 ####                   Maintained by @tmiland                     ####
 ######################################################################
-version='1.1.8'
+version='1.1.9'
 # Colors used for printing
 RED='\033[0;31m'
 BLUE='\033[0;34m'
@@ -54,25 +54,6 @@ else
   echo -e "${RED}This script requires curl or wget.\nProcess aborted${NC}"
   exit 0
 fi
-
-show_progress () {
-  pid=$! # Process Id of the previous running command
-
-  spin[0]="-"
-  spin[1]="\\"
-  spin[2]="|"
-  spin[3]="/"
-
-  echo -n "[working] ${spin[0]}"
-  while [ kill -0 $pid ]
-  do
-    for i in "${spin[@]}"
-    do
-      echo -ne "\b$i"
-      sleep 0.1
-    done
-  done
-}
 
 #########################
 #     File Handling     #
@@ -1031,8 +1012,14 @@ case $OPTION in
     while [[ $RM_PostgreSQLDB !=  "y" && $RM_PostgreSQLDB != "n" ]]; do
       read -p "       Remove PostgreSQL database for Invidious ? [y/n]: " -e RM_PostgreSQLDB
       if [[ ! $RM_PostgreSQLDB !=  "y" ]]; then
-        read -p "       Enter Invidious PostgreSQL database name: " RM_PSQLDB
         echo -e "       ${ORANGE}(( A backup will be placed in $PgDbBakPath ))${NC}"
+        read -p "       Enter Invidious PostgreSQL database name: " RM_PSQLDB
+      fi
+      if [[ ! $RM_PostgreSQLDB !=  "y" ]]; then
+        while [[ $RM_RE_PostgreSQLDB !=  "y" && $RM_RE_PostgreSQLDB != "n" ]]; do
+          echo -e "       ${ORANGE}(( If yes, only data will be dropped ))${NC}"
+          read -p "       Do you intend to reinstall?: " RM_RE_PostgreSQLDB
+        done
       fi
       # Let's allow the user to confirm that what they've typed in is correct:
       #echo "          You entered: database name: $RM_PSQLDB"
@@ -1047,17 +1034,16 @@ case $OPTION in
       done
     fi
     while [[ $RM_FILES !=  "y" && $RM_FILES != "n" ]]; do
-      read -p "       Remove files ? [y/n]: " -e RM_FILES
       echo -e "       ${ORANGE}(( This option will remove $USER_DIR/invidious ))${NC}"
+      read -p "       Remove files ? [y/n]: " -e RM_FILES
       if [[ "$RM_FILES" = 'y' ]]; then
         while [[ $RM_USER !=  "y" && $RM_USER != "n" ]]; do
-          read -p "       Remove user ? [y/n]: " -e RM_USER
           echo -e "       ${ORANGE}(( This option will remove $USER_DIR ))\n"
           echo -e "       (( Not needed for reinstall ))${NC}"
+          read -p "       Remove user ? [y/n]: " -e RM_USER
         done
       fi
     done
-
     # Let's allow the user to confirm that what they've typed in is correct:
     read -p "       Is that correct? [y/n]: " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
     echo ""
@@ -1090,15 +1076,26 @@ case $OPTION in
       sudo -u postgres pg_dump ${RM_PSQLDB} > ${PgDbBakPath}/${RM_PSQLDB}.sql
       sleep 2
       sudo chown -R 1000:1000 "/home/backup"
-      echo ""
-      echo -e "${RED}Dropping Invidious PostgreSQL database${NC}"
-      echo ""
-      sudo -u postgres psql -c "DROP DATABASE $RM_PSQLDB;"
-      echo ""
-      echo -e "${ORANGE}Database dropped and backed up to ${PgDbBakPath}/${RM_PSQLDB}.sql ${NC}"
-      echo ""
-      echo "Removing user kemal"
-      sudo -u postgres psql -c "DROP ROLE IF EXISTS kemal;"
+      if [[ "$RM_RE_PostgreSQLDB" != 'n' ]]; then
+        echo ""
+        echo -e "${RED}Dropping Invidious PostgreSQL data${NC}"
+        echo ""
+        sudo -u postgres psql -c "DROP OWNED BY kemal CASCADE;"
+        echo ""
+        echo -e "${ORANGE}Data dropped and backed up to ${PgDbBakPath}/${RM_PSQLDB}.sql ${NC}"
+        echo ""
+      fi
+      if [[ "$RM_RE_PostgreSQLDB" != 'y' ]]; then
+        echo ""
+        echo -e "${RED}Dropping Invidious PostgreSQL database${NC}"
+        echo ""
+        sudo -u postgres psql -c "DROP DATABASE $RM_PSQLDB;"
+        echo ""
+        echo -e "${ORANGE}Database dropped and backed up to ${PgDbBakPath}/${RM_PSQLDB}.sql ${NC}"
+        echo ""
+        echo "Removing user kemal"
+        sudo -u postgres psql -c "DROP ROLE IF EXISTS kemal;"
+      fi
       #systemctl stop postgresql
       #sleep 1
       #systemctl disable postgresql
@@ -1136,6 +1133,7 @@ case $OPTION in
           echo -e "removing packages."
           echo ""
           apt-get remove -y $i
+          
         done
       fi
       echo ""
@@ -1152,6 +1150,7 @@ case $OPTION in
       rm -r \
         /lib/systemd/system/invidious.service \
         /etc/apt/sources.list.d/crystal.list
+      
       # postgresql postgresql-9.6 postgresql-client-9.6 postgresql-contrib-9.6 # Don't touch PostgreSQL
       #PURGE_PKGS="apt-transport-https git curl sudo remove crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev imagemagick libsqlite3-dev"
 
@@ -1196,8 +1195,7 @@ case $OPTION in
         echo -e "${ORANGE}User $USER_NAME Found, removing user and files${NC}"
         echo ""
         #/usr/sbin/userdel -r $USER_NAME
-        deluser --remove-home $USER_NAME #&&
-        #delgroup $USER_NAME
+        deluser --remove-home $USER_NAME
       fi
     fi
 
