@@ -159,17 +159,20 @@ open_file () { #expects one argument: file_path
 get_updater_version () {
   echo $(sed -n '14 s/[^0-9.]*\([0-9.]*\).*/\1/p' "$1")
 }
-# Update banner
-show_update_banner () {
-  clear
+header () {
   echo -e "${GREEN}\n"
   echo ' ######################################################################'
   echo ' ####                    Invidious Update.sh                       ####'
   echo ' ####            Automatic update script for Invidio.us            ####'
   echo ' ####                   Maintained by @tmiland                     ####'
-  echo ' ####                        version: '${version}'                        ####'
+  echo ' ####                       version: '${version}'                         ####'
   echo ' ######################################################################'
   echo -e "${NC}\n"
+}
+# Update banner
+show_update_banner () {
+  clear
+  header
   echo "Welcome to the Invidious Update.sh script."
   echo ""
   echo "There is a newer version of Invidious Update.sh available."
@@ -239,14 +242,7 @@ update_updater $@
 cd "$CURRDIR"
 show_banner () {
   clear
-  echo -e "${GREEN}\n"
-  echo ' ######################################################################'
-  echo ' ####                    Invidious Update.sh                       ####'
-  echo ' ####            Automatic update script for Invidio.us            ####'
-  echo ' ####                   Maintained by @tmiland                     ####'
-  echo ' ####                        version: '${version}'                        ####'
-  echo ' ######################################################################'
-  echo -e "${NC}\n"
+  header
   echo "Welcome to the Invidious Update.sh script."
   echo ""
   echo "What do you want to do?"
@@ -303,14 +299,7 @@ case $OPTION in
     chk_git_repo
     show_preinstall_banner () {
       clear
-      echo -e "${GREEN}\n"
-      echo ' ######################################################################'
-      echo ' ####                    Invidious Update.sh                       ####'
-      echo ' ####            Automatic update script for Invidio.us            ####'
-      echo ' ####                   Maintained by @tmiland                     ####'
-      echo ' ####                        version: '${version}'                        ####'
-      echo ' ######################################################################'
-      echo -e "${NC}\n"
+      header
       echo "Thank you for using the Invidious Update.sh script."
       echo ""
       echo ""
@@ -642,14 +631,7 @@ case $OPTION in
     fi
     show_install_banner () {
       #clear
-      echo -e "${GREEN}\n"
-      echo ' ######################################################################'
-      echo ' ####                    Invidious Update.sh                       ####'
-      echo ' ####            Automatic update script for Invidio.us            ####'
-      echo ' ####                   Maintained by @tmiland                     ####'
-      echo ' ####                        version: '${version}'                        ####'
-      echo ' ######################################################################'
-      echo -e "${NC}\n"
+      header
       echo "Thank you for using the Invidious Update.sh script."
       echo ""
       echo "Invidious install done. Now visit http://localhost:3000"
@@ -744,7 +726,7 @@ case $OPTION in
         esac
       fi
     }
-
+    header
     echo ""
     echo "Deploy Invidious with Docker."
     echo ""
@@ -930,14 +912,7 @@ case $OPTION in
     fi
     show_systemd_install_banner () {
       #clear
-      echo -e "${GREEN}\n"
-      echo ' ######################################################################'
-      echo ' ####                    Invidious Update.sh                       ####'
-      echo ' ####            Automatic update script for Invidio.us            ####'
-      echo ' ####                   Maintained by @tmiland                     ####'
-      echo ' ####                        version: '${version}'                        ####'
-      echo ' ######################################################################'
-      echo -e "${NC}\n"
+      header
       echo "Thank you for using the Invidious Update.sh script."
       echo ""
       echo "Invidious systemd install done. Now visit http://localhost:3000"
@@ -1004,14 +979,7 @@ case $OPTION in
     fi
     show_maintenance_banner () {
       #clear
-      echo -e "${GREEN}\n"
-      echo ' ######################################################################'
-      echo ' ####                    Invidious Update.sh                       ####'
-      echo ' ####            Automatic update script for Invidio.us            ####'
-      echo ' ####                   Maintained by @tmiland                     ####'
-      echo ' ####                        version: '${version}'                        ####'
-      echo ' ######################################################################'
-      echo -e "${NC}\n"
+      header
       echo "Thank you for using the Invidious Update.sh script."
       echo ""
       echo ""
@@ -1080,14 +1048,7 @@ case $OPTION in
       fi
     fi
     show_migration_banner () {
-      echo -e "${GREEN}\n"
-      echo ' ######################################################################'
-      echo ' ####                    Invidious Update.sh                       ####'
-      echo ' ####            Automatic update script for Invidio.us            ####'
-      echo ' ####                   Maintained by @tmiland                     ####'
-      echo ' ####                        version: '${version}'                        ####'
-      echo ' ######################################################################'
-      echo -e "${NC}\n"
+      header
       echo "Thank you for using the Invidious Update.sh script."
       echo ""
       echo "Invidious migration done. Now visit http://localhost:3000"
