@@ -946,8 +946,17 @@ case $OPTION in
           sudo systemctl stop invidious
           sleep 3
           echo "Running Maintenance on $psqldb"
+          echo "Deleting expired tokens"
           sudo -u postgres psql $psqldb -c "DELETE FROM nonces * WHERE expire < current_timestamp;"
+          sleep 1
+          echo "Truncating videos table."
           sudo -u postgres psql $psqldb -c "TRUNCATE TABLE videos;"
+          sleep 1
+          echo "Vacuuming $psqldb."
+          sudo -u postgres vacuumdb --dbname=$psqldb --analyze --verbose --table 'videos'
+          sleep 1
+          echo "Reindexing $psqldb."
+          sudo -u postgres reindexdb --dbname=$psqldb
           sleep 3
           echo -e "${GREEN}Maintenance on $psqldb done."
           # Restart postgresql
