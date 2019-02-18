@@ -61,12 +61,12 @@ $ invidious_update
    * Select database name: invidious
    * Select database password: invidious
    * Enter the desired domain name: localhost
-   * Are you going to use https only? [true/false]: false
+   * Are you going to use https only? [y/n]: n
      * You entered: 
      * branch: release/master
      * domain: localhost
      * https only: false
-     * name: invidious
+     * dbname: invidious
      * password: invidious
 
    * Choose your Imagemagick version :
