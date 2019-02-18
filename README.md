@@ -133,10 +133,6 @@ $ invidious_update
 [install log Debian 9](https://github.com/tmiland/Invidious-Updater/blob/master/log/install_log_debian.log)
 
 
-## Issues
-
-- [create an issue](https://github.com/tmiland/Invidious-Updater/issues/new)
-
 ## Todo
 
 - [ ] Add Imagemagick (source) to Uninstall options
@@ -177,8 +173,9 @@ $ invidious_update
   * [Git-Repo-Update](https://github.com/KillianKemps/Git-Repo-Update)
   * [ghacks user.js updater.sh](https://github.com/ghacksuserjs/ghacks-user.js/blob/master/updater.sh)
 
-## Feedback and bug reports
-- [create an issue](https://github.com/tmiland/Invidious-Updater/issues/new)
+## Feature request and bug reports
+- [Bug report](https://github.com/tmiland/Invidious-Updater/issues/new?assignees=tmiland&labels=bug&template=bug_report.md&title=Bug report:)
+- [Feature request](https://github.com/tmiland/Invidious-Updater/issues/new?assignees=tmiland&labels=enhancement&template=feature_request.md&title=Feature request:)
 
 ## Donations 
 - [PayPal me](https://paypal.me/milanddata)
