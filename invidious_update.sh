@@ -339,7 +339,7 @@ case $OPTION in
     echo -e "     branch: $IN_BRANCH"
     echo -e "     domain: $domain"
     echo -e " https only: $https_only"
-    echo -e "       name: $psqldb"
+    echo -e "     dbname: $psqldb"
     echo -e "   password: $psqlpass"
     echo -e "${NC}"
     echo ""
