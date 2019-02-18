@@ -5,7 +5,7 @@
                   ####                    Invidious Update.sh                       ####
                   ####            Automatic update script for Invidio.us            ####
                   ####                   Maintained by @tmiland                     ####
-                  ####                       version: 1.2.2                         ####
+                  ####                       version: 1.2.3                         ####
                   ######################################################################
 ```
 
@@ -13,7 +13,7 @@
 
 * Install invidious
 * Update git repo, rebuild and restart service
-* Update the Script
+* Deploy Invidious with Docker
 * Install Invidious service
 * Run database maintenance
 * Run database migration
@@ -89,8 +89,11 @@ $ invidious_update
      * branch: release
    * Invidious is ready to be updated, press any key to continue...
 
-3. ### Update the Script
-   * Downloads and executes the script from this repo with the latest version.
+3. ### Deploy Invidious with Docker
+   * Build and start cluster
+   * Rebuild cluster
+   * Delete data and rebuild
+   * Install Docker CE
 
 4. ### Install Invidious service
    * Setup Systemd Service
@@ -117,8 +120,13 @@ $ invidious_update
    * Exits the script
 
 ## Testing
+
 - [x] Tested extensively on Debian 9
+  - [x] Docker option tested and working
+
 - [x] Tested on Ubuntu 16.04
+  - [x] Docker option tested, not working
+- [ ] Tested on Ubuntu 18.04
 
 #### Latest install log - version: 1.1.6
 
@@ -127,12 +135,11 @@ $ invidious_update
 
 ## Issues
 
-- None (hopefully) ;)
+- [create an issue](https://github.com/tmiland/Invidious-Updater/issues/new)
 
 ## Todo
 
 - [ ] Add Imagemagick (source) to Uninstall options
-- [ ] Add support to deploy in Docker
 
 ## Done
 
@@ -147,11 +154,10 @@ $ invidious_update
    - Added support for Imagemagick 6 and 7, or keep current version.
    - The captcha clock is working with 6 and 7, not with default pkg.
 - [X] Add Deb Packages
-
 - Support for auto-update check
   - [X] For Script - Added in 1.1.7
-  
 - [X] Rewrite the update procedure - Done in 1.2.2
+- [X] Add support to deploy in Docker - Added in 1.2.3
 
 ### Possible options
 - Support for auto-update check
@@ -176,3 +182,5 @@ $ invidious_update
 
 ## Donations 
 - [PayPal me](https://paypal.me/milanddata)
+- [BTC] : 3MV69DmhzCqwUnbryeHrKDQxBaM724iJC2
+- [BCH] : qznnyvpxym7a8he2ps9m6l44s373fecfnv86h2vwq2

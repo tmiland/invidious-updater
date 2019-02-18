@@ -11,7 +11,7 @@ SCRIPT_DIR=$(dirname "${sfp}")
 ####            Script to update or install Invidious             ####
 ####                   Maintained by @tmiland                     ####
 ######################################################################
-version='1.2.2' # Must stay on line 14 for updater to fetch the numbers
+version='1.2.3' # Must stay on line 14 for updater to fetch the numbers
 # Colors used for printing
 RED='\033[0;31m'
 BLUE='\033[0;34m'
@@ -225,7 +225,7 @@ show_banner () {
   echo "What do you want to do?"
   echo "   1) Install Invidious"
   echo "   2) Update Invidious"
-  echo "   3) Update Script"
+  echo "   3) Deploy with Docker"
   echo "   4) Install Invidious service"
   echo "   5) Run Database Maintenance"
   echo "   6) Run Database Migration"
@@ -259,18 +259,21 @@ case $OPTION in
         identify -version
       fi
     }
-    # Check if the folder is a git repo and systemdservice is installed
-    if [[ -d "$USER_DIR/invidious/.git" ]]; then
-      #if (systemctl -q is-active invidious.service) && -d "$USER_DIR/invidious/.git" then
-      echo ""
-      echo -e "${RED}Looks like Invidious is already installed!${NC}"
-      echo ""
-      echo -e "${ORANGE}If you want to reinstall, please choose option 7 to Uninstall Invidious first!${NC}"
-      echo ""
-      sleep 3
-      ./invidious_update.sh
-      exit 1
-    fi
+    chk_git_repo () {
+      # Check if the folder is a git repo
+      if [[ -d "$USER_DIR/invidious/.git" ]]; then
+        #if (systemctl -q is-active invidious.service) && -d "$USER_DIR/invidious/.git" then
+        echo ""
+        echo -e "${RED}Looks like Invidious is already installed!${NC}"
+        echo ""
+        echo -e "${ORANGE}If you want to reinstall, please choose option 7 to Uninstall Invidious first!${NC}"
+        echo ""
+        sleep 3
+        ./invidious_update.sh
+        exit 1
+      fi
+    }
+    chk_git_repo
     show_preinstall_banner () {
       clear
       echo -e "${GREEN}\n"
@@ -587,7 +590,7 @@ case $OPTION in
     ######################
     cd $USER_DIR/invidious || exit 1
     #sudo -i -u invidious \
-    shards
+      shards
     crystal build src/invidious.cr --release
     sudo chown -R $USER_NAME:$USER_NAME $USER_DIR
     ######################
@@ -678,14 +681,196 @@ case $OPTION in
     restart
     exit
     ;;
-  3) # Update Script
-    wget https://github.com/tmiland/Invidious-Updater/raw/master/invidious_update.sh -O invidious_update.sh
-    chmod +x invidious_update.sh
+  3) # Deploy with Docker
+    docker_repo_chk () {
+      # Check if the folder is a git repo
+      if [[ ! -d "$USER_DIR/invidious/.git" ]]; then
+        #if (systemctl -q is-active invidious.service) && -d "$USER_DIR/invidious/.git" then
+        echo ""
+        echo -e "${RED}Looks like Invidious is not installed!${NC}"
+        echo ""
+        read -p "Do you want to download Invidious? [y/n/q]?" answer
+        echo ""
+        case $answer in
+          [Yy]* )
+            echo -e "${GREEN}Seting up Dependencies${NC}"
+            if ! dpkg -s $PRE_INSTALL_PKGS >/dev/null 2>&1; then
+              apt-get update
+              for i in $PRE_INSTALL_PKGS; do
+                apt install -y $i  # || exit 1
+              done
+            fi
+            mkdir -p $USER_DIR
+            cd $USER_DIR || exit 1
+            echo -e "${GREEN}Downloading Invidious from GitHub${NC}"
+            git clone https://github.com/omarroth/invidious
+            sleep 3
+            cd -
+            ./invidious_update.sh
+            ;;
+          [Nn]* )
+            sleep 3
+            cd -
+            ./invidious_update.sh
+            ;;
+          * ) echo "Enter Y, N or Q, please." ;;
+        esac
+      fi
+    }
+
     echo ""
-    echo -e "${GREEN}Update done.${NC}"
+    echo "Deploy Invidious with Docker."
     echo ""
-    sleep 2
-    ./invidious_update.sh
+    echo "What do you want to do?"
+    echo "   1) Build and start cluster:"
+    echo "   2) Rebuild cluster"
+    echo "   3) Delete data and rebuild"
+    echo "   4) Install Docker CE"
+    echo ""
+    while [[ $DOCKER_OPTION !=  "1" && $DOCKER_OPTION != "2" && $DOCKER_OPTION != "3" && $DOCKER_OPTION != "4" ]]; do
+      read -p "Select an option [1-4]: " DOCKER_OPTION
+    done
+    case $DOCKER_OPTION in
+      1) # Build and start cluster
+        while [[ $BUILD_DOCKER !=  "y" && $BUILD_DOCKER != "n" ]]; do
+          read -p "   Build and start cluster? [y/n]: " -e BUILD_DOCKER
+        done
+        docker_repo_chk
+        if dpkg -s docker-ce docker-ce-cli >/dev/null 2>&1; then
+          if [[ $BUILD_DOCKER = "y" ]]; then
+            echo -e "${BLUE}(( Press ctrl+c to exit ))${NC}"
+            cd $USER_DIR/invidious
+            docker-compose up >/dev/null
+            echo -e "${GREEN}Deployment done.${NC}"
+            sleep 5
+            cd -
+            ./invidious_update.sh
+            #exit
+          fi
+          if [[ $BUILD_DOCKER = "n" ]]; then
+            cd -
+            ./invidious_update.sh
+          fi
+        else
+          echo -e "${RED}Docker is not installed, please choose option 4)${NC}"
+        fi
+        exit
+        ;;
+      2) # Rebuild cluster
+        while [[ $REBUILD_DOCKER !=  "y" && $REBUILD_DOCKER != "n" ]]; do
+          read -p "       Rebuild cluster ? [y/n]: " -e REBUILD_DOCKER
+        done
+        docker_repo_chk
+        if dpkg -s docker-ce docker-ce-cli >/dev/null 2>&1; then
+          if [[ $REBUILD_DOCKER = "y" ]]; then
+            cd $USER_DIR/invidious
+            docker-compose build
+            echo -e "${GREEN}Rebuild done.${NC}"
+            sleep 5
+            cd -
+            ./invidious_update.sh
+          fi
+          if [[ $REBUILD_DOCKER = "n" ]]; then
+            cd -
+            ./invidious_update.sh
+          fi
+        else
+          echo -e "${RED}Docker is not installed, please choose option 4)${NC}"
+        fi
+        exit
+        ;;
+      3) # Delete data and rebuild
+        while [[ $DEL_REBUILD_DOCKER !=  "y" && $DEL_REBUILD_DOCKER != "n" ]]; do
+          read -p "       Delete data and rebuild Docker? [y/n]: " -e DEL_REBUILD_DOCKER
+        done
+        docker_repo_chk
+        if dpkg -s docker-ce docker-ce-cli >/dev/null 2>&1; then
+          if [[ $DEL_REBUILD_DOCKER = "y" ]]; then
+            cd $USER_DIR/invidious
+            docker volume rm invidious_postgresdata
+            sleep 5
+            docker-compose build
+            echo -e "${GREEN}Data deleted and Rebuild done.${NC}"
+            sleep 5
+            cd -
+            ./invidious_update.sh
+          fi
+          if [[ $DEL_REBUILD_DOCKER = "n" ]]; then
+            cd -
+            ./invidious_update.sh
+          fi
+        else
+          echo -e "${RED}Docker is not installed, please choose option 4)${NC}"
+        fi
+        exit
+        ;;
+      4) # Install Docker CE
+        echo ""
+        echo "This will install Docker CE."
+        echo ""
+        echo "Do you want to install Docker stable or nightly?"
+        echo "   1) Stable $DOCKER_STABLE_VER"
+        echo "   2) Nightly $DOCKER_NIGHTLY_VER"
+        echo "   2) Test $DOCKER_NIGHTLY_VER"
+        echo ""
+        while [[ $DOCKER_VER != "1" && $DOCKER_VER != "2" && $DOCKER_VER != "3" ]]; do
+          read -p "Select an option [1-3]: " DOCKER_VER
+        done
+        case $DOCKER_VER in
+          1)
+            DOCKER_VER=stable
+            ;;
+          2)
+            DOCKER_VER=nightly
+            ;;
+          3)
+            DOCKER_VER=test
+            ;;
+        esac
+        echo ""
+        read -n1 -r -p "Docker is ready to be installed, press any key to continue..."
+        echo ""
+        # Update the apt package index:
+        sudo apt-get update
+        #Install packages to allow apt to use a repository over HTTPS:
+        sudo apt-get install \
+          apt-transport-https \
+          ca-certificates \
+          curl \
+          gnupg2 \
+          software-properties-common -y
+        # Add Docker’s official GPG key:
+        curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
+        # Verify that you now have the key with the fingerprint 9DC8 5822 9FC7 DD38 854A E2D8 8D81 803C 0EBF CD88, by searching for the last 8 characters of the fingerprint.
+        sudo apt-key fingerprint 0EBFCD88
+
+        sudo add-apt-repository \
+          "deb [arch=amd64] https://download.docker.com/linux/debian \
+            $(lsb_release -cs) \
+          ${DOCKER_VER}"
+        # Update the apt package index:
+        sudo apt-get update
+        # Install the latest version of Docker CE and containerd
+        sudo apt-get install docker-ce docker-ce-cli containerd.io -y
+        # Verify that Docker CE is installed correctly by running the hello-world image.
+        sudo docker run hello-world
+        # We're almost done !
+        echo "Docker Installation done."
+        while [[ $Docker_Compose !=  "y" && $Docker_Compose != "n" ]]; do
+          read -p "       Install Docker Compose ? [y/n]: " -e Docker_Compose
+        done
+        if [[ "$Docker_Compose" = 'y' ]]; then
+          # download the latest version of Docker Compose:
+          sudo curl -L "https://github.com/docker/compose/releases/download/1.23.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          sleep 5
+          # Apply executable permissions to the binary:
+          sudo chmod +x /usr/local/bin/docker-compose
+          # Create a symbolic link to /usr/bin
+          sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+        fi
+        # We're done !
+        echo "Docker Installation done."
+    esac
     exit
     ;;
   4) # Install Invidious service
