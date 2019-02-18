@@ -11,8 +11,8 @@
 
 ## Script to install and update [Invidious](https://github.com/omarroth/invidious)
 
-* Install invidious
-* Update git repo, rebuild and restart service
+* Install Invidious
+* Update Invidious
 * Deploy Invidious with Docker
 * Install Invidious service
 * Run database maintenance
