@@ -950,18 +950,18 @@ case $OPTION in
           sudo -u postgres psql $psqldb -c "TRUNCATE TABLE videos;"
           sleep 3
           echo -e "${GREEN}Maintenance on $psqldb done."
-          # Restart Invidious
-          echo -e "${GREEN}Restarting Invidious..."
-          sudo systemctl restart invidious
-          echo -e "${GREEN}Restarting Invidious done."
-          sudo systemctl status invidious --no-pager
-          sleep 1
           # Restart postgresql
           echo -e "${GREEN}Restarting postgresql..."
           sudo systemctl restart postgresql
           echo -e "${GREEN}Restarting postgresql done."
           sudo systemctl status postgresql --no-pager
           sleep 5
+          # Restart Invidious
+          echo -e "${GREEN}Restarting Invidious..."
+          sudo systemctl restart invidious
+          echo -e "${GREEN}Restarting Invidious done."
+          sudo systemctl status invidious --no-pager
+          sleep 1
         else
           echo -e "${RED}Database Maintenance failed. Is PostgreSQL running?"
           # Try to restart postgresql
