@@ -90,10 +90,11 @@ $ invidious-updater
    * Invidious is ready to be updated, press any key to continue...
 
 3. ### Deploy Invidious with Docker
-   * Build and start cluster
-   * Rebuild cluster
-   * Delete data and rebuild
-   * Install Docker CE
+   * 1) Build and start cluster
+   * 2) Start, Stop or Restart cluster
+   * 3) Rebuild cluster
+   * 4) Delete data and rebuild
+   * 5) Install Docker CE
 
 4. ### Install Invidious service
    * Setup Systemd Service
