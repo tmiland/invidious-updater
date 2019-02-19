@@ -204,7 +204,7 @@ update_updater () {
       echo -e "\n\n"
       if [[ $REPLY =~ ^[Yy]$ ]]; then
         mv "${tmpfile}" "${SCRIPT_DIR}/invidious_update.sh"
-        chmod +x "${SCRIPT_DIR}/invidious_update.sh"
+        sudo chmod u+x "${SCRIPT_DIR}/invidious_update.sh"
         "${SCRIPT_DIR}/invidious_update.sh" "$@" -d
         exit 1 # Update available, user chooses to update
       fi
@@ -241,7 +241,7 @@ fi
 update_updater $@
 cd "$CURRDIR"
 show_banner () {
-  clear
+  #clear
   header
   echo "Welcome to the Invidious Update.sh script."
   echo ""
@@ -709,17 +709,44 @@ case $OPTION in
                 apt install -y $i  # || exit 1
               done
             fi
+            echo ""
+            echo "Do you want to install Invidious release or master?"
+            echo "   1) $IN_RELEASE"
+            echo "   2) $IN_MASTER"
+            echo ""
+            while [[ $IN_BRANCH != "1" && $IN_BRANCH != "2" ]]; do
+              read -p "Select an option [1-2]: " IN_BRANCH
+            done
+            case $IN_BRANCH in
+              1)
+                IN_BRANCH=$IN_RELEASE
+                ;;
+              2)
+                IN_BRANCH=$IN_MASTER
+                ;;
+            esac
             mkdir -p $USER_DIR
-            cd $USER_DIR || exit 1
             echo -e "${GREEN}Downloading Invidious from GitHub${NC}"
+            #sudo -i -u $USER_NAME
+            cd $USER_DIR || exit 1
             git clone https://github.com/omarroth/invidious
-            sleep 3
-            cd -
-            ./invidious_update.sh
+            # Set user permissions (just in case)
+            #sudo chown -R $USER_NAME:$USER_NAME $USER_DIR/invidious
+            #sudo chmod -R 755 $USER_DIR/invidious/config/sql/*.sql
+            cd $USER_DIR/invidious || exit 1
+            # Checkout
+            if [[ ! "$IN_BRANCH" = 'master' ]]; then
+              GetRelease
+            fi
+            if [[ ! "$IN_BRANCH" = 'release' ]]; then
+              GetMaster
+            fi
+            #cd -
+            #./invidious_update.sh
             ;;
           [Nn]* )
             sleep 3
-            cd -
+            cd ${CURRDIR}
             ./invidious_update.sh
             ;;
           * ) echo "Enter Y, N or Q, please." ;;
@@ -731,13 +758,14 @@ case $OPTION in
     echo "Deploy Invidious with Docker."
     echo ""
     echo "What do you want to do?"
-    echo "   1) Build and start cluster:"
-    echo "   2) Rebuild cluster"
-    echo "   3) Delete data and rebuild"
-    echo "   4) Install Docker CE"
+    echo "   1) Build and start cluster"
+    echo "   2) Start, Stop or Restart cluster"
+    echo "   3) Rebuild cluster"
+    echo "   4) Delete data and rebuild"
+    echo "   5) Install Docker CE"
     echo ""
     while [[ $DOCKER_OPTION !=  "1" && $DOCKER_OPTION != "2" && $DOCKER_OPTION != "3" && $DOCKER_OPTION != "4" ]]; do
-      read -p "Select an option [1-4]: " DOCKER_OPTION
+      read -p "Select an option [1-5]: " DOCKER_OPTION
     done
     case $DOCKER_OPTION in
       1) # Build and start cluster
@@ -747,17 +775,16 @@ case $OPTION in
         docker_repo_chk
         if dpkg -s docker-ce docker-ce-cli >/dev/null 2>&1; then
           if [[ $BUILD_DOCKER = "y" ]]; then
-            echo -e "${BLUE}(( Press ctrl+c to exit ))${NC}"
             cd $USER_DIR/invidious
-            docker-compose up >/dev/null
+            docker-compose up -d
             echo -e "${GREEN}Deployment done.${NC}"
             sleep 5
-            cd -
+            cd ${CURRDIR}
             ./invidious_update.sh
-            #exit
+            #exit 0
           fi
           if [[ $BUILD_DOCKER = "n" ]]; then
-            cd -
+            cd ${CURRDIR}
             ./invidious_update.sh
           fi
         else
@@ -765,7 +792,37 @@ case $OPTION in
         fi
         exit
         ;;
-      2) # Rebuild cluster
+      2) # Start, Stop or Restart Invidious
+        echo ""
+        echo "Do you want to start, stop or restart Docker?"
+        echo "   1) Start"
+        echo "   2) Stop"
+        echo "   3) Restart"
+        echo ""
+        while [[ $DOCKER_SERVICE != "1" && $DOCKER_SERVICE != "2" && $DOCKER_SERVICE != "3" ]]; do
+          read -p "Select an option [1-3]: " DOCKER_SERVICE
+        done
+        case $DOCKER_SERVICE in
+          1)
+            DOCKER_SERVICE=start
+            ;;
+          2)
+            DOCKER_SERVICE=stop
+            ;;
+          3)
+            DOCKER_SERVICE=restart
+            ;;
+        esac
+        while true; do
+          cd $USER_DIR/invidious
+          docker-compose ${DOCKER_SERVICE}
+          sleep 5
+          cd ${CURRDIR}
+          ./invidious_update.sh
+        done
+        exit
+        ;;
+      3) # Rebuild cluster
         while [[ $REBUILD_DOCKER !=  "y" && $REBUILD_DOCKER != "n" ]]; do
           read -p "       Rebuild cluster ? [y/n]: " -e REBUILD_DOCKER
         done
@@ -776,11 +833,11 @@ case $OPTION in
             docker-compose build
             echo -e "${GREEN}Rebuild done.${NC}"
             sleep 5
-            cd -
+            cd ${CURRDIR}
             ./invidious_update.sh
           fi
           if [[ $REBUILD_DOCKER = "n" ]]; then
-            cd -
+            cd ${CURRDIR}
             ./invidious_update.sh
           fi
         else
@@ -788,7 +845,7 @@ case $OPTION in
         fi
         exit
         ;;
-      3) # Delete data and rebuild
+      4) # Delete data and rebuild
         while [[ $DEL_REBUILD_DOCKER !=  "y" && $DEL_REBUILD_DOCKER != "n" ]]; do
           read -p "       Delete data and rebuild Docker? [y/n]: " -e DEL_REBUILD_DOCKER
         done
@@ -796,16 +853,17 @@ case $OPTION in
         if dpkg -s docker-ce docker-ce-cli >/dev/null 2>&1; then
           if [[ $DEL_REBUILD_DOCKER = "y" ]]; then
             cd $USER_DIR/invidious
+            docker-compose down
             docker volume rm invidious_postgresdata
             sleep 5
             docker-compose build
             echo -e "${GREEN}Data deleted and Rebuild done.${NC}"
             sleep 5
-            cd -
+            cd ${CURRDIR}
             ./invidious_update.sh
           fi
           if [[ $DEL_REBUILD_DOCKER = "n" ]]; then
-            cd -
+            cd ${CURRDIR}
             ./invidious_update.sh
           fi
         else
@@ -813,7 +871,7 @@ case $OPTION in
         fi
         exit
         ;;
-      4) # Install Docker CE
+      5) # Install Docker CE
         echo ""
         echo "This will install Docker CE."
         echo ""
@@ -1225,7 +1283,7 @@ case $OPTION in
       echo -e "cleaning up."
       echo ""
       apt-get clean
-      apt-get autoremove
+      apt-get autoremove -y
       echo ""
       echo -e "${GREEN}done.${NC}"
       echo ""
