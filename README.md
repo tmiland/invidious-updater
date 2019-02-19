@@ -43,8 +43,8 @@ $ ./invidious_update.sh
 ```
 #### Optionally
  ```bash
-$ ln -s /home/invidious/Invidious-Updater/invidious_update.sh /usr/bin/invidious_update
-$ invidious_update
+$ ln -s /home/invidious/Invidious-Updater/invidious_update.sh /usr/bin/invidious-updater
+$ invidious-updater
 ```
 ## Usage
 
