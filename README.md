@@ -1,12 +1,12 @@
 # Invidious-Updater (And Installer)
 
 ```
-                  ######################################################################
-                  ####                    Invidious Update.sh                       ####
-                  ####            Automatic update script for Invidio.us            ####
-                  ####                   Maintained by @tmiland                     ####
-                  ####                       version: 1.2.3                         ####
-                  ######################################################################
+                  ╔═══════════════════════════════════════════════════════════════════╗
+                  ║                        Invidious Update.sh                        ║
+                  ║               Automatic update script for Invidio.us              ║
+                  ║                      Maintained by @tmiland                       ║
+                  ║                          version: 1.2.4                           ║
+                  ╚═══════════════════════════════════════════════════════════════════╝
 ```
 
 ## Script to install and update [Invidious](https://github.com/omarroth/invidious)
@@ -20,8 +20,12 @@
 * Uninstall Invidious
 
 
-## Screenshot
+## Screenshots
 ![screenshot](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Screenshot%20at%2015-12-31.png)
+
+| Debian | CentOS |
+| ------ | ------ |
+| [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Screenshot%20from%202019-02-20%2017-14-20.png" height="180" width="320">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Screenshot%20from%202019-02-20%2017-14-20.png) | [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Screenshot%20from%202019-02-20%2017-09-25.png" height="180" width="320">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Screenshot%20from%202019-02-20%2017-09-25.png) |
 
 ## Installation
 
@@ -128,6 +132,8 @@ $ invidious-updater
 - [x] Tested on Ubuntu 16.04
   - [x] Docker option tested, not working
 - [ ] Tested on Ubuntu 18.04
+- [X] Tested on CentOS 7
+  - [ ] Docker option not yet implemented
 
 #### Latest install log - version: 1.1.6
 
@@ -155,6 +161,7 @@ $ invidious-updater
   - [X] For Script - Added in 1.1.7
 - [X] Rewrite the update procedure - Done in 1.2.2
 - [X] Add support to deploy in Docker - Added in 1.2.3
+- [X] Added support for CentOS 7 - 1.2.4 (Docker option not supported yet)
 
 ### Possible options
 - Support for auto-update check
@@ -166,6 +173,8 @@ $ invidious-updater
 ## Compatibility and Requirements
 * Debian 8 and later
 * Ubuntu 16.04 and later
+* CentOS 7
+  * Requirements: `yum install redhat-lsb` 
 
 ## Credits
 - Code is mixed and and customized from these sources:
