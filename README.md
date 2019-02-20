@@ -21,7 +21,7 @@
 
 
 ## Screenshots
-![screenshot](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Screenshot%20at%2015-12-31.png)
+![screenshot](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Screenshot%20at%2018-10-05.png)
 
 | Debian | CentOS |
 | ------ | ------ |
