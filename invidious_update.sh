@@ -11,7 +11,7 @@ SCRIPT_DIR=$(dirname "${sfp}")
 ####            Script to update or install Invidious             ####
 ####                   Maintained by @tmiland                     ####
 ######################################################################
-version='1.2.3' # Must stay on line 14 for updater to fetch the numbers
+version='1.2.4' # Must stay on line 14 for updater to fetch the numbers
 
 #------------------------------------------------------------------------------------#
 #                                                                                    #
@@ -59,20 +59,111 @@ IN_MASTER=master
 IN_RELEASE=release
 # Service name
 SERVICE_NAME=invidious.service
-# ImageMagick package name
-IMAGICKPKG=imagemagick
-# Pre-install packages
-PRE_INSTALL_PKGS="apt-transport-https git curl sudo"
-# Install packages
-INSTALL_PKGS="crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev postgresql libsqlite3-dev"
-#Uninstall packages
-UNINSTALL_PKGS="crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev libsqlite3-dev"
-# Build-dep packages
-BUILD_DEP_PKGS="build-essential ca-certificates wget libpcre3 libpcre3-dev autoconf unzip automake libtool tar zlib1g-dev uuid-dev lsb-release make"
 # ImageMagick 6 version
-IMAGICK_VER=6.9.10-27
+IMAGICK_VER=6.9.10-28
 # ImageMagick 7 version
-IMAGICK_SEVEN_VER=7.0.8-27
+IMAGICK_SEVEN_VER=7.0.8-28
+# Distro support
+SUDO=""
+UPDATE=""
+INSTALL=""
+UNINSTALL=""
+PURGE=""
+CLEAN=""
+PKGCHK=""
+if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
+  # ImageMagick package name
+  IMAGICKPKG=imagemagick
+  SUDO="sudo"
+  UPDATE="apt-get update"
+  INSTALL="apt-get install -y"
+  UNINSTALL="apt-get remove -y"
+  PURGE="apt-get purge -y"
+  CLEAN="apt-get clean && apt-get autoremove -y"
+  PKGCHK="dpkg -s"
+  # Pre-install packages
+  PRE_INSTALL_PKGS="apt-transport-https git curl sudo"
+  # Install packages
+  INSTALL_PKGS="crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev postgresql libsqlite3-dev"
+  #Uninstall packages
+  UNINSTALL_PKGS="crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev libsqlite3-dev"
+  # Build-dep packages
+  BUILD_DEP_PKGS="build-essential ca-certificates wget libpcre3 libpcre3-dev autoconf unzip automake libtool tar zlib1g-dev uuid-dev lsb-release make"
+  # PostgreSQL Service
+  PGSQL_SERVICE="postgresql"
+elif [[ $(lsb_release -si) == "CentOS" ]]; then
+  #elif [[ $(cat /etc/*release | grep ^NAME | grep "CentOS") ]]; then
+  # ImageMagick package name
+  IMAGICKPKG=ImageMagick
+  SUDO="sudo"
+  UPDATE="yum update"
+  INSTALL="yum install -y"
+  UNINSTALL="yum remove -y"
+  PURGE="yum purge -y"
+  CLEAN="yum clean all -y"
+  PKGCHK="rpm --quiet --query"
+  # Pre-install packages
+  PRE_INSTALL_PKGS="epel-release git curl sudo"
+  # Install packages
+  INSTALL_PKGS="crystal openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-devel sqlite-devel"
+  #Uninstall packages
+  UNINSTALL_PKGS="crystal openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-devel sqlite-devel"
+  # Build-dep packages
+  BUILD_DEP_PKGS="ImageMagick-devel"
+  # PostgreSQL Service
+  PGSQL_SERVICE="postgresql-11"
+  #elif [[ $(lsb_release -si) == "Darwin" ]]; then
+  #SUDO="sudo"
+  #UPDATE="brew update"
+  #INSTALL="brew install -y"
+  #UNINSTALL="brew remove -y"
+  #PURGE="brew purge -y"
+  #CLEAN="brew clean && brew autoremove -y"
+  #PKGCHK=""
+  #elif [[ $(lsb_release -si) == "Arch" ]]; then
+  #SUDO="sudo"
+  #UPDATE="pacman -Syu"
+  #INSTALL="pacman -S"
+  #UNINSTALL="pacman -R"
+  #PURGE="pacman -Rs"
+  #CLEAN="pacman -Sc"
+  #PKGCHK="pacman -Qi"
+else
+  echo -e "${RED}Error: Sorry, your OS is not supported.${NC}"
+  exit 1;
+fi
+header () {
+  echo -e "${GREEN}\n"
+  echo ' ╔═══════════════════════════════════════════════════════════════════╗'
+  echo ' ║                        Invidious Update.sh                        ║'
+  echo ' ║               Automatic update script for Invidio.us              ║'
+  echo ' ║                      Maintained by @tmiland                       ║'
+  echo ' ║                          version: '${version}'                           ║'
+  echo ' ╚═══════════════════════════════════════════════════════════════════╝'
+  echo -e "${NC}"
+}
+# Get Crystal
+function get_crystal () {
+  if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
+    if [[ ! -e /etc/apt/sources.list.d/crystal.list ]]; then
+      #apt-key adv --keyserver keys.gnupg.net --recv-keys 09617FD37CC06B54
+      curl -sL "https://keybase.io/crystal/pgp_keys.asc" | ${SUDO} apt-key add -
+      echo "deb https://dist.crystal-lang.org/apt crystal main" | ${SUDO} tee /etc/apt/sources.list.d/crystal.list
+    fi
+  elif [[ $(lsb_release -si) == "CentOS" ]]; then
+    if [[ ! -e /etc/yum.repos.d/crystal.repo ]]; then
+      curl https://dist.crystal-lang.org/rpm/setup.sh | ${SUDO} bash
+      #rpm --import https://dist.crystal-lang.org/rpm/RPM-GPG-KEY
+    fi
+  elif [[ $(lsb_release -si) == "Darwin" ]]; then
+    exit 1;
+  elif [[ $(lsb_release -si) == "Arch" ]]; then
+    exit 1;
+  else
+    echo -e "${RED}Error: Sorry, your OS is not supported.${NC}"
+    exit 1;
+  fi
+}
 # Checkout Master branch
 function GetMaster {
   master=$(git rev-list --max-count=1 --abbrev-commit HEAD)
@@ -107,9 +198,9 @@ function rebuild {
 # Restart Invidious
 function restart {
   printf "\n-- restarting Invidious\n"
-  sudo systemctl restart $SERVICE_NAME
+  ${SUDO} systemctl restart $SERVICE_NAME
   sleep 2
-  sudo systemctl status $SERVICE_NAME --no-pager
+  ${SUDO} systemctl status $SERVICE_NAME --no-pager
   printf "\n"
   echo -e "${GREEN} Invidious has been restarted ${NC}"
   sleep 3
@@ -151,23 +242,13 @@ open_file () { #expects one argument: file_path
     echo -e "${RED}Error: Sorry, opening files is not supported for your OS.${NC}"
   fi
 }
-################################################
-## Update invidious_update.sh                 ##
-## ghacks-user.js updater for macOS and Linux ##
-################################################
-# Returns the version number of a invidious_update.sh file on line 14
+########################################################
+## Update invidious_update.sh                         ##
+## Source: ghacks-user.js updater for macOS and Linux ##
+########################################################
+# Returns the version number of invidious_update.sh file on line 14
 get_updater_version () {
   echo $(sed -n '14 s/[^0-9.]*\([0-9.]*\).*/\1/p' "$1")
-}
-header () {
-  echo -e "${GREEN}\n"
-  echo ' ######################################################################'
-  echo ' ####                    Invidious Update.sh                       ####'
-  echo ' ####            Automatic update script for Invidio.us            ####'
-  echo ' ####                   Maintained by @tmiland                     ####'
-  echo ' ####                       version: '${version}'                         ####'
-  echo ' ######################################################################'
-  echo -e "${NC}\n"
 }
 # Update banner
 show_update_banner () {
@@ -189,9 +270,9 @@ show_update_banner () {
 # Update invidious_update.sh
 # Default: Check for update, if available, ask user if they want to execute it
 update_updater () {
-  if [ $UPDATE = 'no' ]; then
-    return 0 # User signified not to check for updates
-  fi
+  #if [ $UPDATE = 'no' ]; then
+  #  return 0 # User signified not to check for updates
+  #fi
   # Get tmpfile from github
   declare -r tmpfile=$(download_file 'https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/invidious_update.sh')
   # Do the work
@@ -204,7 +285,7 @@ update_updater () {
       echo -e "\n\n"
       if [[ $REPLY =~ ^[Yy]$ ]]; then
         mv "${tmpfile}" "${SCRIPT_DIR}/invidious_update.sh"
-        sudo chmod u+x "${SCRIPT_DIR}/invidious_update.sh"
+        ${SUDO} chmod u+x "${SCRIPT_DIR}/invidious_update.sh"
         "${SCRIPT_DIR}/invidious_update.sh" "$@" -d
         exit 1 # Update available, user chooses to update
       fi
@@ -269,18 +350,24 @@ case $OPTION in
       exit 1
     fi
     # Check if Debian/Ubuntu
-    if [[ ! $(lsb_release -si) == "Debian" && ! $(lsb_release -si) == "Ubuntu" ]]
-    then
-      echo -e "${RED}Sorry, This script only runs on Debian/Ubuntu${NC}"
-      exit 1
-    fi
+    #if [[ ! $(lsb_release -si) == "Debian" && ! $(lsb_release -si) == "Ubuntu" ]]
+    #then
+    #  echo -e "${RED}Sorry, This script only runs on Debian/Ubuntu${NC}"
+    #  exit 1
+    #fi
     # Check which ImageMagick version is installed
     function chk_imagickpkg {
-      if ! dpkg -s $IMAGICKPKG >/dev/null 2>&1; then
+
+      if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
         apt -qq list $IMAGICKPKG
-      else
+      elif [[ $(lsb_release -si) == "CentOS" ]]; then
         identify -version
+      else
+        echo -e "${RED}Error: Sorry, your OS is not supported.${NC}"
+        exit 1;
       fi
+      #if ! ${PKGCHK} $IMAGICKPKG >/dev/null 2>&1; then
+      #fi
     }
     chk_git_repo () {
       # Check if the folder is a git repo
@@ -383,23 +470,24 @@ case $OPTION in
     ######################
     # Setup Dependencies
     ######################
-    if ! dpkg -s $PRE_INSTALL_PKGS >/dev/null 2>&1; then
-      apt-get update
+    if ! ${PKGCHK} $PRE_INSTALL_PKGS >/dev/null 2>&1; then
+      ${UPDATE}
       for i in $PRE_INSTALL_PKGS; do
-        apt install -y $i  # || exit 1
+        ${INSTALL} $i  # || exit 1
       done
     fi
-    if [[ ! -e /etc/apt/sources.list.d/crystal.list ]]; then
-      #apt-key adv --keyserver keys.gnupg.net --recv-keys 09617FD37CC06B54
-      curl -sL "https://keybase.io/crystal/pgp_keys.asc" | sudo apt-key add -
-      echo "deb https://dist.crystal-lang.org/apt crystal main" | sudo tee /etc/apt/sources.list.d/crystal.list
-    fi
+    get_crystal
+    #if [[ ! -e /etc/apt/sources.list.d/crystal.list ]]; then
+    #apt-key adv --keyserver keys.gnupg.net --recv-keys 09617FD37CC06B54
+    #curl -sL "https://keybase.io/crystal/pgp_keys.asc" | ${SUDO} apt-key add -
+    #echo "deb https://dist.crystal-lang.org/apt crystal main" | ${SUDO} tee /etc/apt/sources.list.d/crystal.list
+    #fi
     # || exit 1 # postgresql-9.6 postgresql-client-9.6 postgresql-contrib-9.6 # Don't touch PostgreSQL
     #INSTALL_PKGS="crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev postgresql imagemagick libsqlite3-dev"
-    if ! dpkg -s $INSTALL_PKGS >/dev/null 2>&1; then
-      sudo apt-get update
+    if ! ${PKGCHK} $INSTALL_PKGS >/dev/null 2>&1; then
+      ${SUDO} ${UPDATE}
       for i in $INSTALL_PKGS; do
-        sudo apt install -y $i  # || exit 1 #--allow-unauthenticated
+        ${SUDO} ${INSTALL} $i  # || exit 1 #--allow-unauthenticated
       done
     fi
     #################
@@ -407,14 +495,20 @@ case $OPTION in
     ################
     if [[ "$IMAGEMAGICK" = 'y' ]]; then
 
-      if ! dpkg -s $BUILD_DEP_PKGS >/dev/null 2>&1; then
+      if ! ${PKGCHK} $BUILD_DEP_PKGS >/dev/null 2>&1; then
         for i in $BUILD_DEP_PKGS; do
-          apt install -y $i  # || exit 1
+          ${INSTALL} $i  # || exit 1
         done
       fi
-      sudo apt purge imagemagick -y
-      sudo apt autoremove
-
+      if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
+        ${SUDO} ${PURGE} imagemagick
+        ${SUDO} ${CLEAN}
+      elif [[ $(lsb_release -si) == "CentOS" ]]; then
+        ${SUDO} yum groupinstall "Development Tools"
+      else
+        echo -e "${RED}Error: Sorry, your OS is not supported.${NC}"
+        exit 1;
+      fi
       cd /tmp || exit 1
       wget https://github.com/ImageMagick/ImageMagick6/archive/${IMAGICK_VER}.tar.gz
       tar -xvf ${IMAGICK_VER}.tar.gz
@@ -424,9 +518,9 @@ case $OPTION in
         --with-rsvg
 
       make
-      sudo make install
+      ${SUDO} make install
 
-      sudo ldconfig /usr/local/lib
+      ${SUDO} ldconfig /usr/local/lib
 
       identify -version
       sleep 5
@@ -443,13 +537,20 @@ case $OPTION in
     # ImageMagick 7
     ################
     if [[ "$IMAGEMAGICK_SEVEN" = 'y' ]]; then
-      if ! dpkg -s $BUILD_DEP_PKGS >/dev/null 2>&1; then
+      if ! ${PKGCHK} $BUILD_DEP_PKGS >/dev/null 2>&1; then
         for i in $BUILD_DEP_PKGS; do
-          apt install -y $i
+          ${INSTALL} $i
         done
       fi
-      sudo apt purge imagemagick -y
-      sudo apt autoremove
+      if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
+        ${SUDO} ${PURGE} imagemagick
+        ${SUDO} ${CLEAN}
+      elif [[ $(lsb_release -si) == "CentOS" ]]; then
+        ${SUDO} yum groupinstall "Development Tools"
+      else
+        echo -e "${RED}Error: Sorry, your OS is not supported.${NC}"
+        exit 1;
+      fi
 
       cd /tmp || exit 1
       wget https://www.imagemagick.org/download/ImageMagick-${IMAGICK_SEVEN_VER}.tar.gz
@@ -462,9 +563,9 @@ case $OPTION in
         #EXEC-PREFIX     = /usr/local
 
       make
-      sudo make install
+      ${SUDO} make install
 
-      sudo ldconfig /usr/local/lib
+      ${SUDO} ldconfig /usr/local/lib
 
       identify -version
       sleep 5
@@ -474,7 +575,16 @@ case $OPTION in
     fi
 
     if [[ $IMAGEMAGICK_SEVEN != "y" && $IMAGEMAGICK != "y" ]]; then
-      sudo apt install -y imagemagick
+      if ! ${PKGCHK} $BUILD_DEP_PKGS >/dev/null 2>&1; then
+        if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
+          ${SUDO} ${INSTALL} imagemagick
+        elif [[ $(lsb_release -si) == "CentOS" ]]; then
+          ${SUDO} ${INSTALL} ImageMagick
+        else
+          echo -e "${RED}Error: Sorry, your OS is not supported.${NC}"
+          exit 1;
+        fi
+      fi
     fi
     ######################
     # Add user postgres if not already present
@@ -496,7 +606,7 @@ case $OPTION in
     if [ ! $? -eq 0 ] ; then
       echo -e "${ORANGE}User $USER_NAME Not Found, adding user${NC}"
       #/usr/sbin/useradd -m $USER_NAME
-      sudo useradd -m $USER_NAME
+      ${SUDO} useradd -m $USER_NAME
     fi
     # If directory is not created
     if [[ ! -d $USER_DIR ]]; then
@@ -508,10 +618,13 @@ case $OPTION in
     echo -e "${GREEN}Downloading Invidious from GitHub${NC}"
     #sudo -i -u $USER_NAME
     cd $USER_DIR || exit 1
-    git clone https://github.com/omarroth/invidious
+    sudo -i -u invidious \
+      git clone https://github.com/omarroth/invidious
     # Set user permissions (just in case)
-    sudo chown -R $USER_NAME:$USER_NAME $USER_DIR/invidious
-    sudo chmod -R 755 $USER_DIR/invidious/config/sql/*.sql
+    #if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
+    #${SUDO} chown -R $USER_NAME:$USER_NAME $USER_DIR
+    #${SUDO} chmod -R 755 $USER_DIR
+    #fi
     cd $USER_DIR/invidious || exit 1
     # Checkout
     if [[ ! "$IN_BRANCH" = 'master' ]]; then
@@ -522,9 +635,38 @@ case $OPTION in
     fi
     cd -
     #fi
-    systemctl enable postgresql
+    if [[ $(lsb_release -si) == "CentOS" ]]; then
+      ${SUDO} ${INSTALL} https://download.postgresql.org/pub/repos/yum/11/redhat/rhel-7-x86_64/pgdg-centos11-11-2.noarch.rpm
+      ${SUDO} ${INSTALL} postgresql11-server postgresql11
+      ${SUDO} /usr/pgsql-11/bin/postgresql-11-setup initdb
+      ${SUDO} chmod 775 /var/lib/pgsql/11/data/postgresql.conf
+      ${SUDO} chmod 775 /var/lib/pgsql/11/data/pg_hba.conf
+      sleep 1
+      ${SUDO} sed -i "s/#port = 5432/port = 5432/g" /var/lib/pgsql/11/data/postgresql.conf
+      cp -rp /var/lib/pgsql/11/data/pg_hba.conf /var/lib/pgsql/11/data/pg_hba.conf.bak
+      echo "
+      # Database administrative login by Unix domain socket
+      local   all             postgres                                peer
+
+      # TYPE  DATABASE        USER            ADDRESS                 METHOD
+
+      # local is for Unix domain socket connections only
+      local   all             all                                     peer
+      # IPv4 local connections:
+      host    all             all             127.0.0.1/32            md5
+      # IPv6 local connections:
+      host    all             all             ::1/128                 md5
+      # Allow replication connections from localhost, by a user with the
+      # replication privilege.
+      local   replication     all                                     peer
+      host    replication     all             127.0.0.1/32            md5
+      host    replication     all             ::1/128                 md5" | ${SUDO} tee /var/lib/pgsql/11/data/pg_hba.conf
+      ${SUDO} chmod 600 /var/lib/pgsql/11/data/postgresql.conf
+      ${SUDO} chmod 600 /var/lib/pgsql/11/data/pg_hba.conf
+    fi
+    systemctl enable ${PGSQL_SERVICE}
     sleep 1
-    systemctl start postgresql
+    systemctl restart ${PGSQL_SERVICE}
     sleep 1
     # Create users and set privileges
     #echo "Creating user postgres with no password"
@@ -532,34 +674,34 @@ case $OPTION in
     #echo "Grant all on database postgres to user postgres"
     #sudo -u postgres psql -c "GRANT ALL ON DATABASE postgres TO postgres;"
     echo "Creating user kemal with password $psqlpass"
-    sudo -u postgres psql -c "CREATE USER kemal WITH PASSWORD '$psqlpass';"
+    ${SUDO} -u postgres psql -c "CREATE USER kemal WITH PASSWORD '$psqlpass';"
     #echo "Creating user $psqluser with password $psqlpass"
     #sudo -u postgres psql -c "CREATE USER $psqluser WITH PASSWORD '$psqlpass';"
     #echo "Creating user $USER_NAME with password $psqlpass"
     #sudo -u postgres psql -c "CREATE USER $USER_NAME WITH PASSWORD '$psqlpass';"
     echo "Creating database $psqldb with owner kemal"
-    sudo -u postgres psql -c "CREATE DATABASE $psqldb WITH OWNER kemal;"
+    ${SUDO} -u postgres psql -c "CREATE DATABASE $psqldb WITH OWNER kemal;"
     echo "Grant all on database $psqldb to user kemal"
-    sudo -u postgres psql -c "GRANT ALL ON DATABASE $psqldb TO kemal;"
+    ${SUDO} -u postgres psql -c "GRANT ALL ON DATABASE $psqldb TO kemal;"
     #echo "Grant all on database $psqldb to user $psqluser"
     #sudo -u postgres psql -c "GRANT ALL ON DATABASE $psqldb TO $psqluser;"
     #echo "Grant all on database $psqldb to user $USER_NAME"
     #sudo -u postgres psql -c "GRANT ALL ON DATABASE $psqldb TO $USER_NAME;"
     # Import db files
     echo "Running channels.sql"
-    sudo -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/channels.sql
+    ${SUDO} -i -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/channels.sql
     echo "Running videos.sql"
-    sudo -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/videos.sql
+    ${SUDO} -i -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/videos.sql
     echo "Running channel_videos.sql"
-    sudo -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/channel_videos.sql
+    ${SUDO} -i -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/channel_videos.sql
     echo "Running users.sql"
-    sudo -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/users.sql
+    ${SUDO} -i -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/users.sql
     if [[ -e $USER_DIR/invidious/config/sql/session_ids.sql ]]; then
       echo "Running session_ids.sql"
-      sudo -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/session_ids.sql
+      ${SUDO} -i -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/session_ids.sql
     fi
     echo "Running nonces.sql"
-    sudo -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/nonces.sql
+    ${SUDO} -i -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/nonces.sql
     echo "Finished Database section"
     ######################
     # Update config.yml with new info from user input
@@ -604,26 +746,35 @@ case $OPTION in
     # Done updating config.yml with new info!
     # Source: https://www.cyberciti.biz/faq/unix-linux-replace-string-words-in-many-files/
     ######################
+    # Crystal complaining about permissions on CentOS and somewhat Debian
+    # So before we build, make sure permissions are set.
+    ${SUDO} chown -R $USER_NAME:$USER_NAME $USER_DIR
+    ${SUDO} chmod -R 755 $USER_DIR
+    ${SUDO} chmod 644 $USER_DIR/invidious/config/config.yml
+    ######################
     cd $USER_DIR/invidious || exit 1
     #sudo -i -u invidious \
       shards
     crystal build src/invidious.cr --release
-    sudo chown -R $USER_NAME:$USER_NAME $USER_DIR
+    # Not figured out why yet, so let's set permissions after as well...
+    ${SUDO} chown -R $USER_NAME:$USER_NAME $USER_DIR
+    ${SUDO} chmod -R 755 $USER_DIR
+    ${SUDO} chmod 644 $USER_DIR/invidious/config/config.yml
     ######################
     # Setup Systemd Service
     ######################
-    cp $USER_DIR/invidious/invidious.service /lib/systemd/system/invidious.service
+    cp $USER_DIR/invidious/${SERVICE_NAME} /lib/systemd/system/${SERVICE_NAME}
     #wget https://github.com/omarroth/invidious/raw/master/invidious.service
     # Enable invidious start at boot
-    sudo systemctl enable invidious
+    ${SUDO} systemctl enable ${SERVICE_NAME}
     # Reload Systemd
-    sudo systemctl daemon-reload
+    ${SUDO} systemctl daemon-reload
     # Restart Invidious
-    sudo systemctl start invidious
-    if ( systemctl -q is-active invidious.service)
+    ${SUDO} systemctl start ${SERVICE_NAME}
+    if ( systemctl -q is-active ${SERVICE_NAME})
     then
       echo -e "${GREEN}Invidious service has been successfully installed!${NC}"
-      sudo systemctl status invidious --no-pager
+      ${SUDO} systemctl status ${SERVICE_NAME} --no-pager
       sleep 5
     else
       echo -e "${RED}Invidious service installation failed...${NC}"
@@ -685,12 +836,22 @@ case $OPTION in
       GetMaster
     fi
     rebuild
-    sudo chown -R $USER_NAME:$USER_NAME $USER_DIR/invidious
+    ${SUDO} chown -R $USER_NAME:$USER_NAME $USER_DIR/invidious
     #cd -
     restart
     exit
     ;;
   3) # Deploy with Docker
+    #if [[ $(lsb_release -si) == "CentOS" ]]; then
+    #  echo -e "${RED}DOCKER OPTION NOT SUPPORTED FOR CENTOS YET!${NC}"
+    #  exit 1;
+    #fi
+    # Check if not Debian/Ubuntu
+    if [[ ! $(lsb_release -si) == "Debian" && ! $(lsb_release -si) == "Ubuntu" ]]
+    then
+      echo -e "${RED}SORRY, DOCKER OPTION NOT SUPPORTED FOR YOUR OS YET!${NC}"
+      exit 1
+    fi
     docker_repo_chk () {
       # Check if the folder is a git repo
       if [[ ! -d "$USER_DIR/invidious/.git" ]]; then
@@ -703,10 +864,10 @@ case $OPTION in
         case $answer in
           [Yy]* )
             echo -e "${GREEN}Seting up Dependencies${NC}"
-            if ! dpkg -s $PRE_INSTALL_PKGS >/dev/null 2>&1; then
-              apt-get update
+            if ! ${PKGCHK} $PRE_INSTALL_PKGS >/dev/null 2>&1; then
+              ${UPDATE}
               for i in $PRE_INSTALL_PKGS; do
-                apt install -y $i  # || exit 1
+                ${INSTALL} $i  # || exit 1
               done
             fi
             echo ""
@@ -773,7 +934,7 @@ case $OPTION in
           read -p "   Build and start cluster? [y/n]: " -e BUILD_DOCKER
         done
         docker_repo_chk
-        if dpkg -s docker-ce docker-ce-cli >/dev/null 2>&1; then
+        if ${PKGCHK} docker-ce docker-ce-cli >/dev/null 2>&1; then
           if [[ $BUILD_DOCKER = "y" ]]; then
             cd $USER_DIR/invidious
             docker-compose up -d
@@ -827,7 +988,7 @@ case $OPTION in
           read -p "       Rebuild cluster ? [y/n]: " -e REBUILD_DOCKER
         done
         docker_repo_chk
-        if dpkg -s docker-ce docker-ce-cli >/dev/null 2>&1; then
+        if ${PKGCHK} docker-ce docker-ce-cli >/dev/null 2>&1; then
           if [[ $REBUILD_DOCKER = "y" ]]; then
             cd $USER_DIR/invidious
             docker-compose build
@@ -850,7 +1011,7 @@ case $OPTION in
           read -p "       Delete data and rebuild Docker? [y/n]: " -e DEL_REBUILD_DOCKER
         done
         docker_repo_chk
-        if dpkg -s docker-ce docker-ce-cli >/dev/null 2>&1; then
+        if ${PKGCHK} docker-ce docker-ce-cli >/dev/null 2>&1; then
           if [[ $DEL_REBUILD_DOCKER = "y" ]]; then
             cd $USER_DIR/invidious
             docker-compose down
@@ -898,29 +1059,29 @@ case $OPTION in
         read -n1 -r -p "Docker is ready to be installed, press any key to continue..."
         echo ""
         # Update the apt package index:
-        sudo apt-get update
+        ${SUDO} ${UPDATE}
         #Install packages to allow apt to use a repository over HTTPS:
-        sudo apt-get install \
+        ${SUDO} ${INSTALL} \
           apt-transport-https \
           ca-certificates \
           curl \
           gnupg2 \
-          software-properties-common -y
+          software-properties-common
         # Add Docker’s official GPG key:
-        curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
+        curl -fsSL https://download.docker.com/linux/debian/gpg | ${SUDO} apt-key add -
         # Verify that you now have the key with the fingerprint 9DC8 5822 9FC7 DD38 854A E2D8 8D81 803C 0EBF CD88, by searching for the last 8 characters of the fingerprint.
-        sudo apt-key fingerprint 0EBFCD88
+        ${SUDO} apt-key fingerprint 0EBFCD88
 
-        sudo add-apt-repository \
+        ${SUDO} add-apt-repository \
           "deb [arch=amd64] https://download.docker.com/linux/debian \
             $(lsb_release -cs) \
           ${DOCKER_VER}"
         # Update the apt package index:
-        sudo apt-get update
+        ${SUDO} ${UPDATE}
         # Install the latest version of Docker CE and containerd
-        sudo apt-get install docker-ce docker-ce-cli containerd.io -y
+        ${SUDO} ${INSTALL} docker-ce docker-ce-cli containerd.io
         # Verify that Docker CE is installed correctly by running the hello-world image.
-        sudo docker run hello-world
+        ${SUDO} docker run hello-world
         # We're almost done !
         echo "Docker Installation done."
         while [[ $Docker_Compose !=  "y" && $Docker_Compose != "n" ]]; do
@@ -928,12 +1089,12 @@ case $OPTION in
         done
         if [[ "$Docker_Compose" = 'y' ]]; then
           # download the latest version of Docker Compose:
-          sudo curl -L "https://github.com/docker/compose/releases/download/1.23.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          ${SUDO} curl -L "https://github.com/docker/compose/releases/download/1.23.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
           sleep 5
           # Apply executable permissions to the binary:
-          sudo chmod +x /usr/local/bin/docker-compose
+          ${SUDO} chmod +x /usr/local/bin/docker-compose
           # Create a symbolic link to /usr/bin
-          sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+          ${SUDO} ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
         fi
         # We're done !
         echo "Docker Installation done."
@@ -948,21 +1109,21 @@ case $OPTION in
     ######################
     # Setup Systemd Service
     ######################
-    if ( ! systemctl -q is-active invidious.service)
+    if ( ! systemctl -q is-active ${SERVICE_NAME})
     then
-      cp $USER_DIR/invidious/invidious.service /lib/systemd/system/invidious.service
+      cp $USER_DIR/invidious/${SERVICE_NAME} /lib/systemd/system/${SERVICE_NAME}
       #wget https://github.com/omarroth/invidious/raw/master/invidious.service
       # Enable invidious start at boot
-      sudo systemctl enable invidious
+      ${SUDO} systemctl enable ${SERVICE_NAME}
       # Reload Systemd
-      sudo systemctl daemon-reload
+      ${SUDO} systemctl daemon-reload
       # Restart Invidious
-      sudo systemctl start invidious
+      ${SUDO} systemctl start ${SERVICE_NAME}
     fi
-    if ( systemctl -q is-active invidious.service)
+    if ( systemctl -q is-active ${SERVICE_NAME})
     then
       echo -e "${GREEN}Invidious service has been successfully installed!${NC}"
-      sudo systemctl status invidious --no-pager
+      ${SUDO} systemctl status ${SERVICE_NAME} --no-pager
       sleep 5
     else
       echo -e "${RED}Invidious service installation failed...${NC}"
@@ -998,44 +1159,44 @@ case $OPTION in
       echo ""
       read -p "Is that correct? Enter [y/n]: " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
       if [[ "$answer" = 'y' ]]; then
-        if ( systemctl -q is-active postgresql.service)
+        if ( systemctl -q is-active ${PGSQL_SERVICE}.service)
         then
           echo -e "${RED}stopping Invidious..."
-          sudo systemctl stop invidious
+          ${SUDO} systemctl stop ${SERVICE_NAME}
           sleep 3
           echo "Running Maintenance on $psqldb"
           echo "Deleting expired tokens"
-          sudo -u postgres psql $psqldb -c "DELETE FROM nonces * WHERE expire < current_timestamp;"
+          ${SUDO} -i -u postgres psql $psqldb -c "DELETE FROM nonces * WHERE expire < current_timestamp;"
           sleep 1
           echo "Truncating videos table."
-          sudo -u postgres psql $psqldb -c "TRUNCATE TABLE videos;"
+          ${SUDO} -i -u postgres psql $psqldb -c "TRUNCATE TABLE videos;"
           sleep 1
           echo "Vacuuming $psqldb."
-          sudo -u postgres vacuumdb --dbname=$psqldb --analyze --verbose --table 'videos'
+          ${SUDO} -i -u postgres vacuumdb --dbname=$psqldb --analyze --verbose --table 'videos'
           sleep 1
           echo "Reindexing $psqldb."
-          sudo -u postgres reindexdb --dbname=$psqldb
+          ${SUDO} -i -u postgres reindexdb --dbname=$psqldb
           sleep 3
           echo -e "${GREEN}Maintenance on $psqldb done."
           # Restart postgresql
           echo -e "${GREEN}Restarting postgresql..."
-          sudo systemctl restart postgresql
+          ${SUDO} systemctl restart ${PGSQL_SERVICE}
           echo -e "${GREEN}Restarting postgresql done."
-          sudo systemctl status postgresql --no-pager
+          ${SUDO} systemctl status ${PGSQL_SERVICE} --no-pager
           sleep 5
           # Restart Invidious
           echo -e "${GREEN}Restarting Invidious..."
-          sudo systemctl restart invidious
+          ${SUDO} systemctl restart ${SERVICE_NAME}
           echo -e "${GREEN}Restarting Invidious done."
-          sudo systemctl status invidious --no-pager
+          ${SUDO} systemctl status ${SERVICE_NAME} --no-pager
           sleep 1
         else
           echo -e "${RED}Database Maintenance failed. Is PostgreSQL running?"
           # Try to restart postgresql
           echo -e "${GREEN}trying to start postgresql..."
-          sudo systemctl start postgresql
+          ${SUDO} systemctl start ${PGSQL_SERVICE}
           echo -e "${GREEN}Postgresql started successfully"
-          sudo systemctl status postgresql --no-pager
+          ${SUDO} systemctl status ${PGSQL_SERVICE} --no-pager
           sleep 5
           echo -e "${ORANGE}Restarting script. Please try again..."
           sleep 5
@@ -1069,10 +1230,10 @@ case $OPTION in
     echo "You entered: $answer"
 
     if [[ "$answer" = 'y' ]]; then
-      if ( systemctl -q is-active postgresql.service)
+      if ( systemctl -q is-active ${PGSQL_SERVICE}.service)
       then
         echo -e "${ORANGE}stopping Invidious...${NC}"
-        sudo systemctl stop invidious
+        ${SUDO} systemctl stop ${SERVICE_NAME}
         echo "Running Migration..."
         cd $USER_DIR/invidious || exit 1
         currentVersion=$(git rev-list --max-count=1 --abbrev-commit HEAD)
@@ -1090,23 +1251,23 @@ case $OPTION in
         echo -e "${GREEN}Migration Done ${NC}"
         # Restart Invidious
         echo -e "${GREEN}Restarting Invidious...${NC}"
-        sudo systemctl restart invidious
+        ${SUDO} systemctl restart ${SERVICE_NAME}
         echo -e "${GREEN}Restarting Invidious done.${NC}"
-        sudo systemctl status invidious --no-pager
+        ${SUDO} systemctl status ${SERVICE_NAME} --no-pager
         sleep 1
         # Restart postgresql
         echo -e "${GREEN}Restarting postgresql...${NC}"
-        sudo systemctl restart postgresql
+        ${SUDO} systemctl restart ${PGSQL_SERVICE}
         echo -e "${GREEN}Restarting postgresql done.${NC}"
-        sudo systemctl status postgresql --no-pager
+        ${SUDO} systemctl status ${PGSQL_SERVICE} --no-pager
         sleep 5
       else
         echo -e "${RED}Database Migration failed. Is PostgreSQL running?${NC}"
         # Restart postgresql
         echo -e "${GREEN}trying to start postgresql...${NC}"
-        sudo systemctl start postgresql
+        ${SUDO} systemctl start ${PGSQL_SERVICE}
         echo -e "${GREEN}Postgresql started successfully${NC}"
-        sudo systemctl status postgresql --no-pager
+        ${SUDO} systemctl status ${PGSQL_SERVICE} --no-pager
         sleep 5
         echo -e "${ORANGE}Restarting script. Please try again...${NC}"
         sleep 5
@@ -1177,15 +1338,15 @@ case $OPTION in
     # Remove PostgreSQL database if user answer is yes
     if [[ "$RM_PostgreSQLDB" = 'y' ]]; then
       # Stop and disable invidious
-      systemctl stop invidious
+      systemctl stop ${SERVICE_NAME}
       sleep 1
-      systemctl restart postgresql
+      systemctl restart ${PGSQL_SERVICE}
       sleep 1
       #   pg_dump -U $username --format=c --file=$mydatabase.sqlc $dbname
       # If directory is not created
       if [[ ! -d $PgDbBakPath ]]; then
         echo -e "${ORANGE}Backup Folder Not Found, adding folder${NC}"
-        sudo mkdir -p $PgDbBakPath
+        ${SUDO} mkdir -p $PgDbBakPath
       fi
       #pg_dump --username=postgres \
         #        --no-password \
@@ -1196,14 +1357,14 @@ case $OPTION in
       echo -e "${GREEN}Running database backup${NC}"
       echo ""
       #sudo -u postgres psql ${RM_PSQLDB} > ${PgDbBakPath}/${RM_PSQLDB}.sql || exit 1
-      sudo -u postgres pg_dump ${RM_PSQLDB} > ${PgDbBakPath}/${RM_PSQLDB}.sql
+      ${SUDO} -i -u postgres pg_dump ${RM_PSQLDB} > ${PgDbBakPath}/${RM_PSQLDB}.sql
       sleep 2
-      sudo chown -R 1000:1000 "/home/backup"
+      ${SUDO} chown -R 1000:1000 "/home/backup"
       if [[ "$RM_RE_PostgreSQLDB" != 'n' ]]; then
         echo ""
         echo -e "${RED}Dropping Invidious PostgreSQL data${NC}"
         echo ""
-        sudo -u postgres psql -c "DROP OWNED BY kemal CASCADE;"
+        ${SUDO} -i -u postgres psql -c "DROP OWNED BY kemal CASCADE;"
         echo ""
         echo -e "${ORANGE}Data dropped and backed up to ${PgDbBakPath}/${RM_PSQLDB}.sql ${NC}"
         echo ""
@@ -1212,12 +1373,12 @@ case $OPTION in
         echo ""
         echo -e "${RED}Dropping Invidious PostgreSQL database${NC}"
         echo ""
-        sudo -u postgres psql -c "DROP DATABASE $RM_PSQLDB;"
+        ${SUDO} -i -u postgres psql -c "DROP DATABASE $RM_PSQLDB;"
         echo ""
         echo -e "${ORANGE}Database dropped and backed up to ${PgDbBakPath}/${RM_PSQLDB}.sql ${NC}"
         echo ""
         echo "Removing user kemal"
-        sudo -u postgres psql -c "DROP ROLE IF EXISTS kemal;"
+        ${SUDO} -i -u postgres psql -c "DROP ROLE IF EXISTS kemal;"
       fi
       #systemctl stop postgresql
       #sleep 1
@@ -1238,7 +1399,7 @@ case $OPTION in
         #  /etc/postgresql-common
     fi
     # Reload Systemd
-    sudo systemctl daemon-reload
+    ${SUDO} systemctl daemon-reload
     # Remove packages installed during installation
     if [[ "$RM_PACKAGES" = 'y' ]]; then
       echo ""
@@ -1248,12 +1409,12 @@ case $OPTION in
       echo ""
       # postgresql postgresql-9.6 postgresql-client-9.6 postgresql-contrib-9.6 # Dont touch PostgreSQL
       #UNINSTALL_PKGS="apt-transport-https git curl sudo remove crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev imagemagick libsqlite3-dev"
-      if dpkg -s $UNINSTALL_PKGS >/dev/null 2>&1; then
+      if ${PKGCHK} $UNINSTALL_PKGS >/dev/null 2>&1; then
         for i in $UNINSTALL_PKGS; do
           echo ""
           echo -e "removing packages."
           echo ""
-          apt-get remove -y $i
+          ${UNINSTALL} $i
         done
       fi
       echo ""
@@ -1266,24 +1427,29 @@ case $OPTION in
       echo ""
       echo -e "${ORANGE}Removing invidious files and modules files.${NC}"
       echo ""
-      rm -r \
-        /lib/systemd/system/invidious.service \
-        /etc/apt/sources.list.d/crystal.list
+      if [[ $(lsb_release -si) == "CentOS" ]]; then
+        rm -r \
+          /usr/lib/systemd/system/${SERVICE_NAME} \
+          /etc/yum.repos.d/crystal.repo
+      elif [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
+        rm -r \
+          /lib/systemd/system/${SERVICE_NAME} \
+          /etc/apt/sources.list.d/crystal.list
+      fi
       # postgresql postgresql-9.6 postgresql-client-9.6 postgresql-contrib-9.6 # Don't touch PostgreSQL
       #PURGE_PKGS="apt-transport-https git curl sudo remove crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev imagemagick libsqlite3-dev"
-      if dpkg -s $UNINSTALL_PKGS >/dev/null 2>&1; then
+      if ${PKGCHK} $UNINSTALL_PKGS >/dev/null 2>&1; then
         for i in $UNINSTALL_PKGS; do
           echo ""
           echo -e "purging packages."
           echo ""
-          apt-get purge -y $i
+          ${PURGE} $i
         done
       fi
       echo ""
       echo -e "cleaning up."
       echo ""
-      apt-get clean
-      apt-get autoremove -y
+      ${CLEAN}
       echo ""
       echo -e "${GREEN}done.${NC}"
       echo ""
@@ -1298,9 +1464,9 @@ case $OPTION in
     # Remove user and settings
     if [[ "$RM_USER" = 'y' ]]; then
       # Stop and disable invidious
-      systemctl stop invidious
+      systemctl stop ${SERVICE_NAME}
       sleep 1
-      systemctl restart postgresql
+      systemctl restart ${PGSQL_SERVICE}
       sleep 1
       systemctl daemon-reload
       sleep 1
@@ -1309,8 +1475,12 @@ case $OPTION in
         echo ""
         echo -e "${ORANGE}User $USER_NAME Found, removing user and files${NC}"
         echo ""
-        #/usr/sbin/userdel -r $USER_NAME
-        deluser --remove-home $USER_NAME
+        if [[ $(lsb_release -si) == "CentOS" ]]; then
+          /usr/sbin/userdel -r $USER_NAME
+        fi
+        if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
+          deluser --remove-home $USER_NAME
+        fi
       fi
     fi
     # We're done !
