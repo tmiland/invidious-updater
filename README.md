@@ -64,6 +64,7 @@ $ invidious-updater
 
    Select an option [1-2]: 2
    * Do you want to enter advanced options? [y/n]: y
+   * (Selecting "no" will load default values)
      * Enter the desired domain name:invidio.us
      * Enter the desired ip adress:10.0.2.15
      * Enter the desired port number:3003
