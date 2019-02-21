@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 CURRDIR=$(pwd)
 sfp=$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || greadlink -f "${BASH_SOURCE[0]}" 2>/dev/null)
@@ -59,6 +59,20 @@ IN_MASTER=master
 IN_RELEASE=release
 # Service name
 SERVICE_NAME=invidious.service
+# Default branch
+IN_BRANCH=master
+# Default domain
+domain=invidio.us
+# Default ip
+ip=localhost
+# Default port
+port=3000
+# Default dbname
+psqldb=invidious
+# Default dbpass
+psqlpass=kemal
+# Default https only
+https_only=false
 # ImageMagick 6 version
 IMAGICK_VER=6.9.10-28
 # ImageMagick 7 version
@@ -71,6 +85,7 @@ UNINSTALL=""
 PURGE=""
 CLEAN=""
 PKGCHK=""
+PGSQL_SERVICE=""
 if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
   # ImageMagick package name
   IMAGICKPKG=imagemagick
@@ -90,7 +105,7 @@ if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
   # Build-dep packages
   BUILD_DEP_PKGS="build-essential ca-certificates wget libpcre3 libpcre3-dev autoconf unzip automake libtool tar zlib1g-dev uuid-dev lsb-release make"
   # PostgreSQL Service
-  PGSQL_SERVICE="postgresql"
+  PGSQL_SERVICE="postgresql.service"
 elif [[ $(lsb_release -si) == "CentOS" ]]; then
   #elif [[ $(cat /etc/*release | grep ^NAME | grep "CentOS") ]]; then
   # ImageMagick package name
@@ -111,7 +126,7 @@ elif [[ $(lsb_release -si) == "CentOS" ]]; then
   # Build-dep packages
   BUILD_DEP_PKGS="ImageMagick-devel"
   # PostgreSQL Service
-  PGSQL_SERVICE="postgresql-11"
+  PGSQL_SERVICE="postgresql-11.service"
   #elif [[ $(lsb_release -si) == "Darwin" ]]; then
   #SUDO="sudo"
   #UPDATE="brew update"
@@ -143,7 +158,7 @@ header () {
   echo -e "${NC}"
 }
 # Get Crystal
-function get_crystal () {
+get_crystal () {
   if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
     if [[ ! -e /etc/apt/sources.list.d/crystal.list ]]; then
       #apt-key adv --keyserver keys.gnupg.net --recv-keys 09617FD37CC06B54
@@ -153,7 +168,6 @@ function get_crystal () {
   elif [[ $(lsb_release -si) == "CentOS" ]]; then
     if [[ ! -e /etc/yum.repos.d/crystal.repo ]]; then
       curl https://dist.crystal-lang.org/rpm/setup.sh | ${SUDO} bash
-      #rpm --import https://dist.crystal-lang.org/rpm/RPM-GPG-KEY
     fi
   elif [[ $(lsb_release -si) == "Darwin" ]]; then
     exit 1;
@@ -165,7 +179,7 @@ function get_crystal () {
   fi
 }
 # Checkout Master branch
-function GetMaster {
+GetMaster () {
   master=$(git rev-list --max-count=1 --abbrev-commit HEAD)
   # Checkout master
   git checkout $master
@@ -173,7 +187,7 @@ function GetMaster {
   #for i in `git rev-list --abbrev-commit $master..HEAD` ; do file=$USER_DIR/invidious/config/migrate-scripts/migrate-db-$i.sh ; [ -f $file ] && $file ; done
 }
 # Checkout Release Tag
-function GetRelease {
+GetRelease () {
   # Get new tags from remote
   git fetch --tags
   # Get latest tag name
@@ -184,7 +198,7 @@ function GetRelease {
   #for i in `git rev-list --abbrev-commit $currentVersion..HEAD` ; do file=$USER_DIR/invidious/config/migrate-scripts/migrate-db-$i.sh ; [ -f $file ] && $file ; done
 }
 # Rebuild Invidious
-function rebuild {
+rebuild () {
   printf "\n-- Rebuilding $USER_DIR/invidious\n"
   cd $USER_DIR/invidious || exit 1
   shards
@@ -196,7 +210,7 @@ function rebuild {
   sleep 3
 }
 # Restart Invidious
-function restart {
+restart () {
   printf "\n-- restarting Invidious\n"
   ${SUDO} systemctl restart $SERVICE_NAME
   sleep 2
@@ -356,10 +370,10 @@ case $OPTION in
     #  exit 1
     #fi
     # Check which ImageMagick version is installed
-    function chk_imagickpkg {
+    chk_imagickpkg () {
 
       if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
-        apt -qq list $IMAGICKPKG
+        apt -qq list $IMAGICKPKG 2>/dev/null
       elif [[ $(lsb_release -si) == "CentOS" ]]; then
         identify -version
       else
@@ -412,38 +426,44 @@ case $OPTION in
         IN_BRANCH=$IN_MASTER
         ;;
     esac
-    #read -p "Enter the desired branch of your Invidious installation: " branch
-    # Here's where the user is going to enter the Invidious database user, as it appears in the GUI:
-    #read -p "Enter the desired user of your Invidious PostgreSQL database: " psqluser
-    # Here's where the user is going to enter the Invidious database name, as it appears in the GUI:
-    read -p "       Select database name:" psqldb
-    # Here's where the user is going to enter the Invidious database password, as it appears in the GUI:
-    read -p "       Select database password:" psqlpass
-    # Let's allow the user to confirm that what they've typed in is correct:
-    #echo "You entered: password: $psqlpass name: $psqldb"
-    #read -p "Is that correct? Enter y or n: " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
-    # Here's where the user is going to enter the Invidious domain name, as it appears in the GUI:
-    read -p "       Enter the desired domain name:" domain
-    # Here's where the user is going to enter the Invidious https only settings, as it appears in the GUI:
-    while [[ $https_only != "y" && $https_only != "n" ]]; do
-      read -p "Are you going to use https only? [y/n]: " https_only
+    # Let the user enter advanced options:
+    while [[ $advanced_options != "y" && $advanced_options != "n" ]]; do
+      read -p "Do you want to enter advanced options? [y/n]: " advanced_options
     done
-    case $https_only in
-      y)
-        https_only=true
-        ;;
-      n)
-        https_only=false
-        ;;
-    esac
-    # Let's allow the user to confirm that what they've typed in is correct:
+    while :;
+    do
+      case $advanced_options in
+        [Yy]* )
+          read -p "       Enter the desired domain name:" domain
+          read -p "       Enter the desired ip adress:" ip
+          read -p "       Enter the desired port number:" port
+          read -p "       Select database name:" psqldb
+          read -p "       Select database password:" psqlpass
+          ;;
+        [Nn]* ) break ;;
+      esac
+      shift
+      while [[ $https_only != "y" && $https_only != "n" ]]; do
+        read -p "Are you going to use https only? [y/n]: " https_only
+      done
+      case $https_only in
+        [Yy]* )
+          https_only=true
+          break ;;
+        [Nn]* )
+          https_only=false
+          break ;;
+      esac
+    done
     echo -e "${GREEN}\n"
     echo -e "You entered: \n"
-    echo -e "     branch: $IN_BRANCH"
-    echo -e "     domain: $domain"
-    echo -e " https only: $https_only"
-    echo -e "     dbname: $psqldb"
-    echo -e "   password: $psqlpass"
+    echo -e "  branch     : $IN_BRANCH"
+    echo -e "  domain     : $domain"
+    echo -e "  ip adress  : $ip"
+    echo -e "  port       : $port"
+    echo -e "  dbname     : $psqldb"
+    echo -e "  dbpass     : $psqlpass"
+    echo -e "  https only : $https_only"
     echo -e "${NC}"
     echo ""
     echo "Choose your Imagemagick version :"
@@ -463,7 +483,6 @@ case $OPTION in
         IMAGEMAGICK_SEVEN=y
         ;;
     esac
-    #read -p "Is that correct? Enter y or n: " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
     echo ""
     read -n1 -r -p "Invidious is ready to be installed, press any key to continue..."
     echo ""
@@ -703,49 +722,52 @@ case $OPTION in
     echo "Running nonces.sql"
     ${SUDO} -i -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/nonces.sql
     echo "Finished Database section"
-    ######################
-    # Update config.yml with new info from user input
-    ######################
-    # Lets change the default user # Not a good idea... Invidious uses 'kemal'. Left for reference
-    #OLDUSER="user: kemal"
-    #NEWUSER="user: $psqluser"
-    BAKPATH="/home/backup/$USER_NAME/config"
-    # Lets change the default password
-    OLDPASS="password: kemal"
-    NEWPASS="password: $psqlpass"
-    # Lets change the default database name
-    OLDDBNAME="dbname: invidious"
-    NEWDBNAME="dbname: $psqldb"
-    # Lets change the default domain
-    OLDDOMAIN="domain: invidio.us"
-    NEWDOMAIN="domain: $domain"
-    # Lets change https_only value
-    OLDHTTPS="https_only: false"
-    NEWHTTPS="https_only: $https_only"
-    DPATH="$USER_DIR/invidious/config/config.yml"
-    BPATH="$BAKPATH"
-    TFILE="/tmp/config.yml"
-    [ ! -d $BPATH ] && mkdir -p $BPATH || :
-    for f in $DPATH
-    do
-      if [ -f $f -a -r $f ]; then
-        /bin/cp -f $f $BPATH
-        echo -e "${GREEN}Updating config.yml with new info...${NC}"
-        sed "s/$OLDPASS/$NEWPASS/g; s/$OLDDBNAME/$NEWDBNAME/g; s/$OLDDOMAIN/$NEWDOMAIN/g; s/$OLDHTTPS/$NEWHTTPS/g" "$f" > $TFILE &&
-        mv $TFILE "$f"
+    update_config () {
+      ######################
+      # Update config.yml with new info from user input
+      ######################
+      # Lets change the default user # Not a good idea... Invidious uses 'kemal'. Left for reference
+      #OLDUSER="user: kemal"
+      #NEWUSER="user: $psqluser"
+      BAKPATH="/home/backup/$USER_NAME/config"
+      # Lets change the default password
+      OLDPASS="password: kemal"
+      NEWPASS="password: $psqlpass"
+      # Lets change the default database name
+      OLDDBNAME="dbname: invidious"
+      NEWDBNAME="dbname: $psqldb"
+      # Lets change the default domain
+      OLDDOMAIN="domain: invidio.us"
+      NEWDOMAIN="domain: $domain"
+      # Lets change https_only value
+      OLDHTTPS="https_only: false"
+      NEWHTTPS="https_only: $https_only"
+      DPATH="$USER_DIR/invidious/config/config.yml"
+      BPATH="$BAKPATH"
+      TFILE="/tmp/config.yml"
+      [ ! -d $BPATH ] && mkdir -p $BPATH || :
+      for f in $DPATH
+      do
+        if [ -f $f -a -r $f ]; then
+          /bin/cp -f $f $BPATH
+          echo -e "${GREEN}Updating config.yml with new info...${NC}"
+          sed "s/$OLDPASS/$NEWPASS/g; s/$OLDDBNAME/$NEWDBNAME/g; s/$OLDDOMAIN/$NEWDOMAIN/g; s/$OLDHTTPS/$NEWHTTPS/g" "$f" > $TFILE &&
+          mv $TFILE "$f"
+        else
+          echo -e "${RED}Error: Cannot read $f"
+        fi
+      done
+      if [[ -e $TFILE ]]; then
+        /bin/rm $TFILE
       else
-        echo -e "${RED}Error: Cannot read $f"
+        echo -e "${GREEN}Done updating config.yml with new info!${NC}"
       fi
-    done
-    if [[ -e $TFILE ]]; then
-      /bin/rm $TFILE
-    else
-      echo -e "${GREEN}Done updating config.yml with new info!${NC}"
-    fi
-    ######################
-    # Done updating config.yml with new info!
-    # Source: https://www.cyberciti.biz/faq/unix-linux-replace-string-words-in-many-files/
-    ######################
+      ######################
+      # Done updating config.yml with new info!
+      # Source: https://www.cyberciti.biz/faq/unix-linux-replace-string-words-in-many-files/
+      ######################
+    }
+    update_config
     # Crystal complaining about permissions on CentOS and somewhat Debian
     # So before we build, make sure permissions are set.
     ${SUDO} chown -R $USER_NAME:$USER_NAME $USER_DIR
@@ -760,32 +782,60 @@ case $OPTION in
     ${SUDO} chown -R $USER_NAME:$USER_NAME $USER_DIR
     ${SUDO} chmod -R 755 $USER_DIR
     ${SUDO} chmod 644 $USER_DIR/invidious/config/config.yml
-    ######################
-    # Setup Systemd Service
-    ######################
-    cp $USER_DIR/invidious/${SERVICE_NAME} /lib/systemd/system/${SERVICE_NAME}
-    #wget https://github.com/omarroth/invidious/raw/master/invidious.service
-    # Enable invidious start at boot
-    ${SUDO} systemctl enable ${SERVICE_NAME}
-    # Reload Systemd
-    ${SUDO} systemctl daemon-reload
-    # Restart Invidious
-    ${SUDO} systemctl start ${SERVICE_NAME}
-    if ( systemctl -q is-active ${SERVICE_NAME})
-    then
-      echo -e "${GREEN}Invidious service has been successfully installed!${NC}"
-      ${SUDO} systemctl status ${SERVICE_NAME} --no-pager
-      sleep 5
-    else
-      echo -e "${RED}Invidious service installation failed...${NC}"
-      sleep 5
-    fi
+    systemd_install () {
+      ######################
+      # Setup Systemd Service
+      ######################
+      cp $USER_DIR/invidious/${SERVICE_NAME} /lib/systemd/system/${SERVICE_NAME}
+      #wget https://github.com/omarroth/invidious/raw/master/invidious.service
+      ${SUDO} sed -i "s/invidious -o invidious.log/invidious -b ${ip} -p ${port} -o invidious.log/g" /lib/systemd/system/${SERVICE_NAME}
+      # Lets change the default ip and port
+      # OLD_IP_PORT="/invidious -o invidious.log"
+      # NEW_IP_PORT="/invidious -b ${ip} -p ${port} -o invidious.log"
+      #
+      # DPATH="/lib/systemd/system/${SERVICE_NAME}"
+      # BPATH="$BAKPATH"
+      # TFILE="/tmp/${SERVICE_NAME}"
+      # [ ! -d $BPATH ] && mkdir -p $BPATH || :
+      # for f in $DPATH
+      # do
+      #   if [ -f $f -a -r $f ]; then
+      #     /bin/cp -f $f $BPATH
+      #     echo -e "${GREEN}Updating ${SERVICE_NAME} with new info...${NC}"
+      #     sed "s/$OLD_IP_PORT/$NEW_IP_PORT/g" "$f" > $TFILE &&
+      #     mv $TFILE "$f"
+      #   else
+      #     echo -e "${RED}Error: Cannot read $f"
+      #   fi
+      # done
+      # if [[ -e $TFILE ]]; then
+      #   /bin/rm $TFILE
+      # else
+      #   echo -e "${GREEN}Done updating ${SERVICE_NAME} with new info!${NC}"
+      # fi
+      # Enable invidious start at boot
+      ${SUDO} systemctl enable ${SERVICE_NAME}
+      # Reload Systemd
+      ${SUDO} systemctl daemon-reload
+      # Restart Invidious
+      ${SUDO} systemctl start ${SERVICE_NAME}
+      if ( systemctl -q is-active ${SERVICE_NAME})
+      then
+        echo -e "${GREEN}Invidious service has been successfully installed!${NC}"
+        ${SUDO} systemctl status ${SERVICE_NAME} --no-pager
+        sleep 5
+      else
+        echo -e "${RED}Invidious service installation failed...${NC}"
+        sleep 5
+      fi
+    }
+    systemd_install
     show_install_banner () {
       #clear
       header
       echo "Thank you for using the Invidious Update.sh script."
       echo ""
-      echo "Invidious install done. Now visit http://localhost:3000"
+      echo "Invidious install done. Now visit http://${ip}:${port}"
       echo ""
       echo -e "Documentation for this script is available here: ${ORANGE}\n https://github.com/tmiland/Invidious-Updater${NC}\n"
     }
@@ -1159,7 +1209,7 @@ case $OPTION in
       echo ""
       read -p "Is that correct? Enter [y/n]: " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
       if [[ "$answer" = 'y' ]]; then
-        if ( systemctl -q is-active ${PGSQL_SERVICE}.service)
+        if ( systemctl -q is-active ${PGSQL_SERVICE})
         then
           echo -e "${RED}stopping Invidious..."
           ${SUDO} systemctl stop ${SERVICE_NAME}
@@ -1230,7 +1280,7 @@ case $OPTION in
     echo "You entered: $answer"
 
     if [[ "$answer" = 'y' ]]; then
-      if ( systemctl -q is-active ${PGSQL_SERVICE}.service)
+      if ( systemctl -q is-active ${PGSQL_SERVICE})
       then
         echo -e "${ORANGE}stopping Invidious...${NC}"
         ${SUDO} systemctl stop ${SERVICE_NAME}
@@ -1324,8 +1374,8 @@ case $OPTION in
       read -p "       Remove files ? [y/n]: " -e RM_FILES
       if [[ "$RM_FILES" = 'y' ]]; then
         while [[ $RM_USER !=  "y" && $RM_USER != "n" ]]; do
-          echo -e "       ${RED}(( This option will remove $USER_DIR ))"
-          echo -e "       (( Not needed for reinstall ))${NC}"
+          echo -e "       ${RED}(( This option will remove $USER_DIR ))${NC}"
+          echo -e "       ${ORANGE}(( Not needed for reinstall ))${NC}"
           read -p "       Remove user ? [y/n]: " -e RM_USER
         done
       fi
