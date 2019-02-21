@@ -11,7 +11,7 @@ SCRIPT_DIR=$(dirname "${sfp}")
 ####            Script to update or install Invidious             ####
 ####                   Maintained by @tmiland                     ####
 ######################################################################
-version='1.2.4' # Must stay on line 14 for updater to fetch the numbers
+version='1.2.5' # Must stay on line 14 for updater to fetch the numbers
 
 #------------------------------------------------------------------------------------#
 #                                                                                    #
@@ -77,6 +77,8 @@ https_only=false
 IMAGICK_VER=6.9.10-28
 # ImageMagick 7 version
 IMAGICK_SEVEN_VER=7.0.8-28
+# Docker Compose version
+Docker_Compose_Ver=1.23.2
 # Distro support
 SUDO=""
 UPDATE=""
@@ -683,9 +685,9 @@ case $OPTION in
       ${SUDO} chmod 600 /var/lib/pgsql/11/data/postgresql.conf
       ${SUDO} chmod 600 /var/lib/pgsql/11/data/pg_hba.conf
     fi
-    systemctl enable ${PGSQL_SERVICE}
+    ${SUDO} systemctl enable ${PGSQL_SERVICE}
     sleep 1
-    systemctl restart ${PGSQL_SERVICE}
+    ${SUDO} systemctl restart ${PGSQL_SERVICE}
     sleep 1
     # Create users and set privileges
     #echo "Creating user postgres with no password"
@@ -897,11 +899,11 @@ case $OPTION in
     #  exit 1;
     #fi
     # Check if not Debian/Ubuntu
-    if [[ ! $(lsb_release -si) == "Debian" && ! $(lsb_release -si) == "Ubuntu" ]]
-    then
-      echo -e "${RED}SORRY, DOCKER OPTION NOT SUPPORTED FOR YOUR OS YET!${NC}"
-      exit 1
-    fi
+    # if [[ ! $(lsb_release -si) == "Debian" && ! $(lsb_release -si) == "Ubuntu" ]]
+    # then
+    #   echo -e "${RED}SORRY, DOCKER OPTION NOT SUPPORTED FOR YOUR OS YET!${NC}"
+    #   exit 1
+    # fi
     docker_repo_chk () {
       # Check if the folder is a git repo
       if [[ ! -d "$USER_DIR/invidious/.git" ]]; then
@@ -975,7 +977,7 @@ case $OPTION in
     echo "   4) Delete data and rebuild"
     echo "   5) Install Docker CE"
     echo ""
-    while [[ $DOCKER_OPTION !=  "1" && $DOCKER_OPTION != "2" && $DOCKER_OPTION != "3" && $DOCKER_OPTION != "4" ]]; do
+    while [[ $DOCKER_OPTION !=  "1" && $DOCKER_OPTION != "2" && $DOCKER_OPTION != "3" && $DOCKER_OPTION != "4" && $DOCKER_OPTION != "5" ]]; do
       read -p "Select an option [1-5]: " DOCKER_OPTION
     done
     case $DOCKER_OPTION in
@@ -999,7 +1001,7 @@ case $OPTION in
             ./invidious_update.sh
           fi
         else
-          echo -e "${RED}Docker is not installed, please choose option 4)${NC}"
+          echo -e "${RED}Docker is not installed, please choose option 5)${NC}"
         fi
         exit
         ;;
@@ -1052,7 +1054,7 @@ case $OPTION in
             ./invidious_update.sh
           fi
         else
-          echo -e "${RED}Docker is not installed, please choose option 4)${NC}"
+          echo -e "${RED}Docker is not installed, please choose option 5)${NC}"
         fi
         exit
         ;;
@@ -1078,7 +1080,7 @@ case $OPTION in
             ./invidious_update.sh
           fi
         else
-          echo -e "${RED}Docker is not installed, please choose option 4)${NC}"
+          echo -e "${RED}Docker is not installed, please choose option 5)${NC}"
         fi
         exit
         ;;
@@ -1110,28 +1112,52 @@ case $OPTION in
         echo ""
         # Update the apt package index:
         ${SUDO} ${UPDATE}
-        #Install packages to allow apt to use a repository over HTTPS:
-        ${SUDO} ${INSTALL} \
-          apt-transport-https \
-          ca-certificates \
-          curl \
-          gnupg2 \
-          software-properties-common
-        # Add Docker’s official GPG key:
-        curl -fsSL https://download.docker.com/linux/debian/gpg | ${SUDO} apt-key add -
-        # Verify that you now have the key with the fingerprint 9DC8 5822 9FC7 DD38 854A E2D8 8D81 803C 0EBF CD88, by searching for the last 8 characters of the fingerprint.
-        ${SUDO} apt-key fingerprint 0EBFCD88
+        if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
+          #Install packages to allow apt to use a repository over HTTPS:
+          ${SUDO} ${INSTALL} \
+            apt-transport-https \
+            ca-certificates \
+            curl \
+            gnupg2 \
+            software-properties-common
+          # Add Docker’s official GPG key:
+          curl -fsSL https://download.docker.com/linux/debian/gpg | ${SUDO} apt-key add -
+          # Verify that you now have the key with the fingerprint 9DC8 5822 9FC7 DD38 854A E2D8 8D81 803C 0EBF CD88, by searching for the last 8 characters of the fingerprint.
+          ${SUDO} apt-key fingerprint 0EBFCD88
 
-        ${SUDO} add-apt-repository \
-          "deb [arch=amd64] https://download.docker.com/linux/debian \
+          ${SUDO} add-apt-repository \
+            "deb [arch=amd64] https://download.docker.com/linux/debian \
             $(lsb_release -cs) \
-          ${DOCKER_VER}"
-        # Update the apt package index:
-        ${SUDO} ${UPDATE}
-        # Install the latest version of Docker CE and containerd
-        ${SUDO} ${INSTALL} docker-ce docker-ce-cli containerd.io
-        # Verify that Docker CE is installed correctly by running the hello-world image.
-        ${SUDO} docker run hello-world
+            ${DOCKER_VER}"
+            # Update the apt package index:
+            ${SUDO} ${UPDATE}
+            # Install the latest version of Docker CE and containerd
+            ${SUDO} ${INSTALL} docker-ce docker-ce-cli containerd.io
+            # Verify that Docker CE is installed correctly by running the hello-world image.
+            ${SUDO} docker run hello-world
+        elif [[ $(lsb_release -si) == "CentOS" ]]; then
+          # Install required packages.
+          sudo yum install -y yum-utils \
+            device-mapper-persistent-data \
+            lvm2
+            # Set up the repository.
+          ${SUDO} yum-config-manager \
+            --add-repo \
+            https://download.docker.com/linux/centos/docker-ce.repo
+            # Enable the repository.
+            sudo yum-config-manager --enable docker-ce-${DOCKER_VER}
+            # Update the apt package index:
+            ${SUDO} ${UPDATE}
+            # Install the latest version of Docker CE and containerd
+            ${SUDO} ${INSTALL} docker-ce docker-ce-cli containerd.io
+            # Start Docker.
+            ${SUDO} systemctl start docker
+            # Verify that Docker CE is installed correctly by running the hello-world image.
+            ${SUDO} docker run hello-world
+        else
+          echo -e "${RED}Error: Sorry, your OS is not supported.${NC}"
+          exit 1;
+        fi
         # We're almost done !
         echo "Docker Installation done."
         while [[ $Docker_Compose !=  "y" && $Docker_Compose != "n" ]]; do
@@ -1139,7 +1165,7 @@ case $OPTION in
         done
         if [[ "$Docker_Compose" = 'y' ]]; then
           # download the latest version of Docker Compose:
-          ${SUDO} curl -L "https://github.com/docker/compose/releases/download/1.23.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          ${SUDO} curl -L "https://github.com/docker/compose/releases/download/${Docker_Compose_Ver}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
           sleep 5
           # Apply executable permissions to the binary:
           ${SUDO} chmod +x /usr/local/bin/docker-compose
@@ -1388,9 +1414,9 @@ case $OPTION in
     # Remove PostgreSQL database if user answer is yes
     if [[ "$RM_PostgreSQLDB" = 'y' ]]; then
       # Stop and disable invidious
-      systemctl stop ${SERVICE_NAME}
+      ${SUDO} systemctl stop ${SERVICE_NAME}
       sleep 1
-      systemctl restart ${PGSQL_SERVICE}
+      ${SUDO} systemctl restart ${PGSQL_SERVICE}
       sleep 1
       #   pg_dump -U $username --format=c --file=$mydatabase.sqlc $dbname
       # If directory is not created
@@ -1514,11 +1540,11 @@ case $OPTION in
     # Remove user and settings
     if [[ "$RM_USER" = 'y' ]]; then
       # Stop and disable invidious
-      systemctl stop ${SERVICE_NAME}
+      ${SUDO} systemctl stop ${SERVICE_NAME}
       sleep 1
-      systemctl restart ${PGSQL_SERVICE}
+      ${SUDO} systemctl restart ${PGSQL_SERVICE}
       sleep 1
-      systemctl daemon-reload
+      ${SUDO} systemctl daemon-reload
       sleep 1
       grep $USER_NAME /etc/passwd >/dev/null 2>&1
       if [ $? -eq 0 ] ; then

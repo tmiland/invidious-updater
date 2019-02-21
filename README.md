@@ -5,7 +5,7 @@
                   ║                        Invidious Update.sh                        ║
                   ║               Automatic update script for Invidio.us              ║
                   ║                      Maintained by @tmiland                       ║
-                  ║                          version: 1.2.4                           ║
+                  ║                          version: 1.2.5                           ║
                   ╚═══════════════════════════════════════════════════════════════════╝
 ```
 
@@ -134,14 +134,14 @@ $ invidious-updater
 
 ## Testing
 
-- [x] Tested extensively on Debian 9
-  - [x] Docker option tested and working
+- [X] Tested extensively on Debian 9
+  - [X] Docker option tested and working
 
-- [x] Tested on Ubuntu 16.04
-  - [x] Docker option tested, not working
+- [X] Tested on Ubuntu 16.04
+  - [X] Docker option tested, not working
 - [ ] Tested on Ubuntu 18.04
 - [X] Tested on CentOS 7
-  - [ ] Docker option not yet implemented
+  - [X] Docker option tested and working
 
 #### Latest install log - version: 1.1.6
 
@@ -150,7 +150,6 @@ $ invidious-updater
 
 ## Todo
 
-- [ ] Add Docker support for CentOS
 - [ ] Add Imagemagick (source) to Uninstall options
 
 ## Done
@@ -172,6 +171,7 @@ $ invidious-updater
 - [X] Add support to deploy in Docker - Added in 1.2.3
 - [X] Added support for CentOS 7 - 1.2.4 (Docker option not supported yet)
 - [X] Add option for custom IP and Port
+- [X] Add Docker support for CentOS - Added in 1.2.5
 
 ### Possible options
 - Support for auto-update check
