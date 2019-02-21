@@ -142,6 +142,7 @@ $ invidious-updater
 
 ## Todo
 
+- [ ] Add Docker support for CentOS
 - [ ] Add Imagemagick (source) to Uninstall options
 
 ## Done
@@ -162,6 +163,7 @@ $ invidious-updater
 - [X] Rewrite the update procedure - Done in 1.2.2
 - [X] Add support to deploy in Docker - Added in 1.2.3
 - [X] Added support for CentOS 7 - 1.2.4 (Docker option not supported yet)
+- [X] Add option for custom IP and Port
 
 ### Possible options
 - Support for auto-update check
