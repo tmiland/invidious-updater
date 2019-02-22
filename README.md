@@ -27,13 +27,18 @@
 | ------ | ------ |
 | [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Screenshot%20from%202019-02-20%2017-14-20.png" height="180" width="320">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Screenshot%20from%202019-02-20%2017-14-20.png) | [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Screenshot%20from%202019-02-20%2017-09-25.png" height="180" width="320">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Screenshot%20from%202019-02-20%2017-09-25.png) |
 
+(click to expand)
+
 ## Installation
 
-#### download and execute the script :
+<details><summary>Download and execute the script:</summary><p>
+
 ```bash
 $ wget https://github.com/tmiland/Invidious-Updater/raw/master/invidious_update.sh
 $ chmod +x invidious_update.sh
-$ su
+$ su -
+## OR ##
+$ sudo -i
 $ ./invidious_update.sh
 ```
 #### Or : 
@@ -42,7 +47,9 @@ $ cd /home/invidious
 $ git clone https://github.com/tmiland/Invidious-Updater.git
 $ cd Invidious-Updater
 $ chmod +x invidious_update.sh
-$ su
+$ su -
+## OR ##
+$ sudo -i
 $ ./invidious_update.sh
 ```
 #### Optionally
@@ -50,9 +57,11 @@ $ ./invidious_update.sh
 $ ln -s /home/invidious/Invidious-Updater/invidious_update.sh /usr/bin/invidious-updater
 $ invidious-updater
 ```
-## Usage
 
-1. ### Install invidious
+</p></details>
+
+## Usage
+<details><summary>1. Install invidious</summary><p>
    
    * Select an option [1-8]: 1
 
@@ -89,8 +98,10 @@ $ invidious-updater
 
 
    * Invidious is ready to be installed, press any key to continue...
+</p></details>
 
-2. ### Update Invidious
+<details><summary>2. Update Invidious</summary><p>
+
    * Let's go through some configuration options.
 
    * Do you want to checkout Invidious release or master?
@@ -101,58 +112,88 @@ $ invidious-updater
      * branch: release
    * Invidious is ready to be updated, press any key to continue...
 
-3. ### Deploy Invidious with Docker
+</p></details>
+
+<details><summary>3. Deploy Invidious with Docker</summary><p>
+
    * 1) Build and start cluster
    * 2) Start, Stop or Restart cluster
    * 3) Rebuild cluster
    * 4) Delete data and rebuild
    * 5) Install Docker CE
 
-4. ### Install Invidious service
+</p></details>
+
+<details><summary>4. Install Invidious service</summary><p>
+
    * Setup Systemd Service
 
-5. ### Run database maintenance
+</p></details>
+
+<details><summary>5. Run database maintenance</summary><p>
+
    * Database maintenance option [Database Information and Maintenance](https://github.com/omarroth/invidious/wiki/Database-Information-and-Maintenance)
 
-6. ### Run database migration
+</p></details>
+
+<details><summary>6. Run database migration</summary><p>
+
    * Database migration option [migrate-scripts](https://github.com/omarroth/invidious/tree/master/config/migrate-scripts)
 
-7. ### Uninstall Invidious
-      * Uninstallation of Invidious, and everything installed during setup.
-        * Remove PostgreSQL database for Invidious ? [y/n]
-          * Enter Invidious PostgreSQL database name: invidious
-          * Backup will be placed in /home/backup
-        * Remove Packages ? [y/n]
-        * Purge Package configuration files ? [y/n]
-        * Remove files ? [y/n]: <-- ***This is required for reinstalling.***
-        * Remove user ? [y/n]: <-- ***This is not required for reinstalling.***
-        * Is that correct? [y/n]:
-      * Invidious is ready to be uninstalled, press any key to continue...
+</p></details>
 
-8. ### Exit
+<details><summary>7. Uninstall Invidious</summary><p>
+
+  * Uninstallation of Invidious, and everything installed during setup.
+    * Remove PostgreSQL database for Invidious ? [y/n]
+      * Enter Invidious PostgreSQL database name: invidious
+      * Backup will be placed in /home/backup
+    * Remove Packages ? [y/n]
+    * Purge Package configuration files ? [y/n]
+    * Remove files ? [y/n]: <-- ***This is required for reinstalling.***
+    * Remove user ? [y/n]: <-- ***This is not required for reinstalling.***
+    * Is that correct? [y/n]:
+  * Invidious is ready to be uninstalled, press any key to continue...
+
+</p></details>
+
+<details><summary>8. Exit</summary><p>
+
    * Exits the script
+   
+   </p></details>
 
 ## Testing
 
+<details><summary>Tested on:</summary><p>
+
 - [X] Tested extensively on Debian 9
   - [X] Docker option tested and working
-
 - [X] Tested on Ubuntu 16.04
   - [X] Docker option tested, not working
 - [ ] Tested on Ubuntu 18.04
 - [X] Tested on CentOS 7
   - [X] Docker option tested and working
-
+- [X] Tested on Fedora 29
+  - [X] Docker option tested and working
+  
 #### Latest install log - version: 1.1.6
 
 [install log Debian 9](https://github.com/tmiland/Invidious-Updater/blob/master/log/install_log_debian.log)
 
+</p></details>
 
 ## Todo
 
+<details><summary>On the todo list:</summary><p>
+
 - [ ] Add Imagemagick (source) to Uninstall options
 
+</p></details>
+
 ## Done
+
+<details><summary>What's done:</summary><p>
 
 - [X] Add Uninstallation option 
   - Added in version 1.1.4
@@ -166,25 +207,45 @@ $ invidious-updater
    - The captcha clock is working with 6 and 7, not with default pkg.
 - [X] Add Deb Packages
 - Support for auto-update check
-  - [X] For Script - Added in 1.1.7
-- [X] Rewrite the update procedure - Done in 1.2.2
-- [X] Add support to deploy in Docker - Added in 1.2.3
-- [X] Added support for CentOS 7 - 1.2.4 (Docker option not supported yet)
-- [X] Add option for custom IP and Port
-- [X] Add Docker support for CentOS - Added in 1.2.5
+  - [X] For Script 
+  - Added in 1.1.7
+- [X] Rewrite the update procedure 
+  - Done in 1.2.2
+- [X] Add support to deploy in Docker 
+  - Added in Added in [1.2.3](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.2.3)
+- [X] Added support for CentOS 7 
+  - Added in [1.2.4](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.2.4) (Docker option not supported yet)
+- [X] Add option for custom IP and Port 
+  - Added in [1.2.5](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.2.5)
+- [X] Add Docker support for CentOS 
+  - Added in [1.2.5](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.2.5)
+- [X] Add support for Fedora 
+  - Added in [1.2.6](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.2.6)
+
+  </p></details>
 
 ### Possible options
+
+<details><summary>Ideas:</summary><p>
+
 - Support for auto-update check
   - [ ] For Invidious
 
 - [ ] Support for running own forks
 - [ ] Support for database backup
 
+</p></details>
+
 ## Compatibility and Requirements
+
 * Debian 8 and later
 * Ubuntu 16.04 and later
 * CentOS 7
   * Requirements: `yum install redhat-lsb` 
+* Fedora 29
+  * Requirements: `dnf install redhat-lsb`
+  * Docker support
+    - [OS requirements](https://docs.docker.com/install/linux/docker-ce/fedora/)
 
 ## Credits
 - Code is mixed and and customized from these sources:
