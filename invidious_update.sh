@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 
-CURRDIR=$(pwd)
-sfp=$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || greadlink -f "${BASH_SOURCE[0]}" 2>/dev/null)
-if [ -z "$sfp" ]; then sfp=${BASH_SOURCE[0]}; fi
-SCRIPT_DIR=$(dirname "${sfp}")
+
 ## Author: Tommy Miland (@tmiland) - Copyright (c) 2019
+
+
 ######################################################################
 ####                    Invidious Update.sh                       ####
 ####            Automatic update script for Invidio.us            ####
 ####            Script to update or install Invidious             ####
 ####                   Maintained by @tmiland                     ####
 ######################################################################
-version='1.2.5' # Must stay on line 14 for updater to fetch the numbers
+
+version='1.2.6' # Must stay on line 14 for updater to fetch the numbers
 
 #------------------------------------------------------------------------------------#
 #                                                                                    #
@@ -39,6 +39,15 @@ version='1.2.5' # Must stay on line 14 for updater to fetch the numbers
 #                                                                                    #
 #------------------------------------------------------------------------------------#
 
+# Detect absolute and full path as well as filename of this script
+cd "$(dirname $0)"
+CURRDIR=$(pwd)
+SCRIPT_NAME=$(basename $0)
+cd - > /dev/null
+sfp=$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || greadlink -f "${BASH_SOURCE[0]}" 2>/dev/null)
+if [ -z "$sfp" ]; then sfp=${BASH_SOURCE[0]}; fi
+SCRIPT_DIR=$(dirname "${sfp}")
+
 # Colors used for printing
 RED='\033[0;31m'
 BLUE='\033[0;34m'
@@ -49,10 +58,14 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 # Set update check
 UPDATE='check'
+# Set repo update check
+REPO_UPDATE='check'
 # Set username
 USER_NAME=invidious
 # Set userdir
 USER_DIR="/home/invidious"
+# Set repo Dir
+REPO_DIR=$USER_DIR/invidious
 # Master branch
 IN_MASTER=master
 # Release tag
@@ -129,6 +142,24 @@ elif [[ $(lsb_release -si) == "CentOS" ]]; then
   BUILD_DEP_PKGS="ImageMagick-devel"
   # PostgreSQL Service
   PGSQL_SERVICE="postgresql-11.service"
+elif [[ $(lsb_release -si) == "Fedora" ]]; then
+  SUDO="sudo"
+  UPDATE="dnf update"
+  INSTALL="dnf install -y"
+  UNINSTALL="dnf remove -y"
+  PURGE="dnf purge -y"
+  CLEAN="dnf clean all -y"
+  PKGCHK="rpm --quiet --query"
+  # Pre-install packages
+  PRE_INSTALL_PKGS="git curl sudo"
+  # Install packages
+  INSTALL_PKGS="crystal openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-devel sqlite-devel"
+  #Uninstall packages
+  UNINSTALL_PKGS="crystal openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-devel sqlite-devel"
+  # Build-dep packages
+  BUILD_DEP_PKGS="ImageMagick-devel"
+  # PostgreSQL Service
+  PGSQL_SERVICE="postgresql-11.service"
   #elif [[ $(lsb_release -si) == "Darwin" ]]; then
   #SUDO="sudo"
   #UPDATE="brew update"
@@ -159,6 +190,13 @@ header () {
   echo ' ╚═══════════════════════════════════════════════════════════════════╝'
   echo -e "${NC}"
 }
+# Set permissions
+set_permissions () {
+  ${SUDO} chown -R $USER_NAME:$USER_NAME $USER_DIR
+  ${SUDO} chmod -R 755 $USER_DIR
+  #${SUDO} chmod 664 ${REPO_DIR}/config/config.yml
+  #${SUDO} chmod 755 ${REPO_DIR}/invidious
+}
 # Get Crystal
 get_crystal () {
   if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
@@ -167,7 +205,7 @@ get_crystal () {
       curl -sL "https://keybase.io/crystal/pgp_keys.asc" | ${SUDO} apt-key add -
       echo "deb https://dist.crystal-lang.org/apt crystal main" | ${SUDO} tee /etc/apt/sources.list.d/crystal.list
     fi
-  elif [[ $(lsb_release -si) == "CentOS" ]]; then
+  elif [[ $(lsb_release -si) == "CentOS" || $(lsb_release -si) == "Fedora" ]]; then
     if [[ ! -e /etc/yum.repos.d/crystal.repo ]]; then
       curl https://dist.crystal-lang.org/rpm/setup.sh | ${SUDO} bash
     fi
@@ -185,8 +223,8 @@ GetMaster () {
   master=$(git rev-list --max-count=1 --abbrev-commit HEAD)
   # Checkout master
   git checkout $master
-  git pull
-  #for i in `git rev-list --abbrev-commit $master..HEAD` ; do file=$USER_DIR/invidious/config/migrate-scripts/migrate-db-$i.sh ; [ -f $file ] && $file ; done
+  #git pull
+  #for i in `git rev-list --abbrev-commit $master..HEAD` ; do file=${REPO_DIR}/config/migrate-scripts/migrate-db-$i.sh ; [ -f $file ] && $file ; done
 }
 # Checkout Release Tag
 GetRelease () {
@@ -196,19 +234,19 @@ GetRelease () {
   latestVersion=$(git describe --tags `git rev-list --tags --max-count=1`)
   # Checkout latest release tag
   git checkout $latestVersion
-  git pull
-  #for i in `git rev-list --abbrev-commit $currentVersion..HEAD` ; do file=$USER_DIR/invidious/config/migrate-scripts/migrate-db-$i.sh ; [ -f $file ] && $file ; done
+  #git pull
+  #for i in `git rev-list --abbrev-commit $currentVersion..HEAD` ; do file=${REPO_DIR}/config/migrate-scripts/migrate-db-$i.sh ; [ -f $file ] && $file ; done
 }
 # Rebuild Invidious
 rebuild () {
-  printf "\n-- Rebuilding $USER_DIR/invidious\n"
-  cd $USER_DIR/invidious || exit 1
+  printf "\n-- Rebuilding ${REPO_DIR}\n"
+  cd ${REPO_DIR} || exit 1
   shards
   crystal build src/invidious.cr --release
   #sudo chown -R 1000:$USER_NAME $USER_DIR
   cd -
   printf "\n"
-  echo -e "${GREEN} Done Rebuilding $USER_DIR/invidious ${NC}"
+  echo -e "${GREEN} Done Rebuilding ${REPO_DIR} ${NC}"
   sleep 3
 }
 # Restart Invidious
@@ -376,8 +414,12 @@ case $OPTION in
 
       if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
         apt -qq list $IMAGICKPKG 2>/dev/null
-      elif [[ $(lsb_release -si) == "CentOS" ]]; then
-        identify -version
+      elif [[ $(lsb_release -si) == "CentOS" || $(lsb_release -si) == "Fedora" ]]; then
+        if [[ $(identify -version 2>/dev/null) ]]; then
+          identify -version
+        else
+          echo -e "${ORANGE}ImageMagick is not installed.${NC}"
+        fi
       else
         echo -e "${RED}Error: Sorry, your OS is not supported.${NC}"
         exit 1;
@@ -387,16 +429,17 @@ case $OPTION in
     }
     chk_git_repo () {
       # Check if the folder is a git repo
-      if [[ -d "$USER_DIR/invidious/.git" ]]; then
-        #if (systemctl -q is-active invidious.service) && -d "$USER_DIR/invidious/.git" then
+      if [[ -d "${REPO_DIR}/.git" ]]; then
+        #if (systemctl -q is-active invidious.service) && -d "${REPO_DIR}/.git" then
         echo ""
         echo -e "${RED}Looks like Invidious is already installed!${NC}"
         echo ""
         echo -e "${ORANGE}If you want to reinstall, please choose option 7 to Uninstall Invidious first!${NC}"
         echo ""
         sleep 3
-        ./invidious_update.sh
-        exit 1
+        cd ${CURRDIR}
+        ./${SCRIPT_NAME}
+        #exit 1
       fi
     }
     chk_git_repo
@@ -524,7 +567,7 @@ case $OPTION in
       if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
         ${SUDO} ${PURGE} imagemagick
         ${SUDO} ${CLEAN}
-      elif [[ $(lsb_release -si) == "CentOS" ]]; then
+      elif [[ $(lsb_release -si) == "CentOS" || $(lsb_release -si) == "Fedora" ]]; then
         ${SUDO} yum groupinstall "Development Tools"
       else
         echo -e "${RED}Error: Sorry, your OS is not supported.${NC}"
@@ -566,7 +609,7 @@ case $OPTION in
       if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
         ${SUDO} ${PURGE} imagemagick
         ${SUDO} ${CLEAN}
-      elif [[ $(lsb_release -si) == "CentOS" ]]; then
+      elif [[ $(lsb_release -si) == "CentOS" || $(lsb_release -si) == "Fedora" ]]; then
         ${SUDO} yum groupinstall "Development Tools"
       else
         echo -e "${RED}Error: Sorry, your OS is not supported.${NC}"
@@ -599,7 +642,7 @@ case $OPTION in
       if ! ${PKGCHK} $BUILD_DEP_PKGS >/dev/null 2>&1; then
         if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
           ${SUDO} ${INSTALL} imagemagick
-        elif [[ $(lsb_release -si) == "CentOS" ]]; then
+        elif [[ $(lsb_release -si) == "CentOS" || $(lsb_release -si) == "Fedora" ]]; then
           ${SUDO} ${INSTALL} ImageMagick
         else
           echo -e "${RED}Error: Sorry, your OS is not supported.${NC}"
@@ -635,7 +678,8 @@ case $OPTION in
       mkdir -p $USER_DIR
     fi
 
-    #if [[ ! -d $USER_DIR/invidious ]]; then
+    set_permissions
+    #if [[ ! -d ${REPO_DIR} ]]; then
     echo -e "${GREEN}Downloading Invidious from GitHub${NC}"
     #sudo -i -u $USER_NAME
     cd $USER_DIR || exit 1
@@ -646,18 +690,26 @@ case $OPTION in
     #${SUDO} chown -R $USER_NAME:$USER_NAME $USER_DIR
     #${SUDO} chmod -R 755 $USER_DIR
     #fi
-    cd $USER_DIR/invidious || exit 1
+    cd ${REPO_DIR} || exit 1
     # Checkout
     if [[ ! "$IN_BRANCH" = 'master' ]]; then
       GetRelease
+      git pull
     fi
     if [[ ! "$IN_BRANCH" = 'release' ]]; then
       GetMaster
+      git pull
     fi
+    set_permissions
     cd -
     #fi
-    if [[ $(lsb_release -si) == "CentOS" ]]; then
-      ${SUDO} ${INSTALL} https://download.postgresql.org/pub/repos/yum/11/redhat/rhel-7-x86_64/pgdg-centos11-11-2.noarch.rpm
+    if [[ $(lsb_release -si) == "CentOS" || $(lsb_release -si) == "Fedora" ]]; then
+      if [[ $(lsb_release -si) == "CentOS" ]]; then
+        ${SUDO} ${INSTALL} https://download.postgresql.org/pub/repos/yum/11/redhat/rhel-7-x86_64/pgdg-centos11-11-2.noarch.rpm
+      fi
+      if [[ $(lsb_release -si) == "Fedora" ]]; then
+        ${SUDO} rpm -Uvh "https://download.postgresql.org/pub/repos/yum/11/fedora/fedora-$(lsb_release -sr)-x86_64/pgdg-fedora11-11-2.noarch.rpm"
+      fi
       ${SUDO} ${INSTALL} postgresql11-server postgresql11
       ${SUDO} /usr/pgsql-11/bin/postgresql-11-setup initdb
       ${SUDO} chmod 775 /var/lib/pgsql/11/data/postgresql.conf
@@ -665,8 +717,7 @@ case $OPTION in
       sleep 1
       ${SUDO} sed -i "s/#port = 5432/port = 5432/g" /var/lib/pgsql/11/data/postgresql.conf
       cp -rp /var/lib/pgsql/11/data/pg_hba.conf /var/lib/pgsql/11/data/pg_hba.conf.bak
-      echo "
-      # Database administrative login by Unix domain socket
+      echo "# Database administrative login by Unix domain socket
       local   all             postgres                                peer
 
       # TYPE  DATABASE        USER            ADDRESS                 METHOD
@@ -710,19 +761,19 @@ case $OPTION in
     #sudo -u postgres psql -c "GRANT ALL ON DATABASE $psqldb TO $USER_NAME;"
     # Import db files
     echo "Running channels.sql"
-    ${SUDO} -i -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/channels.sql
+    ${SUDO} -i -u postgres psql -d $psqldb -f ${REPO_DIR}/config/sql/channels.sql
     echo "Running videos.sql"
-    ${SUDO} -i -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/videos.sql
+    ${SUDO} -i -u postgres psql -d $psqldb -f ${REPO_DIR}/config/sql/videos.sql
     echo "Running channel_videos.sql"
-    ${SUDO} -i -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/channel_videos.sql
+    ${SUDO} -i -u postgres psql -d $psqldb -f ${REPO_DIR}/config/sql/channel_videos.sql
     echo "Running users.sql"
-    ${SUDO} -i -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/users.sql
-    if [[ -e $USER_DIR/invidious/config/sql/session_ids.sql ]]; then
+    ${SUDO} -i -u postgres psql -d $psqldb -f ${REPO_DIR}/config/sql/users.sql
+    if [[ -e ${REPO_DIR}/config/sql/session_ids.sql ]]; then
       echo "Running session_ids.sql"
-      ${SUDO} -i -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/session_ids.sql
+      ${SUDO} -i -u postgres psql -d $psqldb -f ${REPO_DIR}/config/sql/session_ids.sql
     fi
     echo "Running nonces.sql"
-    ${SUDO} -i -u postgres psql -d $psqldb -f $USER_DIR/invidious/config/sql/nonces.sql
+    ${SUDO} -i -u postgres psql -d $psqldb -f ${REPO_DIR}/config/sql/nonces.sql
     echo "Finished Database section"
     update_config () {
       ######################
@@ -744,7 +795,7 @@ case $OPTION in
       # Lets change https_only value
       OLDHTTPS="https_only: false"
       NEWHTTPS="https_only: $https_only"
-      DPATH="$USER_DIR/invidious/config/config.yml"
+      DPATH="${REPO_DIR}/config/config.yml"
       BPATH="$BAKPATH"
       TFILE="/tmp/config.yml"
       [ ! -d $BPATH ] && mkdir -p $BPATH || :
@@ -772,23 +823,19 @@ case $OPTION in
     update_config
     # Crystal complaining about permissions on CentOS and somewhat Debian
     # So before we build, make sure permissions are set.
-    ${SUDO} chown -R $USER_NAME:$USER_NAME $USER_DIR
-    ${SUDO} chmod -R 755 $USER_DIR
-    ${SUDO} chmod 644 $USER_DIR/invidious/config/config.yml
+    set_permissions
     ######################
-    cd $USER_DIR/invidious || exit 1
+    cd ${REPO_DIR} || exit 1
     #sudo -i -u invidious \
       shards
     crystal build src/invidious.cr --release
     # Not figured out why yet, so let's set permissions after as well...
-    ${SUDO} chown -R $USER_NAME:$USER_NAME $USER_DIR
-    ${SUDO} chmod -R 755 $USER_DIR
-    ${SUDO} chmod 644 $USER_DIR/invidious/config/config.yml
+    set_permissions
     systemd_install () {
       ######################
       # Setup Systemd Service
       ######################
-      cp $USER_DIR/invidious/${SERVICE_NAME} /lib/systemd/system/${SERVICE_NAME}
+      cp ${REPO_DIR}/${SERVICE_NAME} /lib/systemd/system/${SERVICE_NAME}
       #wget https://github.com/omarroth/invidious/raw/master/invidious.service
       ${SUDO} sed -i "s/invidious -o invidious.log/invidious -b ${ip} -p ${port} -o invidious.log/g" /lib/systemd/system/${SERVICE_NAME}
       # Lets change the default ip and port
@@ -835,15 +882,25 @@ case $OPTION in
     show_install_banner () {
       #clear
       header
+      echo ""
+      echo ""
+      echo ""
       echo "Thank you for using the Invidious Update.sh script."
       echo ""
+      echo ""
+      echo ""
       echo "Invidious install done. Now visit http://${ip}:${port}"
+      echo ""
+      echo ""
+      echo ""
       echo ""
       echo -e "Documentation for this script is available here: ${ORANGE}\n https://github.com/tmiland/Invidious-Updater${NC}\n"
     }
     show_install_banner
     sleep 5
-    exit
+    cd ${CURRDIR}
+    ./${SCRIPT_NAME}
+    #exit
     ;;
   2) # Update Invidious
     if [[ "$EUID" -ne 0 ]]; then
@@ -879,19 +936,24 @@ case $OPTION in
     echo -e "${GREEN}Pulling Invidious from GitHub${NC}"
     #sudo -i -u $USER_NAME
     #cd $USER_DIR || exit 1
-    cd $USER_DIR/invidious || exit 1
+    cd ${REPO_DIR} || exit 1
     # Checkout
     if [[ ! "$IN_BRANCH" = 'master' ]]; then
       GetRelease
+      git pull
     fi
     if [[ ! "$IN_BRANCH" = 'release' ]]; then
       GetMaster
+      git pull
     fi
     rebuild
-    ${SUDO} chown -R $USER_NAME:$USER_NAME $USER_DIR/invidious
+    ${SUDO} chown -R $USER_NAME:$USER_NAME ${REPO_DIR}
     #cd -
     restart
-    exit
+    sleep 3
+    cd ${CURRDIR}
+    ./${SCRIPT_NAME}
+    #exit
     ;;
   3) # Deploy with Docker
     #if [[ $(lsb_release -si) == "CentOS" ]]; then
@@ -906,8 +968,8 @@ case $OPTION in
     # fi
     docker_repo_chk () {
       # Check if the folder is a git repo
-      if [[ ! -d "$USER_DIR/invidious/.git" ]]; then
-        #if (systemctl -q is-active invidious.service) && -d "$USER_DIR/invidious/.git" then
+      if [[ ! -d "${REPO_DIR}/.git" ]]; then
+        #if (systemctl -q is-active invidious.service) && -d "${REPO_DIR}/.git" then
         echo ""
         echo -e "${RED}Looks like Invidious is not installed!${NC}"
         echo ""
@@ -944,23 +1006,25 @@ case $OPTION in
             cd $USER_DIR || exit 1
             git clone https://github.com/omarroth/invidious
             # Set user permissions (just in case)
-            #sudo chown -R $USER_NAME:$USER_NAME $USER_DIR/invidious
-            #sudo chmod -R 755 $USER_DIR/invidious/config/sql/*.sql
-            cd $USER_DIR/invidious || exit 1
+            #sudo chown -R $USER_NAME:$USER_NAME ${REPO_DIR}
+            #sudo chmod -R 755 ${REPO_DIR}/config/sql/*.sql
+            cd ${REPO_DIR} || exit 1
             # Checkout
             if [[ ! "$IN_BRANCH" = 'master' ]]; then
               GetRelease
+              git pull
             fi
             if [[ ! "$IN_BRANCH" = 'release' ]]; then
               GetMaster
+              git pull
             fi
             #cd -
-            #./invidious_update.sh
+            #./${SCRIPT_NAME}
             ;;
           [Nn]* )
             sleep 3
             cd ${CURRDIR}
-            ./invidious_update.sh
+            ./${SCRIPT_NAME}
             ;;
           * ) echo "Enter Y, N or Q, please." ;;
         esac
@@ -988,17 +1052,17 @@ case $OPTION in
         docker_repo_chk
         if ${PKGCHK} docker-ce docker-ce-cli >/dev/null 2>&1; then
           if [[ $BUILD_DOCKER = "y" ]]; then
-            cd $USER_DIR/invidious
+            cd ${REPO_DIR}
             docker-compose up -d
             echo -e "${GREEN}Deployment done.${NC}"
             sleep 5
             cd ${CURRDIR}
-            ./invidious_update.sh
+            ./${SCRIPT_NAME}
             #exit 0
           fi
           if [[ $BUILD_DOCKER = "n" ]]; then
             cd ${CURRDIR}
-            ./invidious_update.sh
+            ./${SCRIPT_NAME}
           fi
         else
           echo -e "${RED}Docker is not installed, please choose option 5)${NC}"
@@ -1027,11 +1091,11 @@ case $OPTION in
             ;;
         esac
         while true; do
-          cd $USER_DIR/invidious
+          cd ${REPO_DIR}
           docker-compose ${DOCKER_SERVICE}
           sleep 5
           cd ${CURRDIR}
-          ./invidious_update.sh
+          ./${SCRIPT_NAME}
         done
         exit
         ;;
@@ -1042,16 +1106,16 @@ case $OPTION in
         docker_repo_chk
         if ${PKGCHK} docker-ce docker-ce-cli >/dev/null 2>&1; then
           if [[ $REBUILD_DOCKER = "y" ]]; then
-            cd $USER_DIR/invidious
+            cd ${REPO_DIR}
             docker-compose build
             echo -e "${GREEN}Rebuild done.${NC}"
             sleep 5
             cd ${CURRDIR}
-            ./invidious_update.sh
+            ./${SCRIPT_NAME}
           fi
           if [[ $REBUILD_DOCKER = "n" ]]; then
             cd ${CURRDIR}
-            ./invidious_update.sh
+            ./${SCRIPT_NAME}
           fi
         else
           echo -e "${RED}Docker is not installed, please choose option 5)${NC}"
@@ -1065,7 +1129,7 @@ case $OPTION in
         docker_repo_chk
         if ${PKGCHK} docker-ce docker-ce-cli >/dev/null 2>&1; then
           if [[ $DEL_REBUILD_DOCKER = "y" ]]; then
-            cd $USER_DIR/invidious
+            cd ${REPO_DIR}
             docker-compose down
             docker volume rm invidious_postgresdata
             sleep 5
@@ -1073,11 +1137,11 @@ case $OPTION in
             echo -e "${GREEN}Data deleted and Rebuild done.${NC}"
             sleep 5
             cd ${CURRDIR}
-            ./invidious_update.sh
+            ./${SCRIPT_NAME}
           fi
           if [[ $DEL_REBUILD_DOCKER = "n" ]]; then
             cd ${CURRDIR}
-            ./invidious_update.sh
+            ./${SCRIPT_NAME}
           fi
         else
           echo -e "${RED}Docker is not installed, please choose option 5)${NC}"
@@ -1129,31 +1193,48 @@ case $OPTION in
             "deb [arch=amd64] https://download.docker.com/linux/debian \
             $(lsb_release -cs) \
             ${DOCKER_VER}"
-            # Update the apt package index:
-            ${SUDO} ${UPDATE}
-            # Install the latest version of Docker CE and containerd
-            ${SUDO} ${INSTALL} docker-ce docker-ce-cli containerd.io
-            # Verify that Docker CE is installed correctly by running the hello-world image.
-            ${SUDO} docker run hello-world
+          # Update the apt package index:
+          ${SUDO} ${UPDATE}
+          # Install the latest version of Docker CE and containerd
+          ${SUDO} ${INSTALL} docker-ce docker-ce-cli containerd.io
+          # Verify that Docker CE is installed correctly by running the hello-world image.
+          ${SUDO} docker run hello-world
         elif [[ $(lsb_release -si) == "CentOS" ]]; then
           # Install required packages.
-          sudo yum install -y yum-utils \
+          ${SUDO} ${INSTALL} yum-utils \
             device-mapper-persistent-data \
             lvm2
-            # Set up the repository.
+          # Set up the repository.
           ${SUDO} yum-config-manager \
             --add-repo \
             https://download.docker.com/linux/centos/docker-ce.repo
-            # Enable the repository.
-            sudo yum-config-manager --enable docker-ce-${DOCKER_VER}
-            # Update the apt package index:
-            ${SUDO} ${UPDATE}
-            # Install the latest version of Docker CE and containerd
-            ${SUDO} ${INSTALL} docker-ce docker-ce-cli containerd.io
-            # Start Docker.
-            ${SUDO} systemctl start docker
-            # Verify that Docker CE is installed correctly by running the hello-world image.
-            ${SUDO} docker run hello-world
+          # Enable the repository.
+          ${SUDO} yum-config-manager --enable docker-ce-${DOCKER_VER}
+          # Update the apt package index:
+          ${SUDO} ${UPDATE}
+          # Install the latest version of Docker CE and containerd
+          ${SUDO} ${INSTALL} docker-ce docker-ce-cli containerd.io
+          # Start Docker.
+          ${SUDO} systemctl start docker
+          # Verify that Docker CE is installed correctly by running the hello-world image.
+          ${SUDO} docker run hello-world
+        elif [[ $(lsb_release -si) == "Fedora" ]]; then
+          # Install required packages.
+          ${SUDO} ${INSTALL} dnf-plugins-core
+          # Set up the repository.
+          ${SUDO} dnf config-manager \
+            --add-repo \
+            https://download.docker.com/linux/fedora/docker-ce.repo
+          # Enable the repository.
+          ${SUDO} dnf config-manager --set-enabled docker-ce-${DOCKER_VER}
+          # Update the apt package index:
+          ${SUDO} ${UPDATE}
+          # Install the latest version of Docker CE and containerd
+          ${SUDO} ${INSTALL} docker-ce docker-ce-cli containerd.io
+          # Start Docker.
+          ${SUDO} systemctl start docker
+          # Verify that Docker CE is installed correctly by running the hello-world image.
+          ${SUDO} docker run hello-world
         else
           echo -e "${RED}Error: Sorry, your OS is not supported.${NC}"
           exit 1;
@@ -1187,7 +1268,7 @@ case $OPTION in
     ######################
     if ( ! systemctl -q is-active ${SERVICE_NAME})
     then
-      cp $USER_DIR/invidious/${SERVICE_NAME} /lib/systemd/system/${SERVICE_NAME}
+      cp ${REPO_DIR}/${SERVICE_NAME} /lib/systemd/system/${SERVICE_NAME}
       #wget https://github.com/omarroth/invidious/raw/master/invidious.service
       # Enable invidious start at boot
       ${SUDO} systemctl enable ${SERVICE_NAME}
@@ -1215,8 +1296,10 @@ case $OPTION in
       echo -e "Documentation for this script is available here: ${ORANGE}\n https://github.com/tmiland/Invidious-Updater${NC}\n"
     }
     show_systemd_install_banner
-    sleep 5
-    exit
+    sleep 3
+    cd ${CURRDIR}
+    ./${SCRIPT_NAME}
+    #exit 1
     ;;
   5) # Database maintenance
     #psqldb="invidious"   # Database name
@@ -1276,26 +1359,34 @@ case $OPTION in
           sleep 5
           echo -e "${ORANGE}Restarting script. Please try again..."
           sleep 5
-          ./invidious_update.sh
-          exit
+          cd ${CURRDIR}
+          ./${SCRIPT_NAME}
+          #exit
         fi
       fi
     fi
     show_maintenance_banner () {
       #clear
       header
+      echo ""
+      echo ""
+      echo ""
       echo "Thank you for using the Invidious Update.sh script."
       echo ""
       echo ""
+      echo ""
       echo "Invidious maintenance done. Now visit http://localhost:3000"
+      echo ""
+      echo ""
       echo ""
       echo ""
       echo -e "Documentation for this script is available here: ${ORANGE}\n https://github.com/tmiland/Invidious-Updater${NC}\n"
     }
     show_maintenance_banner
     sleep 5
-    ./invidious_update.sh
-    exit
+    cd ${CURRDIR}
+    ./${SCRIPT_NAME}
+    #exit 1
     ;;
   6) # Database migration
     if [[ "$EUID" -ne 0 ]]; then
@@ -1311,7 +1402,7 @@ case $OPTION in
         echo -e "${ORANGE}stopping Invidious...${NC}"
         ${SUDO} systemctl stop ${SERVICE_NAME}
         echo "Running Migration..."
-        cd $USER_DIR/invidious || exit 1
+        cd ${REPO_DIR} || exit 1
         currentVersion=$(git rev-list --max-count=1 --abbrev-commit HEAD)
         latestVersion=$(git describe --tags `git rev-list --tags --max-count=1`)
         git checkout $latestVersion
@@ -1347,21 +1438,32 @@ case $OPTION in
         sleep 5
         echo -e "${ORANGE}Restarting script. Please try again...${NC}"
         sleep 5
-        ./invidious_update.sh
-        exit
+        cd ${CURRDIR}
+        ./${SCRIPT_NAME}
+        #exit
       fi
     fi
     show_migration_banner () {
       header
+      echo ""
+      echo ""
+      echo ""
       echo "Thank you for using the Invidious Update.sh script."
       echo ""
+      echo ""
+      echo ""
       echo "Invidious migration done. Now visit http://localhost:3000"
+      echo ""
+      echo ""
+      echo ""
       echo ""
       echo -e "Documentation for this script is available here: ${ORANGE}\n https://github.com/tmiland/Invidious-Updater${NC}\n"
     }
     show_migration_banner
     sleep 3
-    exit
+    cd ${CURRDIR}
+    ./${SCRIPT_NAME}
+    #exit 1
     ;;
   7) # Uninstall Invidious
     if [[ "$EUID" -ne 0 ]]; then
@@ -1396,7 +1498,7 @@ case $OPTION in
       done
     fi
     while [[ $RM_FILES !=  "y" && $RM_FILES != "n" ]]; do
-      echo -e "       ${ORANGE}(( This option will remove $USER_DIR/invidious ))${NC}"
+      echo -e "       ${ORANGE}(( This option will remove ${REPO_DIR} ))${NC}"
       read -p "       Remove files ? [y/n]: " -e RM_FILES
       if [[ "$RM_FILES" = 'y' ]]; then
         while [[ $RM_USER !=  "y" && $RM_USER != "n" ]]; do
@@ -1503,14 +1605,14 @@ case $OPTION in
       echo ""
       echo -e "${ORANGE}Removing invidious files and modules files.${NC}"
       echo ""
-      if [[ $(lsb_release -si) == "CentOS" ]]; then
-        rm -r \
-          /usr/lib/systemd/system/${SERVICE_NAME} \
-          /etc/yum.repos.d/crystal.repo
-      elif [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
+      if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
         rm -r \
           /lib/systemd/system/${SERVICE_NAME} \
           /etc/apt/sources.list.d/crystal.list
+      elif [[ $(lsb_release -si) == "CentOS" ]]; then
+        rm -r \
+          /usr/lib/systemd/system/${SERVICE_NAME} \
+          /etc/yum.repos.d/crystal.repo
       fi
       # postgresql postgresql-9.6 postgresql-client-9.6 postgresql-contrib-9.6 # Don't touch PostgreSQL
       #PURGE_PKGS="apt-transport-https git curl sudo remove crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev imagemagick libsqlite3-dev"
@@ -1532,9 +1634,9 @@ case $OPTION in
     fi
     if [[ "$RM_FILES" = 'y' ]]; then
       # If directory is present, remove
-      if [[ -d $USER_DIR/invidious ]]; then
+      if [[ -d ${REPO_DIR} ]]; then
         echo -e "${ORANGE}Folder Found, removing folder${NC}"
-        rm -r $USER_DIR/invidious
+        rm -r ${REPO_DIR}
       fi
     fi
     # Remove user and settings
@@ -1551,11 +1653,11 @@ case $OPTION in
         echo ""
         echo -e "${ORANGE}User $USER_NAME Found, removing user and files${NC}"
         echo ""
-        if [[ $(lsb_release -si) == "CentOS" ]]; then
-          /usr/sbin/userdel -r $USER_NAME
-        fi
         if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
           deluser --remove-home $USER_NAME
+        fi
+        if [[ $(lsb_release -si) == "CentOS" || $(lsb_release -si) == "Fedora" ]]; then
+          /usr/sbin/userdel -r $USER_NAME
         fi
       fi
     fi
@@ -1563,7 +1665,10 @@ case $OPTION in
     echo ""
     echo -e "${GREEN}Un-installation done.${NC}"
     echo ""
-    exit
+    sleep 3
+    cd ${CURRDIR}
+    ./${SCRIPT_NAME}
+    #exit
     ;;
   8) # Exit
     echo ""
