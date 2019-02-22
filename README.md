@@ -248,9 +248,11 @@ Ideas:
 - [BCH] : qznnyvpxym7a8he2ps9m6l44s373fecfnv86h2vwq2
 
 #### Disclaimer 
+
 *** ***Use at own risk*** ***
 
 ### License
+
 [![MIT License Image](https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/MIT_logo.svg/220px-MIT_logo.svg.png)](https://github.com/tmiland/Invidious-Updater/blob/master/LICENSE)
 
 [MIT License](https://github.com/tmiland/Invidious-Updater/blob/master/LICENSE)
