@@ -19,7 +19,6 @@
 * Run database migration
 * Uninstall Invidious
 
-
 ## Screenshots
 ![screenshot](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Screenshot%20at%2018-10-05.png)
 
@@ -27,11 +26,10 @@
 | ------ | ------ |
 | [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Screenshot%20from%202019-02-20%2017-14-20.png" height="180" width="320">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Screenshot%20from%202019-02-20%2017-14-20.png) | [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Screenshot%20from%202019-02-20%2017-09-25.png" height="180" width="320">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Screenshot%20from%202019-02-20%2017-09-25.png) |
 
-(click to expand)
 
 ## Installation
 
-<details><summary>Download and execute the script:</summary><p>
+#### Download and execute the script:
 
 ```bash
 $ wget https://github.com/tmiland/Invidious-Updater/raw/master/invidious_update.sh
@@ -58,10 +56,9 @@ $ ln -s /home/invidious/Invidious-Updater/invidious_update.sh /usr/bin/invidious
 $ invidious-updater
 ```
 
-</p></details>
-
 ## Usage
-<details><summary>1. Install invidious</summary><p>
+
+1. Install invidious
    
    * Select an option [1-8]: 1
 
@@ -98,9 +95,9 @@ $ invidious-updater
 
 
    * Invidious is ready to be installed, press any key to continue...
-</p></details>
 
-<details><summary>2. Update Invidious</summary><p>
+
+2. Update Invidious
 
    * Let's go through some configuration options.
 
@@ -112,9 +109,9 @@ $ invidious-updater
      * branch: release
    * Invidious is ready to be updated, press any key to continue...
 
-</p></details>
 
-<details><summary>3. Deploy Invidious with Docker</summary><p>
+
+3. Deploy Invidious with Docker
 
    * 1) Build and start cluster
    * 2) Start, Stop or Restart cluster
@@ -122,27 +119,20 @@ $ invidious-updater
    * 4) Delete data and rebuild
    * 5) Install Docker CE
 
-</p></details>
-
-<details><summary>4. Install Invidious service</summary><p>
+4. Install Invidious service
 
    * Setup Systemd Service
 
-</p></details>
-
-<details><summary>5. Run database maintenance</summary><p>
+5. Run database maintenance
 
    * Database maintenance option [Database Information and Maintenance](https://github.com/omarroth/invidious/wiki/Database-Information-and-Maintenance)
 
-</p></details>
 
-<details><summary>6. Run database migration</summary><p>
+6. Run database migration
 
    * Database migration option [migrate-scripts](https://github.com/omarroth/invidious/tree/master/config/migrate-scripts)
 
-</p></details>
-
-<details><summary>7. Uninstall Invidious</summary><p>
+7. Uninstall Invidious
 
   * Uninstallation of Invidious, and everything installed during setup.
     * Remove PostgreSQL database for Invidious ? [y/n]
@@ -155,17 +145,13 @@ $ invidious-updater
     * Is that correct? [y/n]:
   * Invidious is ready to be uninstalled, press any key to continue...
 
-</p></details>
-
-<details><summary>8. Exit</summary><p>
+8. Exit
 
    * Exits the script
    
-   </p></details>
-
 ## Testing
 
-<details><summary>Tested on:</summary><p>
+Tested on:
 
 - [X] Tested extensively on Debian 9
   - [X] Docker option tested and working
@@ -177,23 +163,24 @@ $ invidious-updater
 - [X] Tested on Fedora 29
   - [X] Docker option tested and working
   
+  If you get permission issues, set selinux to permissive. 
+  See how to here: [Disable SELinux or Set it to Permissive mode in Fedora 28 / 29, RHEL or CentOS](https://www.kaizenuslife.com/disable-or-set-selinux-permissive-in-fedora-rhel-or-cent-os/)
+
+  ### ***Postgresql 11 will be installed by default in both Fedora and CentOS.***
+  
 #### Latest install log - version: 1.1.6
 
 [install log Debian 9](https://github.com/tmiland/Invidious-Updater/blob/master/log/install_log_debian.log)
 
-</p></details>
-
 ## Todo
 
-<details><summary>On the todo list:</summary><p>
+On the todo list:
 
 - [ ] Add Imagemagick (source) to Uninstall options
 
-</p></details>
-
 ## Done
 
-<details><summary>What's done:</summary><p>
+What's done:
 
 - [X] Add Uninstallation option 
   - Added in version 1.1.4
@@ -222,19 +209,16 @@ $ invidious-updater
 - [X] Add support for Fedora 
   - Added in [1.2.6](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.2.6)
 
-  </p></details>
+  
 
 ### Possible options
 
-<details><summary>Ideas:</summary><p>
+Ideas:
 
 - Support for auto-update check
   - [ ] For Invidious
-
 - [ ] Support for running own forks
 - [ ] Support for database backup
-
-</p></details>
 
 ## Compatibility and Requirements
 
@@ -262,3 +246,33 @@ $ invidious-updater
 - [PayPal me](https://paypal.me/milanddata)
 - [BTC] : 3MV69DmhzCqwUnbryeHrKDQxBaM724iJC2
 - [BCH] : qznnyvpxym7a8he2ps9m6l44s373fecfnv86h2vwq2
+
+#### Disclaimer 
+*** ***Use at own risk*** ***
+
+### License
+[![MIT License Image](https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/MIT_logo.svg/220px-MIT_logo.svg.png)](https://github.com/tmiland/Invidious-Updater/blob/master/LICENSE)
+
+[MIT License](https://github.com/tmiland/Invidious-Updater/blob/master/LICENSE)
+
+```
+Copyright (c) 2019 Tommy Miland
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
