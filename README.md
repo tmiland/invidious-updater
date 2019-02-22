@@ -199,7 +199,7 @@ What's done:
 - [X] Rewrite the update procedure 
   - Done in 1.2.2
 - [X] Add support to deploy in Docker 
-  - Added in Added in [1.2.3](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.2.3)
+  - Added in [1.2.3](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.2.3)
 - [X] Added support for CentOS 7 
   - Added in [1.2.4](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.2.4) (Docker option not supported yet)
 - [X] Add option for custom IP and Port 
