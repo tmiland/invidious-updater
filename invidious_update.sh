@@ -889,6 +889,7 @@ case $OPTION in
     echo "Let's go through some configuration options."
     echo ""
     echo "Do you want to checkout Invidious release or master?"
+    echo ""
     echo "   1) $IN_RELEASE"
     echo "   2) $IN_MASTER"
     echo ""
@@ -972,6 +973,7 @@ case $OPTION in
 
             echo ""
             echo "Do you want to install Invidious release or master?"
+            echo ""
             echo "   1) $IN_RELEASE"
             echo "   2) $IN_MASTER"
             echo ""
@@ -1307,7 +1309,7 @@ case $OPTION in
       header
       echo "Thank you for using the Invidious Update.sh script."
       echo ""
-      echo "Invidious systemd install done. Now visit http://localhost:3000"
+      echo "Invidious systemd install done."
       echo ""
       echo -e "Documentation for this script is available here: ${ORANGE}\n https://github.com/tmiland/Invidious-Updater${NC}\n"
     }
@@ -1390,7 +1392,7 @@ case $OPTION in
       echo ""
       echo ""
       echo ""
-      echo "Invidious maintenance done. Now visit http://localhost:3000"
+      echo "Invidious maintenance done."
       echo ""
       echo ""
       echo ""
@@ -1465,7 +1467,7 @@ case $OPTION in
       echo ""
       echo ""
       echo ""
-      echo "Invidious migration done. Now visit http://localhost:3000"
+      echo "Invidious migration done."
       echo ""
       echo ""
       echo ""
