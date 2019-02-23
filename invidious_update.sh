@@ -304,6 +304,10 @@ open_file () { #expects one argument: file_path
 get_updater_version () {
   echo $(sed -n '14 s/[^0-9.]*\([0-9.]*\).*/\1/p' "$1")
 }
+# Get dbname from config file (used in db maintenance and uninstallation)
+get_dbname () {
+  echo $(sed -n 's/.*dbname *: *\([^ ]*.*\)/\1/p' "$1")
+}
 
 # Update banner
 show_update_banner () {
@@ -1316,11 +1320,10 @@ case $OPTION in
     read -p "Are you sure you want to run Database Maintenance? Enter [y/n]: " answer
 
     if [[ ! "$answer" = 'n' ]]; then
-      # Here's where the user is going to enter the Invidious database name, as it appears in the GUI:
-      read -p "Enter database name of your Invidious PostgreSQL database: " psqldb
+      psqldb=$(get_dbname "${REPO_DIR}/config/config.yml")
       # Let's allow the user to confirm that what they've typed in is correct:
       echo ""
-      echo "You entered: $psqldb"
+      echo "Your Invidious database name: $psqldb"
       echo ""
       read -p "Is that correct? Enter [y/n]: " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
 
@@ -1480,12 +1483,14 @@ case $OPTION in
     fi
     # Set db backup path
     PgDbBakPath="/home/backup/$USER_NAME"
+    # Get dbname
+    RM_PSQLDB=$(get_dbname "${REPO_DIR}/config/config.yml")
     # Let's go
     while [[ $RM_PostgreSQLDB !=  "y" && $RM_PostgreSQLDB != "n" ]]; do
-      read -p "       Remove PostgreSQL database for Invidious ? [y/n]: " -e RM_PostgreSQLDB
+      read -p "       Remove database for Invidious ? [y/n]: " -e RM_PostgreSQLDB
       if [[ ! $RM_PostgreSQLDB !=  "y" ]]; then
         echo -e "       ${ORANGE}(( A backup will be placed in $PgDbBakPath ))${NC}"
-        read -p "       Enter Invidious PostgreSQL database name: " RM_PSQLDB
+        echo -e "       Your Invidious database name: $RM_PSQLDB"
       fi
       if [[ ! $RM_PostgreSQLDB !=  "y" ]]; then
         while [[ $RM_RE_PostgreSQLDB !=  "y" && $RM_RE_PostgreSQLDB != "n" ]]; do
