@@ -122,7 +122,6 @@ if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
   # PostgreSQL Service
   PGSQL_SERVICE="postgresql.service"
 elif [[ $(lsb_release -si) == "CentOS" ]]; then
-  #elif [[ $(cat /etc/*release | grep ^NAME | grep "CentOS") ]]; then
   # ImageMagick package name
   IMAGICKPKG=ImageMagick
   SUDO="sudo"
@@ -288,6 +287,7 @@ download_file () {
 }
 # Open files
 open_file () { #expects one argument: file_path
+
   if [ "$(uname)" == 'Darwin' ]; then
     open "$1"
   elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
@@ -304,6 +304,7 @@ open_file () { #expects one argument: file_path
 get_updater_version () {
   echo $(sed -n '14 s/[^0-9.]*\([0-9.]*\).*/\1/p' "$1")
 }
+
 # Update banner
 show_update_banner () {
   clear
@@ -324,9 +325,7 @@ show_update_banner () {
 # Update invidious_update.sh
 # Default: Check for update, if available, ask user if they want to execute it
 update_updater () {
-  #if [ $UPDATE = 'no' ]; then
-  #  return 0 # User signified not to check for updates
-  #fi
+
   # Get tmpfile from github
   declare -r tmpfile=$(download_file 'https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/invidious_update.sh')
   # Do the work
@@ -352,6 +351,7 @@ update_updater () {
     return 0 # No update available
   fi
 }
+
 # Ask user to update yes/no
 if [ $# != 0 ]; then
   while getopts ":ud" opt; do
@@ -373,8 +373,10 @@ if [ $# != 0 ]; then
     esac
   done
 fi
+
 update_updater $@
 cd "$CURRDIR"
+
 show_banner () {
   #clear
   header
@@ -392,23 +394,20 @@ show_banner () {
   echo ""
   echo -e "Documentation for this script is available here: ${ORANGE}\n https://github.com/tmiland/Invidious-Updater${NC}\n"
 }
+
 show_banner
 
 while [[ $OPTION !=  "1" && $OPTION != "2" && $OPTION != "3" && $OPTION != "4" && $OPTION != "5" && $OPTION != "6" && $OPTION != "7" && $OPTION != "8" ]]; do
   read -p "Select an option [1-8]: " OPTION
 done
+
 case $OPTION in
   1) # Install Invidious
     if [[ "$EUID" -ne 0 ]]; then
       echo -e "${RED}Sorry, you need to run this as root${NC}"
       exit 1
     fi
-    # Check if Debian/Ubuntu
-    #if [[ ! $(lsb_release -si) == "Debian" && ! $(lsb_release -si) == "Ubuntu" ]]
-    #then
-    #  echo -e "${RED}Sorry, This script only runs on Debian/Ubuntu${NC}"
-    #  exit 1
-    #fi
+
     # Check which ImageMagick version is installed
     chk_imagickpkg () {
 
@@ -424,13 +423,11 @@ case $OPTION in
         echo -e "${RED}Error: Sorry, your OS is not supported.${NC}"
         exit 1;
       fi
-      #if ! ${PKGCHK} $IMAGICKPKG >/dev/null 2>&1; then
-      #fi
     }
+
     chk_git_repo () {
       # Check if the folder is a git repo
       if [[ -d "${REPO_DIR}/.git" ]]; then
-        #if (systemctl -q is-active invidious.service) && -d "${REPO_DIR}/.git" then
         echo ""
         echo -e "${RED}Looks like Invidious is already installed!${NC}"
         echo ""
@@ -442,7 +439,9 @@ case $OPTION in
         #exit 1
       fi
     }
+
     chk_git_repo
+
     show_preinstall_banner () {
       clear
       header
@@ -452,7 +451,9 @@ case $OPTION in
       echo ""
       echo -e "Documentation for this script is available here: ${ORANGE}\n https://github.com/tmiland/Invidious-Updater${NC}\n"
     }
+
     show_preinstall_banner
+
     echo ""
     echo "Let's go through some configuration options."
     echo ""
@@ -471,10 +472,12 @@ case $OPTION in
         IN_BRANCH=$IN_MASTER
         ;;
     esac
+
     # Let the user enter advanced options:
     while [[ $advanced_options != "y" && $advanced_options != "n" ]]; do
       read -p "Do you want to enter advanced options? [y/n]: " advanced_options
     done
+
     while :;
     do
       case $advanced_options in
@@ -488,9 +491,11 @@ case $OPTION in
         [Nn]* ) break ;;
       esac
       shift
+
       while [[ $https_only != "y" && $https_only != "n" ]]; do
         read -p "Are you going to use https only? [y/n]: " https_only
       done
+
       case $https_only in
         [Yy]* )
           https_only=true
@@ -500,6 +505,7 @@ case $OPTION in
           break ;;
       esac
     done
+
     echo -e "${GREEN}\n"
     echo -e "You entered: \n"
     echo -e "  branch     : $IN_BRANCH"
@@ -520,6 +526,7 @@ case $OPTION in
     while [[ $IMAGICK != "1" && $IMAGICK != "2" && $IMAGICK != "3" ]]; do
       read -p "Select an option [1-3]: " IMAGICK
     done
+
     case $IMAGICK in
       2)
         IMAGEMAGICK=y
@@ -528,9 +535,11 @@ case $OPTION in
         IMAGEMAGICK_SEVEN=y
         ;;
     esac
+
     echo ""
     read -n1 -r -p "Invidious is ready to be installed, press any key to continue..."
     echo ""
+
     ######################
     # Setup Dependencies
     ######################
@@ -540,20 +549,16 @@ case $OPTION in
         ${INSTALL} $i  # || exit 1
       done
     fi
+
     get_crystal
-    #if [[ ! -e /etc/apt/sources.list.d/crystal.list ]]; then
-    #apt-key adv --keyserver keys.gnupg.net --recv-keys 09617FD37CC06B54
-    #curl -sL "https://keybase.io/crystal/pgp_keys.asc" | ${SUDO} apt-key add -
-    #echo "deb https://dist.crystal-lang.org/apt crystal main" | ${SUDO} tee /etc/apt/sources.list.d/crystal.list
-    #fi
-    # || exit 1 # postgresql-9.6 postgresql-client-9.6 postgresql-contrib-9.6 # Don't touch PostgreSQL
-    #INSTALL_PKGS="crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev postgresql imagemagick libsqlite3-dev"
+
     if ! ${PKGCHK} $INSTALL_PKGS >/dev/null 2>&1; then
       ${SUDO} ${UPDATE}
       for i in $INSTALL_PKGS; do
         ${SUDO} ${INSTALL} $i  # || exit 1 #--allow-unauthenticated
       done
     fi
+
     #################
     # ImageMagick 6
     ################
@@ -564,6 +569,7 @@ case $OPTION in
           ${INSTALL} $i  # || exit 1
         done
       fi
+
       if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
         ${SUDO} ${PURGE} imagemagick
         ${SUDO} ${CLEAN}
@@ -573,6 +579,7 @@ case $OPTION in
         echo -e "${RED}Error: Sorry, your OS is not supported.${NC}"
         exit 1;
       fi
+
       cd /tmp || exit 1
       wget https://github.com/ImageMagick/ImageMagick6/archive/${IMAGICK_VER}.tar.gz
       tar -xvf ${IMAGICK_VER}.tar.gz
@@ -588,11 +595,7 @@ case $OPTION in
 
       identify -version
       sleep 5
-      #if [[ -e /usr/bin/convert ]]; then
-      #  cp /usr/bin/convert /usr/bin/convert.bak
-      #  rm -r /usr/bin/convert
-      #  sudo ln -s /usr/local/bin/convert /usr/bin/convert
-      #fi
+
       rm -r /tmp/ImageMagick6-${IMAGICK_VER}
       rm -r /tmp/${IMAGICK_VER}.tar.gz
 
@@ -606,6 +609,7 @@ case $OPTION in
           ${INSTALL} $i
         done
       fi
+
       if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
         ${SUDO} ${PURGE} imagemagick
         ${SUDO} ${CLEAN}
@@ -623,8 +627,6 @@ case $OPTION in
 
       ./configure \
         --with-rsvg \
-        #PREFIX          = /usr/local \
-        #EXEC-PREFIX     = /usr/local
 
       make
       ${SUDO} make install
@@ -633,6 +635,7 @@ case $OPTION in
 
       identify -version
       sleep 5
+      
       rm -r /tmp/ImageMagick-${IMAGICK_SEVEN_VER}
       rm -r /tmp/ImageMagick-${IMAGICK_SEVEN_VER}.tar.gz
 
@@ -650,18 +653,7 @@ case $OPTION in
         fi
       fi
     fi
-    ######################
-    # Add user postgres if not already present
-    ######################
-    #grep postgres /etc/passwd >/dev/null 2>&1
-    #if [ ! $? -eq 0 ] ; then
-    #   echo -e "${ORANGE}User postgres not found, adding user${NC}"
-    #  /usr/sbin/useradd -m postgres \
-      #    rm -r /home/postgres
-    #fi
-    #sudo pg_createcluster -- start 9.6 main \
-      #  sudo chown root.postgres /var/log/postgresql \
-      #  sudo chmod g+wx /var/log/postgresql
+
     ######################
     # Setup Repository
     ######################
@@ -669,9 +661,9 @@ case $OPTION in
     grep $USER_NAME /etc/passwd >/dev/null 2>&1
     if [ ! $? -eq 0 ] ; then
       echo -e "${ORANGE}User $USER_NAME Not Found, adding user${NC}"
-      #/usr/sbin/useradd -m $USER_NAME
       ${SUDO} useradd -m $USER_NAME
     fi
+
     # If directory is not created
     if [[ ! -d $USER_DIR ]]; then
       echo -e "${ORANGE}Folder Not Found, adding folder${NC}"
@@ -679,37 +671,38 @@ case $OPTION in
     fi
 
     set_permissions
-    #if [[ ! -d ${REPO_DIR} ]]; then
+
     echo -e "${GREEN}Downloading Invidious from GitHub${NC}"
     #sudo -i -u $USER_NAME
     cd $USER_DIR || exit 1
     sudo -i -u invidious \
       git clone https://github.com/omarroth/invidious
-    # Set user permissions (just in case)
-    #if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
-    #${SUDO} chown -R $USER_NAME:$USER_NAME $USER_DIR
-    #${SUDO} chmod -R 755 $USER_DIR
-    #fi
     cd ${REPO_DIR} || exit 1
     # Checkout
     if [[ ! "$IN_BRANCH" = 'master' ]]; then
       GetRelease
       git pull
     fi
+
     if [[ ! "$IN_BRANCH" = 'release' ]]; then
       GetMaster
       git pull
     fi
+
     set_permissions
+
     cd -
-    #fi
+
     if [[ $(lsb_release -si) == "CentOS" || $(lsb_release -si) == "Fedora" ]]; then
+      
       if [[ $(lsb_release -si) == "CentOS" ]]; then
         ${SUDO} ${INSTALL} https://download.postgresql.org/pub/repos/yum/11/redhat/rhel-7-x86_64/pgdg-centos11-11-2.noarch.rpm
       fi
+
       if [[ $(lsb_release -si) == "Fedora" ]]; then
         ${SUDO} rpm -Uvh "https://download.postgresql.org/pub/repos/yum/11/fedora/fedora-$(lsb_release -sr)-x86_64/pgdg-fedora11-11-2.noarch.rpm"
       fi
+      
       ${SUDO} ${INSTALL} postgresql11-server postgresql11
       ${SUDO} /usr/pgsql-11/bin/postgresql-11-setup initdb
       ${SUDO} chmod 775 /var/lib/pgsql/11/data/postgresql.conf
@@ -736,29 +729,18 @@ case $OPTION in
       ${SUDO} chmod 600 /var/lib/pgsql/11/data/postgresql.conf
       ${SUDO} chmod 600 /var/lib/pgsql/11/data/pg_hba.conf
     fi
+
     ${SUDO} systemctl enable ${PGSQL_SERVICE}
     sleep 1
     ${SUDO} systemctl restart ${PGSQL_SERVICE}
     sleep 1
     # Create users and set privileges
-    #echo "Creating user postgres with no password"
-    #sudo -u postgres psql -c "CREATE USER postgres;"
-    #echo "Grant all on database postgres to user postgres"
-    #sudo -u postgres psql -c "GRANT ALL ON DATABASE postgres TO postgres;"
     echo "Creating user kemal with password $psqlpass"
     ${SUDO} -u postgres psql -c "CREATE USER kemal WITH PASSWORD '$psqlpass';"
-    #echo "Creating user $psqluser with password $psqlpass"
-    #sudo -u postgres psql -c "CREATE USER $psqluser WITH PASSWORD '$psqlpass';"
-    #echo "Creating user $USER_NAME with password $psqlpass"
-    #sudo -u postgres psql -c "CREATE USER $USER_NAME WITH PASSWORD '$psqlpass';"
     echo "Creating database $psqldb with owner kemal"
     ${SUDO} -u postgres psql -c "CREATE DATABASE $psqldb WITH OWNER kemal;"
     echo "Grant all on database $psqldb to user kemal"
     ${SUDO} -u postgres psql -c "GRANT ALL ON DATABASE $psqldb TO kemal;"
-    #echo "Grant all on database $psqldb to user $psqluser"
-    #sudo -u postgres psql -c "GRANT ALL ON DATABASE $psqldb TO $psqluser;"
-    #echo "Grant all on database $psqldb to user $USER_NAME"
-    #sudo -u postgres psql -c "GRANT ALL ON DATABASE $psqldb TO $USER_NAME;"
     # Import db files
     echo "Running channels.sql"
     ${SUDO} -i -u postgres psql -d $psqldb -f ${REPO_DIR}/config/sql/channels.sql
@@ -775,13 +757,11 @@ case $OPTION in
     echo "Running nonces.sql"
     ${SUDO} -i -u postgres psql -d $psqldb -f ${REPO_DIR}/config/sql/nonces.sql
     echo "Finished Database section"
+
     update_config () {
       ######################
       # Update config.yml with new info from user input
       ######################
-      # Lets change the default user # Not a good idea... Invidious uses 'kemal'. Left for reference
-      #OLDUSER="user: kemal"
-      #NEWUSER="user: $psqluser"
       BAKPATH="/home/backup/$USER_NAME/config"
       # Lets change the default password
       OLDPASS="password: kemal"
@@ -810,17 +790,21 @@ case $OPTION in
           echo -e "${RED}Error: Cannot read $f"
         fi
       done
+
       if [[ -e $TFILE ]]; then
         /bin/rm $TFILE
       else
         echo -e "${GREEN}Done updating config.yml with new info!${NC}"
       fi
+
       ######################
       # Done updating config.yml with new info!
       # Source: https://www.cyberciti.biz/faq/unix-linux-replace-string-words-in-many-files/
       ######################
     }
+
     update_config
+
     # Crystal complaining about permissions on CentOS and somewhat Debian
     # So before we build, make sure permissions are set.
     set_permissions
@@ -831,37 +815,13 @@ case $OPTION in
     crystal build src/invidious.cr --release
     # Not figured out why yet, so let's set permissions after as well...
     set_permissions
+
     systemd_install () {
       ######################
       # Setup Systemd Service
       ######################
       cp ${REPO_DIR}/${SERVICE_NAME} /lib/systemd/system/${SERVICE_NAME}
-      #wget https://github.com/omarroth/invidious/raw/master/invidious.service
       ${SUDO} sed -i "s/invidious -o invidious.log/invidious -b ${ip} -p ${port} -o invidious.log/g" /lib/systemd/system/${SERVICE_NAME}
-      # Lets change the default ip and port
-      # OLD_IP_PORT="/invidious -o invidious.log"
-      # NEW_IP_PORT="/invidious -b ${ip} -p ${port} -o invidious.log"
-      #
-      # DPATH="/lib/systemd/system/${SERVICE_NAME}"
-      # BPATH="$BAKPATH"
-      # TFILE="/tmp/${SERVICE_NAME}"
-      # [ ! -d $BPATH ] && mkdir -p $BPATH || :
-      # for f in $DPATH
-      # do
-      #   if [ -f $f -a -r $f ]; then
-      #     /bin/cp -f $f $BPATH
-      #     echo -e "${GREEN}Updating ${SERVICE_NAME} with new info...${NC}"
-      #     sed "s/$OLD_IP_PORT/$NEW_IP_PORT/g" "$f" > $TFILE &&
-      #     mv $TFILE "$f"
-      #   else
-      #     echo -e "${RED}Error: Cannot read $f"
-      #   fi
-      # done
-      # if [[ -e $TFILE ]]; then
-      #   /bin/rm $TFILE
-      # else
-      #   echo -e "${GREEN}Done updating ${SERVICE_NAME} with new info!${NC}"
-      # fi
       # Enable invidious start at boot
       ${SUDO} systemctl enable ${SERVICE_NAME}
       # Reload Systemd
@@ -878,7 +838,9 @@ case $OPTION in
         sleep 5
       fi
     }
+
     systemd_install
+
     show_install_banner () {
       #clear
       header
@@ -896,7 +858,9 @@ case $OPTION in
       echo ""
       echo -e "Documentation for this script is available here: ${ORANGE}\n https://github.com/tmiland/Invidious-Updater${NC}\n"
     }
+
     show_install_banner
+
     sleep 5
     cd ${CURRDIR}
     ./${SCRIPT_NAME}
@@ -907,6 +871,7 @@ case $OPTION in
       echo -e "Sorry, you need to run this as root"
       exit 1
     fi
+
     echo ""
     echo "Let's go through some configuration options."
     echo ""
@@ -942,20 +907,26 @@ case $OPTION in
       GetRelease
       git pull
     fi
+
     if [[ ! "$IN_BRANCH" = 'release' ]]; then
       GetMaster
       git pull
     fi
+
     rebuild
+
     ${SUDO} chown -R $USER_NAME:$USER_NAME ${REPO_DIR}
     #cd -
+
     restart
+
     sleep 3
     cd ${CURRDIR}
     ./${SCRIPT_NAME}
     #exit
     ;;
   3) # Deploy with Docker
+
     #if [[ $(lsb_release -si) == "CentOS" ]]; then
     #  echo -e "${RED}DOCKER OPTION NOT SUPPORTED FOR CENTOS YET!${NC}"
     #  exit 1;
@@ -975,6 +946,7 @@ case $OPTION in
         echo ""
         read -p "Do you want to download Invidious? [y/n/q]?" answer
         echo ""
+
         case $answer in
           [Yy]* )
             echo -e "${GREEN}Seting up Dependencies${NC}"
@@ -984,14 +956,17 @@ case $OPTION in
                 ${INSTALL} $i  # || exit 1
               done
             fi
+
             echo ""
             echo "Do you want to install Invidious release or master?"
             echo "   1) $IN_RELEASE"
             echo "   2) $IN_MASTER"
             echo ""
+
             while [[ $IN_BRANCH != "1" && $IN_BRANCH != "2" ]]; do
               read -p "Select an option [1-2]: " IN_BRANCH
             done
+
             case $IN_BRANCH in
               1)
                 IN_BRANCH=$IN_RELEASE
@@ -1000,14 +975,15 @@ case $OPTION in
                 IN_BRANCH=$IN_MASTER
                 ;;
             esac
+
             mkdir -p $USER_DIR
+
             echo -e "${GREEN}Downloading Invidious from GitHub${NC}"
-            #sudo -i -u $USER_NAME
+
             cd $USER_DIR || exit 1
+
             git clone https://github.com/omarroth/invidious
-            # Set user permissions (just in case)
-            #sudo chown -R $USER_NAME:$USER_NAME ${REPO_DIR}
-            #sudo chmod -R 755 ${REPO_DIR}/config/sql/*.sql
+
             cd ${REPO_DIR} || exit 1
             # Checkout
             if [[ ! "$IN_BRANCH" = 'master' ]]; then
@@ -1030,7 +1006,9 @@ case $OPTION in
         esac
       fi
     }
+
     header
+
     echo ""
     echo "Deploy Invidious with Docker."
     echo ""
@@ -1041,15 +1019,21 @@ case $OPTION in
     echo "   4) Delete data and rebuild"
     echo "   5) Install Docker CE"
     echo ""
+
     while [[ $DOCKER_OPTION !=  "1" && $DOCKER_OPTION != "2" && $DOCKER_OPTION != "3" && $DOCKER_OPTION != "4" && $DOCKER_OPTION != "5" ]]; do
       read -p "Select an option [1-5]: " DOCKER_OPTION
     done
+
     case $DOCKER_OPTION in
+
       1) # Build and start cluster
+
         while [[ $BUILD_DOCKER !=  "y" && $BUILD_DOCKER != "n" ]]; do
           read -p "   Build and start cluster? [y/n]: " -e BUILD_DOCKER
         done
+
         docker_repo_chk
+
         if ${PKGCHK} docker-ce docker-ce-cli >/dev/null 2>&1; then
           if [[ $BUILD_DOCKER = "y" ]]; then
             cd ${REPO_DIR}
@@ -1060,6 +1044,7 @@ case $OPTION in
             ./${SCRIPT_NAME}
             #exit 0
           fi
+
           if [[ $BUILD_DOCKER = "n" ]]; then
             cd ${CURRDIR}
             ./${SCRIPT_NAME}
@@ -1070,15 +1055,18 @@ case $OPTION in
         exit
         ;;
       2) # Start, Stop or Restart Invidious
+
         echo ""
         echo "Do you want to start, stop or restart Docker?"
         echo "   1) Start"
         echo "   2) Stop"
         echo "   3) Restart"
         echo ""
+
         while [[ $DOCKER_SERVICE != "1" && $DOCKER_SERVICE != "2" && $DOCKER_SERVICE != "3" ]]; do
           read -p "Select an option [1-3]: " DOCKER_SERVICE
         done
+
         case $DOCKER_SERVICE in
           1)
             DOCKER_SERVICE=start
@@ -1090,6 +1078,7 @@ case $OPTION in
             DOCKER_SERVICE=restart
             ;;
         esac
+
         while true; do
           cd ${REPO_DIR}
           docker-compose ${DOCKER_SERVICE}
@@ -1100,10 +1089,13 @@ case $OPTION in
         exit
         ;;
       3) # Rebuild cluster
+
         while [[ $REBUILD_DOCKER !=  "y" && $REBUILD_DOCKER != "n" ]]; do
           read -p "       Rebuild cluster ? [y/n]: " -e REBUILD_DOCKER
         done
+
         docker_repo_chk
+
         if ${PKGCHK} docker-ce docker-ce-cli >/dev/null 2>&1; then
           if [[ $REBUILD_DOCKER = "y" ]]; then
             cd ${REPO_DIR}
@@ -1113,6 +1105,7 @@ case $OPTION in
             cd ${CURRDIR}
             ./${SCRIPT_NAME}
           fi
+
           if [[ $REBUILD_DOCKER = "n" ]]; then
             cd ${CURRDIR}
             ./${SCRIPT_NAME}
@@ -1123,10 +1116,13 @@ case $OPTION in
         exit
         ;;
       4) # Delete data and rebuild
+
         while [[ $DEL_REBUILD_DOCKER !=  "y" && $DEL_REBUILD_DOCKER != "n" ]]; do
           read -p "       Delete data and rebuild Docker? [y/n]: " -e DEL_REBUILD_DOCKER
         done
+
         docker_repo_chk
+
         if ${PKGCHK} docker-ce docker-ce-cli >/dev/null 2>&1; then
           if [[ $DEL_REBUILD_DOCKER = "y" ]]; then
             cd ${REPO_DIR}
@@ -1149,6 +1145,7 @@ case $OPTION in
         exit
         ;;
       5) # Install Docker CE
+
         echo ""
         echo "This will install Docker CE."
         echo ""
@@ -1157,9 +1154,11 @@ case $OPTION in
         echo "   2) Nightly $DOCKER_NIGHTLY_VER"
         echo "   2) Test $DOCKER_NIGHTLY_VER"
         echo ""
+
         while [[ $DOCKER_VER != "1" && $DOCKER_VER != "2" && $DOCKER_VER != "3" ]]; do
           read -p "Select an option [1-3]: " DOCKER_VER
         done
+
         case $DOCKER_VER in
           1)
             DOCKER_VER=stable
@@ -1171,6 +1170,7 @@ case $OPTION in
             DOCKER_VER=test
             ;;
         esac
+
         echo ""
         read -n1 -r -p "Docker is ready to be installed, press any key to continue..."
         echo ""
@@ -1239,11 +1239,14 @@ case $OPTION in
           echo -e "${RED}Error: Sorry, your OS is not supported.${NC}"
           exit 1;
         fi
+
         # We're almost done !
         echo "Docker Installation done."
+
         while [[ $Docker_Compose !=  "y" && $Docker_Compose != "n" ]]; do
           read -p "       Install Docker Compose ? [y/n]: " -e Docker_Compose
         done
+
         if [[ "$Docker_Compose" = 'y' ]]; then
           # download the latest version of Docker Compose:
           ${SUDO} curl -L "https://github.com/docker/compose/releases/download/${Docker_Compose_Ver}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
@@ -1269,7 +1272,6 @@ case $OPTION in
     if ( ! systemctl -q is-active ${SERVICE_NAME})
     then
       cp ${REPO_DIR}/${SERVICE_NAME} /lib/systemd/system/${SERVICE_NAME}
-      #wget https://github.com/omarroth/invidious/raw/master/invidious.service
       # Enable invidious start at boot
       ${SUDO} systemctl enable ${SERVICE_NAME}
       # Reload Systemd
@@ -1277,6 +1279,7 @@ case $OPTION in
       # Restart Invidious
       ${SUDO} systemctl start ${SERVICE_NAME}
     fi
+
     if ( systemctl -q is-active ${SERVICE_NAME})
     then
       echo -e "${GREEN}Invidious service has been successfully installed!${NC}"
@@ -1286,6 +1289,7 @@ case $OPTION in
       echo -e "${RED}Invidious service installation failed...${NC}"
       sleep 5
     fi
+
     show_systemd_install_banner () {
       #clear
       header
@@ -1295,20 +1299,22 @@ case $OPTION in
       echo ""
       echo -e "Documentation for this script is available here: ${ORANGE}\n https://github.com/tmiland/Invidious-Updater${NC}\n"
     }
+
     show_systemd_install_banner
+
     sleep 3
     cd ${CURRDIR}
     ./${SCRIPT_NAME}
     #exit 1
     ;;
   5) # Database maintenance
-    #psqldb="invidious"   # Database name
     if [[ "$EUID" -ne 0 ]]; then
       echo -e "Sorry, you need to run this as root"
       exit 1
     fi
+
     read -p "Are you sure you want to run Database Maintenance? Enter [y/n]: " answer
-    #echo "You entered: $answer"
+
     if [[ ! "$answer" = 'n' ]]; then
       # Here's where the user is going to enter the Invidious database name, as it appears in the GUI:
       read -p "Enter database name of your Invidious PostgreSQL database: " psqldb
@@ -1317,6 +1323,7 @@ case $OPTION in
       echo "You entered: $psqldb"
       echo ""
       read -p "Is that correct? Enter [y/n]: " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
+
       if [[ "$answer" = 'y' ]]; then
         if ( systemctl -q is-active ${PGSQL_SERVICE})
         then
@@ -1361,7 +1368,6 @@ case $OPTION in
           sleep 5
           cd ${CURRDIR}
           ./${SCRIPT_NAME}
-          #exit
         fi
       fi
     fi
@@ -1393,6 +1399,7 @@ case $OPTION in
       echo -e "Sorry, you need to run this as root"
       exit 1
     fi
+
     read -p "Are you sure you want to migrate the PostgreSQL database? " answer
     echo "You entered: $answer"
 
@@ -1410,10 +1417,7 @@ case $OPTION in
         do
           file=./config/migrate-scripts/migrate-db-$i.sh ; [ -f $file ] && $file ;
         done
-        #for script in ./config/migrate-scripts/*.sh
-        #do
-        #  sudo -u $USER_NAME bash "$script"
-        #done
+
         cd -
         echo -e "${GREEN}Migration Done ${NC}"
         # Restart Invidious
@@ -1444,7 +1448,9 @@ case $OPTION in
       fi
     fi
     show_migration_banner () {
+
       header
+
       echo ""
       echo ""
       echo ""
@@ -1459,7 +1465,9 @@ case $OPTION in
       echo ""
       echo -e "Documentation for this script is available here: ${ORANGE}\n https://github.com/tmiland/Invidious-Updater${NC}\n"
     }
+
     show_migration_banner
+
     sleep 3
     cd ${CURRDIR}
     ./${SCRIPT_NAME}
@@ -1485,18 +1493,18 @@ case $OPTION in
           read -p "       Do you intend to reinstall?: " RM_RE_PostgreSQLDB
         done
       fi
-      # Let's allow the user to confirm that what they've typed in is correct:
-      #echo "          You entered: database name: $RM_PSQLDB"
-      #read -p "       Is that correct? Enter y or n: " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
     done
+
     while [[ $RM_PACKAGES !=  "y" && $RM_PACKAGES != "n" ]]; do
       read -p "       Remove Packages ? [y/n]: " -e RM_PACKAGES
     done
+
     if [[ $RM_PACKAGES = "y" ]]; then
       while [[ $RM_PURGE !=  "y" && $RM_PURGE != "n" ]]; do
         read -p "       Purge Package configuration files ? [y/n]: " -e RM_PURGE
       done
     fi
+
     while [[ $RM_FILES !=  "y" && $RM_FILES != "n" ]]; do
       echo -e "       ${ORANGE}(( This option will remove ${REPO_DIR} ))${NC}"
       read -p "       Remove files ? [y/n]: " -e RM_FILES
@@ -1508,11 +1516,14 @@ case $OPTION in
         done
       fi
     done
+
     # Let's allow the user to confirm that what they've typed in is correct:
     read -p "       Is that correct? [y/n]: " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
+
     echo ""
     read -n1 -r -p "Invidious is ready to be uninstalled, press any key to continue..."
     echo ""
+
     # Remove PostgreSQL database if user answer is yes
     if [[ "$RM_PostgreSQLDB" = 'y' ]]; then
       # Stop and disable invidious
@@ -1520,24 +1531,20 @@ case $OPTION in
       sleep 1
       ${SUDO} systemctl restart ${PGSQL_SERVICE}
       sleep 1
-      #   pg_dump -U $username --format=c --file=$mydatabase.sqlc $dbname
       # If directory is not created
       if [[ ! -d $PgDbBakPath ]]; then
         echo -e "${ORANGE}Backup Folder Not Found, adding folder${NC}"
         ${SUDO} mkdir -p $PgDbBakPath
       fi
-      #pg_dump --username=postgres \
-        #        --no-password \
-        #        --format=c \
-        #        --file=$PgDbBakPath/$RM_PSQLDB.sql \
-        #        --dbname=$RM_PSQLDB
+
       echo ""
       echo -e "${GREEN}Running database backup${NC}"
       echo ""
-      #sudo -u postgres psql ${RM_PSQLDB} > ${PgDbBakPath}/${RM_PSQLDB}.sql || exit 1
+
       ${SUDO} -i -u postgres pg_dump ${RM_PSQLDB} > ${PgDbBakPath}/${RM_PSQLDB}.sql
       sleep 2
       ${SUDO} chown -R 1000:1000 "/home/backup"
+
       if [[ "$RM_RE_PostgreSQLDB" != 'n' ]]; then
         echo ""
         echo -e "${RED}Dropping Invidious PostgreSQL data${NC}"
@@ -1547,6 +1554,7 @@ case $OPTION in
         echo -e "${ORANGE}Data dropped and backed up to ${PgDbBakPath}/${RM_PSQLDB}.sql ${NC}"
         echo ""
       fi
+
       if [[ "$RM_RE_PostgreSQLDB" != 'y' ]]; then
         echo ""
         echo -e "${RED}Dropping Invidious PostgreSQL database${NC}"
@@ -1558,24 +1566,8 @@ case $OPTION in
         echo "Removing user kemal"
         ${SUDO} -i -u postgres psql -c "DROP ROLE IF EXISTS kemal;"
       fi
-      #systemctl stop postgresql
-      #sleep 1
-      #systemctl disable postgresql
-      #sleep 1
-      #pg_dropcluster --stop 9.6 main
-      #sleep 1
-      #/usr/sbin/userdel -r postgres \
-        #groupdel postgres
-      #rm -r \
-        #  /usr/lib/postgresql \
-        #  /etc/postgresql \
-        #  /usr/share/postgresql \
-        #  /usr/share/postgresql-common \
-        #  /var/cache/postgresql \
-        #  /var/log/postgresql \
-        #  /run/postgresql \
-        #  /etc/postgresql-common
     fi
+
     # Reload Systemd
     ${SUDO} systemctl daemon-reload
     # Remove packages installed during installation
@@ -1585,8 +1577,7 @@ case $OPTION in
       echo ""
       echo -e "Note: PostgreSQL will not be removed due to unwanted complications${NC}"
       echo ""
-      # postgresql postgresql-9.6 postgresql-client-9.6 postgresql-contrib-9.6 # Dont touch PostgreSQL
-      #UNINSTALL_PKGS="apt-transport-https git curl sudo remove crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev imagemagick libsqlite3-dev"
+
       if ${PKGCHK} $UNINSTALL_PKGS >/dev/null 2>&1; then
         for i in $UNINSTALL_PKGS; do
           echo ""
@@ -1599,12 +1590,14 @@ case $OPTION in
       echo -e "${GREEN}done."
       echo ""
     fi
+
     # Remove conf files
     if [[ "$RM_PURGE" = 'y' ]]; then
       # Removing invidious files and modules files
       echo ""
       echo -e "${ORANGE}Removing invidious files and modules files.${NC}"
       echo ""
+
       if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
         rm -r \
           /lib/systemd/system/${SERVICE_NAME} \
@@ -1614,8 +1607,7 @@ case $OPTION in
           /usr/lib/systemd/system/${SERVICE_NAME} \
           /etc/yum.repos.d/crystal.repo
       fi
-      # postgresql postgresql-9.6 postgresql-client-9.6 postgresql-contrib-9.6 # Don't touch PostgreSQL
-      #PURGE_PKGS="apt-transport-https git curl sudo remove crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev imagemagick libsqlite3-dev"
+
       if ${PKGCHK} $UNINSTALL_PKGS >/dev/null 2>&1; then
         for i in $UNINSTALL_PKGS; do
           echo ""
@@ -1624,6 +1616,7 @@ case $OPTION in
           ${PURGE} $i
         done
       fi
+
       echo ""
       echo -e "cleaning up."
       echo ""
@@ -1632,6 +1625,7 @@ case $OPTION in
       echo -e "${GREEN}done.${NC}"
       echo ""
     fi
+
     if [[ "$RM_FILES" = 'y' ]]; then
       # If directory is present, remove
       if [[ -d ${REPO_DIR} ]]; then
@@ -1639,6 +1633,7 @@ case $OPTION in
         rm -r ${REPO_DIR}
       fi
     fi
+
     # Remove user and settings
     if [[ "$RM_USER" = 'y' ]]; then
       # Stop and disable invidious
@@ -1649,6 +1644,7 @@ case $OPTION in
       ${SUDO} systemctl daemon-reload
       sleep 1
       grep $USER_NAME /etc/passwd >/dev/null 2>&1
+
       if [ $? -eq 0 ] ; then
         echo ""
         echo -e "${ORANGE}User $USER_NAME Found, removing user and files${NC}"
