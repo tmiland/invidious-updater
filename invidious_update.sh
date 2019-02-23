@@ -189,6 +189,19 @@ header () {
   echo ' ╚═══════════════════════════════════════════════════════════════════╝'
   echo -e "${NC}"
 }
+
+chk_permissions () {
+  # Make sure that the script runs with root permissions
+  if [[ "$EUID" != 0 ]]; then
+    echo -e "${RED}This action needs root permissions.${NC} Please enter your root password...";
+    cd "$CURRDIR"
+    su -s "$(which bash)" -c "./$SCRIPT_NAME"
+    cd - > /dev/null
+
+    exit 0;
+  fi
+}
+
 # Set permissions
 set_permissions () {
   ${SUDO} chown -R $USER_NAME:$USER_NAME $USER_DIR
@@ -407,10 +420,8 @@ done
 
 case $OPTION in
   1) # Install Invidious
-    if [[ "$EUID" -ne 0 ]]; then
-      echo -e "${RED}Sorry, you need to run this as root${NC}"
-      exit 1
-    fi
+
+    chk_permissions
 
     # Check which ImageMagick version is installed
     chk_imagickpkg () {
@@ -632,14 +643,14 @@ case $OPTION in
       ./configure \
         --with-rsvg \
 
-      make
+        make
       ${SUDO} make install
 
       ${SUDO} ldconfig /usr/local/lib
 
       identify -version
       sleep 5
-      
+
       rm -r /tmp/ImageMagick-${IMAGICK_SEVEN_VER}
       rm -r /tmp/ImageMagick-${IMAGICK_SEVEN_VER}.tar.gz
 
@@ -698,7 +709,7 @@ case $OPTION in
     cd -
 
     if [[ $(lsb_release -si) == "CentOS" || $(lsb_release -si) == "Fedora" ]]; then
-      
+
       if [[ $(lsb_release -si) == "CentOS" ]]; then
         ${SUDO} ${INSTALL} https://download.postgresql.org/pub/repos/yum/11/redhat/rhel-7-x86_64/pgdg-centos11-11-2.noarch.rpm
       fi
@@ -706,7 +717,7 @@ case $OPTION in
       if [[ $(lsb_release -si) == "Fedora" ]]; then
         ${SUDO} rpm -Uvh "https://download.postgresql.org/pub/repos/yum/11/fedora/fedora-$(lsb_release -sr)-x86_64/pgdg-fedora11-11-2.noarch.rpm"
       fi
-      
+
       ${SUDO} ${INSTALL} postgresql11-server postgresql11
       ${SUDO} /usr/pgsql-11/bin/postgresql-11-setup initdb
       ${SUDO} chmod 775 /var/lib/pgsql/11/data/postgresql.conf
@@ -871,10 +882,8 @@ case $OPTION in
     #exit
     ;;
   2) # Update Invidious
-    if [[ "$EUID" -ne 0 ]]; then
-      echo -e "Sorry, you need to run this as root"
-      exit 1
-    fi
+
+    chk_permissions
 
     echo ""
     echo "Let's go through some configuration options."
@@ -1266,10 +1275,9 @@ case $OPTION in
     exit
     ;;
   4) # Install Invidious service
-    if [[ "$EUID" -ne 0 ]]; then
-      echo -e "Sorry, you need to run this as root"
-      exit 1
-    fi
+
+    chk_permissions
+
     ######################
     # Setup Systemd Service
     ######################
@@ -1312,10 +1320,8 @@ case $OPTION in
     #exit 1
     ;;
   5) # Database maintenance
-    if [[ "$EUID" -ne 0 ]]; then
-      echo -e "Sorry, you need to run this as root"
-      exit 1
-    fi
+
+    chk_permissions
 
     read -p "Are you sure you want to run Database Maintenance? Enter [y/n]: " answer
 
@@ -1398,10 +1404,8 @@ case $OPTION in
     #exit 1
     ;;
   6) # Database migration
-    if [[ "$EUID" -ne 0 ]]; then
-      echo -e "Sorry, you need to run this as root"
-      exit 1
-    fi
+
+    chk_permissions
 
     read -p "Are you sure you want to migrate the PostgreSQL database? " answer
     echo "You entered: $answer"
@@ -1477,10 +1481,9 @@ case $OPTION in
     #exit 1
     ;;
   7) # Uninstall Invidious
-    if [[ "$EUID" -ne 0 ]]; then
-      echo -e "Sorry, you need to run this as root"
-      exit 1
-    fi
+
+    chk_permissions
+
     # Set db backup path
     PgDbBakPath="/home/backup/$USER_NAME"
     # Get dbname
