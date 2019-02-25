@@ -34,9 +34,6 @@
 ```bash
 $ wget https://github.com/tmiland/Invidious-Updater/raw/master/invidious_update.sh
 $ chmod +x invidious_update.sh
-$ su -
-## OR ##
-$ sudo -i
 $ ./invidious_update.sh
 ```
 #### Or : 
@@ -45,11 +42,10 @@ $ cd /home/invidious
 $ git clone https://github.com/tmiland/Invidious-Updater.git
 $ cd Invidious-Updater
 $ chmod +x invidious_update.sh
-$ su -
-## OR ##
-$ sudo -i
 $ ./invidious_update.sh
 ```
+***Note: you will be prompted to enter root password***
+
 #### Optionally
  ```bash
 $ ln -s /home/invidious/Invidious-Updater/invidious_update.sh /usr/bin/invidious-updater
