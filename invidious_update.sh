@@ -57,9 +57,9 @@ ORANGE='\033[0;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 # Set update check
-UPDATE='check'
+UPDATE_SCRIPT='check'
 # Set repo update check
-REPO_UPDATE='check'
+#REPO_UPDATE='check'
 # Set username
 USER_NAME=invidious
 # Set userdir
@@ -348,14 +348,14 @@ update_updater () {
   # Do the work
   if [[ $(get_updater_version "${SCRIPT_DIR}/invidious_update.sh") < $(get_updater_version "${tmpfile}") ]]; then
     LV=$(get_updater_version "${tmpfile}")
-    if [ $UPDATE = 'check' ]; then
+    if [ $UPDATE_SCRIPT = 'check' ]; then
       show_update_banner
       echo -e "${RED}Do you want to update [Y/N?]${NC}"
       read -p "" -n 1 -r
       echo -e "\n\n"
       if [[ $REPLY =~ ^[Yy]$ ]]; then
         mv "${tmpfile}" "${SCRIPT_DIR}/invidious_update.sh"
-        ${SUDO} chmod u+x "${SCRIPT_DIR}/invidious_update.sh"
+        chmod u+x "${SCRIPT_DIR}/invidious_update.sh"
         "${SCRIPT_DIR}/invidious_update.sh" "$@" -d
         exit 1 # Update available, user chooses to update
       fi
@@ -374,10 +374,10 @@ if [ $# != 0 ]; then
   while getopts ":ud" opt; do
     case $opt in
       u)
-        UPDATE='yes'
+        UPDATE_SCRIPT='yes'
         ;;
       d)
-        UPDATE='no'
+        UPDATE_SCRIPT='no'
         ;;
       \?)
         echo -e "${RED}\n Error! Invalid option: -$OPTARG${NC}" >&2
