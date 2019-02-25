@@ -22,9 +22,9 @@
 ## Screenshots
 ![screenshot](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Screenshot%20at%2018-10-05.png)
 
-| Debian | CentOS |
-| ------ | ------ |
-| [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Screenshot%20from%202019-02-20%2017-14-20.png" height="180" width="320">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Screenshot%20from%202019-02-20%2017-14-20.png) | [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Screenshot%20from%202019-02-20%2017-09-25.png" height="180" width="320">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Screenshot%20from%202019-02-20%2017-09-25.png) |
+| Debian | CentOS | Fedora |
+| ------ | ------ | ------ |
+| [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Screenshot%20from%202019-02-20%2017-14-20.png" height="140" width="280">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Screenshot%20from%202019-02-20%2017-14-20.png) | [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Screenshot%20from%202019-02-20%2017-09-25.png" height="140" width="280">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Screenshot%20from%202019-02-20%2017-09-25.png) | [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Screenshot%20from%202019-02-25%2016-03-40.png" height="140" width="280">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Screenshot%20from%202019-02-25%2016-03-40.png) |
 
 
 ## Installation
