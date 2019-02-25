@@ -726,21 +726,21 @@ case $OPTION in
       ${SUDO} sed -i "s/#port = 5432/port = 5432/g" /var/lib/pgsql/11/data/postgresql.conf
       cp -rp /var/lib/pgsql/11/data/pg_hba.conf /var/lib/pgsql/11/data/pg_hba.conf.bak
       echo "# Database administrative login by Unix domain socket
-      local   all             postgres                                peer
+local   all             postgres                                peer
 
-      # TYPE  DATABASE        USER            ADDRESS                 METHOD
+# TYPE  DATABASE        USER            ADDRESS                 METHOD
 
-      # local is for Unix domain socket connections only
-      local   all             all                                     peer
-      # IPv4 local connections:
-      host    all             all             127.0.0.1/32            md5
-      # IPv6 local connections:
-      host    all             all             ::1/128                 md5
-      # Allow replication connections from localhost, by a user with the
-      # replication privilege.
-      local   replication     all                                     peer
-      host    replication     all             127.0.0.1/32            md5
-      host    replication     all             ::1/128                 md5" | ${SUDO} tee /var/lib/pgsql/11/data/pg_hba.conf
+# local is for Unix domain socket connections only
+local   all             all                                     peer
+# IPv4 local connections:
+host    all             all             127.0.0.1/32            md5
+# IPv6 local connections:
+host    all             all             ::1/128                 md5
+# Allow replication connections from localhost, by a user with the
+# replication privilege.
+local   replication     all                                     peer
+host    replication     all             127.0.0.1/32            md5
+host    replication     all             ::1/128                 md5" | ${SUDO} tee /var/lib/pgsql/11/data/pg_hba.conf
       ${SUDO} chmod 600 /var/lib/pgsql/11/data/postgresql.conf
       ${SUDO} chmod 600 /var/lib/pgsql/11/data/pg_hba.conf
     fi
