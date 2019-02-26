@@ -46,6 +46,12 @@ $ ./invidious_update.sh
 ```
 ***Note: you will be prompted to enter root password***
 
+If root password is not set, type:
+
+```bash
+sudo passwd root
+```
+
 #### Optionally
  ```bash
 $ ln -s /home/invidious/Invidious-Updater/invidious_update.sh /usr/bin/invidious-updater
