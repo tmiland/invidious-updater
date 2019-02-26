@@ -93,6 +93,55 @@ IMAGICK_SEVEN_VER=7.0.8-28
 # Docker Compose version
 Docker_Compose_Ver=1.23.2
 # Distro support
+if ! lsb_release -si >/dev/null 2>&1; then
+
+  if [[ -f /etc/debian_version ]]; then
+    LSB=lsb-release
+    PKGCMD="apt/apt-get"
+  elif [[ -f /etc/redhat-release ]]; then
+    LSB=redhat-lsb
+    PKGCMD="yum/dnf"
+  fi
+
+  echo ""
+  echo -e "${RED}Looks like ${LSB} is not installed!${NC}"
+  echo ""
+  read -p "Do you want to download ${LSB}? [y/n]? " answer
+  echo ""
+
+  case $answer in
+    [Yy]* )
+      echo ""
+      echo -e "${ORANGE}Since ${LSB} is used to get OS info in this script,\n"
+      echo -e "and the package is not installed,\n"
+      echo -e "you need to manually provide your package manager cmd${NC}"
+      echo ""
+      read -p "Enter cmd: [${PKGCMD}]: " INSTALL_CMD
+      echo ""
+      echo -e "${GREEN}Installing ${LSB}...${NC}"
+      # Make sure that the script runs with root permissions
+      if [[ "$EUID" != 0 ]]; then
+        echo -e "${RED}This action needs root permissions.${NC} Please enter your root password...";
+        if [[ "$INSTALL_CMD" = 'yum' || "$INSTALL_CMD" = 'dnf' ]]; then
+          su -s "$(which bash)" -c "${INSTALL_CMD} install -y ${LSB}"
+        elif [[ "$INSTALL_CMD" = 'apt' || "$INSTALL_CMD" = 'apt-get' ]]; then
+          su -s "$(which bash)" -c "${INSTALL_CMD} install -y ${LSB}"
+        else
+          echo -e "${RED}Error: could not install ${LSB}!${NC}"
+        fi
+      fi
+      echo -e "${GREEN}Done${NC}"
+      sleep 3
+      cd ${CURRDIR}
+      ./${SCRIPT_NAME}
+      ;;
+    [Nn]* )
+      exit 1;
+      ;;
+    * ) echo "Enter Y, N, please." ;;
+  esac
+fi
+
 SUDO=""
 UPDATE=""
 INSTALL=""
@@ -963,7 +1012,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
 
         case $answer in
           [Yy]* )
-            echo -e "${GREEN}Seting up Dependencies${NC}"
+            echo -e "${GREEN}Setting up Dependencies${NC}"
             if ! ${PKGCHK} $PRE_INSTALL_PKGS >/dev/null 2>&1; then
               ${UPDATE}
               for i in $PRE_INSTALL_PKGS; do
