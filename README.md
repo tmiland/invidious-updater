@@ -228,9 +228,7 @@ Ideas:
 * Debian 8 and later
 * Ubuntu 16.04 and later
 * CentOS 7
-  * Requirements: `yum install redhat-lsb` 
 * Fedora 29
-  * Requirements: `dnf install redhat-lsb`
   * Docker support
     - [OS requirements](https://docs.docker.com/install/linux/docker-ce/fedora/)
 
