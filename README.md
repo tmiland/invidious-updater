@@ -210,6 +210,7 @@ What's done:
   - Added in [1.2.5](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.2.5)
 - [X] Add support for Fedora 
   - Added in [1.2.6](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.2.6)
+- [X] Added prompt to install redhat-lsb/lsb-release if not installed.
 
   
 
