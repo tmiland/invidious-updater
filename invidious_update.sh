@@ -48,6 +48,11 @@ sfp=$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || greadlink -f "${BASH_SOURCE
 if [ -z "$sfp" ]; then sfp=${BASH_SOURCE[0]}; fi
 SCRIPT_DIR=$(dirname "${sfp}")
 
+# Icons used for printing
+ARROW='➜'
+DONE='✔'
+ERROR='✗'
+WARNING='⚠'
 # Colors used for printing
 RED='\033[0;31m'
 BLUE='\033[0;34m'
@@ -58,8 +63,6 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 # Set update check
 UPDATE_SCRIPT='check'
-# Set repo update check
-#REPO_UPDATE='check'
 # Set username
 USER_NAME=invidious
 # Set userdir
@@ -104,7 +107,7 @@ if ! lsb_release -si >/dev/null 2>&1; then
   fi
 
   echo ""
-  echo -e "${RED}Looks like ${LSB} is not installed!${NC}"
+  echo -e "${RED}${ERROR} Looks like ${LSB} is not installed!${NC}"
   echo ""
   read -p "Do you want to download ${LSB}? [y/n]? " answer
   echo ""
@@ -112,25 +115,25 @@ if ! lsb_release -si >/dev/null 2>&1; then
   case $answer in
     [Yy]* )
       echo ""
-      echo -e "${ORANGE}Since ${LSB} is used to get OS info in this script,\n"
+      echo -e "${ORANGE}${WARNING} Since ${LSB} is used to get OS info in this script,\n"
       echo -e "and the package is not installed,\n"
       echo -e "you need to manually provide your package manager cmd${NC}"
       echo ""
       read -p "Enter cmd: [${PKGCMD}]: " INSTALL_CMD
       echo ""
-      echo -e "${GREEN}Installing ${LSB}...${NC}"
+      echo -e "${GREEN}${ARROW} Installing ${LSB}...${NC}"
       # Make sure that the script runs with root permissions
       if [[ "$EUID" != 0 ]]; then
-        echo -e "${RED}This action needs root permissions.${NC} Please enter your root password...";
+        echo -e "${RED}${ERROR} This action needs root permissions.${NC} Please enter your root password...";
         if [[ "$INSTALL_CMD" = 'yum' || "$INSTALL_CMD" = 'dnf' ]]; then
           su -s "$(which bash)" -c "${INSTALL_CMD} install -y ${LSB}"
         elif [[ "$INSTALL_CMD" = 'apt' || "$INSTALL_CMD" = 'apt-get' ]]; then
           su -s "$(which bash)" -c "${INSTALL_CMD} install -y ${LSB}"
         else
-          echo -e "${RED}Error: could not install ${LSB}!${NC}"
+          echo -e "${RED}${ERROR} Error: could not install ${LSB}!${NC}"
         fi
       fi
-      echo -e "${GREEN}Done${NC}"
+      echo -e "${GREEN}${DONE} Done${NC}"
       sleep 3
       cd ${CURRDIR}
       ./${SCRIPT_NAME}
@@ -225,7 +228,7 @@ elif [[ $(lsb_release -si) == "Fedora" ]]; then
   #CLEAN="pacman -Sc"
   #PKGCHK="pacman -Qi"
 else
-  echo -e "${RED}Error: Sorry, your OS is not supported.${NC}"
+  echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
   exit 1;
 fi
 header () {
@@ -242,7 +245,7 @@ header () {
 chk_permissions () {
   # Make sure that the script runs with root permissions
   if [[ "$EUID" != 0 ]]; then
-    echo -e "${RED}This action needs root permissions.${NC} Please enter your root password...";
+    echo -e "${RED}${ERROR} This action needs root permissions.${NC} Please enter your root password...";
     cd "$CURRDIR"
     su -s "$(which bash)" -c "./$SCRIPT_NAME"
     cd - > /dev/null
@@ -275,7 +278,7 @@ get_crystal () {
   elif [[ $(lsb_release -si) == "Arch" ]]; then
     exit 1;
   else
-    echo -e "${RED}Error: Sorry, your OS is not supported.${NC}"
+    echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
     exit 1;
   fi
 }
@@ -307,7 +310,7 @@ rebuild () {
   #sudo chown -R 1000:$USER_NAME $USER_DIR
   cd -
   printf "\n"
-  echo -e "${GREEN} Done Rebuilding ${REPO_DIR} ${NC}"
+  echo -e "${GREEN}${DONE} Done Rebuilding ${REPO_DIR} ${NC}"
   sleep 3
 }
 # Restart Invidious
@@ -317,7 +320,7 @@ restart () {
   sleep 2
   ${SUDO} systemctl status $SERVICE_NAME --no-pager
   printf "\n"
-  echo -e "${GREEN} Invidious has been restarted ${NC}"
+  echo -e "${GREEN}${DONE} Invidious has been restarted ${NC}"
   sleep 3
 }
 # Download method priority: curl -> wget
@@ -327,7 +330,7 @@ if [[ $(command -v 'curl') ]]; then
 elif [[ $(command -v 'wget') ]]; then
   DOWNLOAD_METHOD='wget'
 else
-  echo -e "${RED}This script requires curl or wget.\nProcess aborted${NC}"
+  echo -e "${RED}${ERROR} This script requires curl or wget.\nProcess aborted${NC}"
   exit 0
 fi
 #########################
@@ -355,7 +358,7 @@ open_file () { #expects one argument: file_path
   elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
     xdg-open "$1"
   else
-    echo -e "${RED}Error: Sorry, opening files is not supported for your OS.${NC}"
+    echo -e "${RED}${ERROR} Error: Sorry, opening files is not supported for your OS.${NC}"
   fi
 }
 ########################################################
@@ -381,12 +384,12 @@ show_update_banner () {
   echo ""
   echo ""
   echo ""
-  echo -e "    ${GREEN}New version:${NC} "${LV}" "
+  echo -e "    ${GREEN}${DONE} New version:${NC} "${LV}" "
   echo ""
   echo ""
   echo ""
   echo ""
-  echo -e "Documentation for this script is available here: ${ORANGE}\n https://github.com/tmiland/Invidious-Updater${NC}\n"
+  echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
 }
 # Update invidious_update.sh
 # Default: Check for update, if available, ask user if they want to execute it
@@ -399,7 +402,7 @@ update_updater () {
     LV=$(get_updater_version "${tmpfile}")
     if [ $UPDATE_SCRIPT = 'check' ]; then
       show_update_banner
-      echo -e "${RED}Do you want to update [Y/N?]${NC}"
+      echo -e "${RED}${ARROW} Do you want to update [Y/N?]${NC}"
       read -p "" -n 1 -r
       echo -e "\n\n"
       if [[ $REPLY =~ ^[Yy]$ ]]; then
@@ -429,11 +432,11 @@ if [ $# != 0 ]; then
         UPDATE_SCRIPT='no'
         ;;
       \?)
-        echo -e "${RED}\n Error! Invalid option: -$OPTARG${NC}" >&2
+        echo -e "${RED}\n ${ERROR} Error! Invalid option: -$OPTARG${NC}" >&2
         usage
         ;;
       :)
-        echo -e "${RED}Error! Option -$OPTARG requires an argument.${NC}" >&2
+        echo -e "${RED}${ERROR} Error! Option -$OPTARG requires an argument.${NC}" >&2
         exit 1
         ;;
     esac
@@ -458,7 +461,7 @@ show_banner () {
   echo "   7) Uninstall Invidious"
   echo "   8) Exit"
   echo ""
-  echo -e "Documentation for this script is available here: ${ORANGE}\n https://github.com/tmiland/Invidious-Updater${NC}\n"
+  echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
 }
 
 show_banner
@@ -481,10 +484,10 @@ case $OPTION in
         if [[ $(identify -version 2>/dev/null) ]]; then
           identify -version
         else
-          echo -e "${ORANGE}ImageMagick is not installed.${NC}"
+          echo -e "${ORANGE}${ERROR} ImageMagick is not installed.${NC}"
         fi
       else
-        echo -e "${RED}Error: Sorry, your OS is not supported.${NC}"
+        echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
         exit 1;
       fi
     }
@@ -493,9 +496,9 @@ case $OPTION in
       # Check if the folder is a git repo
       if [[ -d "${REPO_DIR}/.git" ]]; then
         echo ""
-        echo -e "${RED}Looks like Invidious is already installed!${NC}"
+        echo -e "${RED}${ERROR} Looks like Invidious is already installed!${NC}"
         echo ""
-        echo -e "${ORANGE}If you want to reinstall, please choose option 7 to Uninstall Invidious first!${NC}"
+        echo -e "${ORANGE}${WARNING} If you want to reinstall, please choose option 7 to Uninstall Invidious first!${NC}"
         echo ""
         sleep 3
         cd ${CURRDIR}
@@ -513,7 +516,7 @@ case $OPTION in
       echo ""
       echo ""
       echo ""
-      echo -e "Documentation for this script is available here: ${ORANGE}\n https://github.com/tmiland/Invidious-Updater${NC}\n"
+      echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
     }
 
     show_preinstall_banner
@@ -572,14 +575,14 @@ case $OPTION in
 
     echo -e "${GREEN}\n"
     echo -e "You entered: \n"
-    echo -e "  branch     : $IN_BRANCH"
-    echo -e "  domain     : $domain"
-    echo -e "  ip adress  : $ip"
-    echo -e "  port       : $port"
-    echo -e "  dbname     : $psqldb"
-    echo -e "  dbpass     : $psqlpass"
-    echo -e "  https only : $https_only"
-    echo -e "${NC}"
+    echo -e " ${DONE} branch     : $IN_BRANCH"
+    echo -e " ${DONE} domain     : $domain"
+    echo -e " ${DONE} ip adress  : $ip"
+    echo -e " ${DONE} port       : $port"
+    echo -e " ${DONE} dbname     : $psqldb"
+    echo -e " ${DONE} dbpass     : $psqlpass"
+    echo -e " ${DONE} https only : $https_only"
+    echo -e " ${NC}"
     echo ""
     echo "Choose your Imagemagick version :"
     echo -e "   1) System's Imagemagick\n "
@@ -640,7 +643,7 @@ case $OPTION in
       elif [[ $(lsb_release -si) == "CentOS" || $(lsb_release -si) == "Fedora" ]]; then
         ${SUDO} yum groupinstall "Development Tools"
       else
-        echo -e "${RED}Error: Sorry, your OS is not supported.${NC}"
+        echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
         exit 1;
       fi
 
@@ -680,7 +683,7 @@ case $OPTION in
       elif [[ $(lsb_release -si) == "CentOS" || $(lsb_release -si) == "Fedora" ]]; then
         ${SUDO} yum groupinstall "Development Tools"
       else
-        echo -e "${RED}Error: Sorry, your OS is not supported.${NC}"
+        echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
         exit 1;
       fi
 
@@ -712,7 +715,7 @@ case $OPTION in
         elif [[ $(lsb_release -si) == "CentOS" || $(lsb_release -si) == "Fedora" ]]; then
           ${SUDO} ${INSTALL} ImageMagick
         else
-          echo -e "${RED}Error: Sorry, your OS is not supported.${NC}"
+          echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
           exit 1;
         fi
       fi
@@ -724,19 +727,19 @@ case $OPTION in
     # https://stackoverflow.com/a/51894266
     grep $USER_NAME /etc/passwd >/dev/null 2>&1
     if [ ! $? -eq 0 ] ; then
-      echo -e "${ORANGE}User $USER_NAME Not Found, adding user${NC}"
+      echo -e "${ORANGE}${ARROW} User $USER_NAME Not Found, adding user${NC}"
       ${SUDO} useradd -m $USER_NAME
     fi
 
     # If directory is not created
     if [[ ! -d $USER_DIR ]]; then
-      echo -e "${ORANGE}Folder Not Found, adding folder${NC}"
+      echo -e "${ORANGE}${ARROW} Folder Not Found, adding folder${NC}"
       mkdir -p $USER_DIR
     fi
 
     set_permissions
 
-    echo -e "${GREEN}Downloading Invidious from GitHub${NC}"
+    echo -e "${ORANGE}${ARROW} Downloading Invidious from GitHub${NC}"
     #sudo -i -u $USER_NAME
     cd $USER_DIR || exit 1
     sudo -i -u invidious \
@@ -752,7 +755,7 @@ case $OPTION in
       GetMaster
       git pull
     fi
-
+    echo -e "${GREEN}${ARROW} Done${NC}"
     set_permissions
 
     cd -
@@ -799,28 +802,28 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
     ${SUDO} systemctl restart ${PGSQL_SERVICE}
     sleep 1
     # Create users and set privileges
-    echo "Creating user kemal with password $psqlpass"
+    echo -e "${ORANGE}${ARROW} Creating user kemal with password $psqlpass ${NC}"
     ${SUDO} -u postgres psql -c "CREATE USER kemal WITH PASSWORD '$psqlpass';"
-    echo "Creating database $psqldb with owner kemal"
+    echo -e "${ORANGE}${ARROW} Creating database $psqldb with owner kemal${NC}"
     ${SUDO} -u postgres psql -c "CREATE DATABASE $psqldb WITH OWNER kemal;"
-    echo "Grant all on database $psqldb to user kemal"
+    echo -e "${ORANGE}${ARROW} Grant all on database $psqldb to user kemal${NC}"
     ${SUDO} -u postgres psql -c "GRANT ALL ON DATABASE $psqldb TO kemal;"
     # Import db files
-    echo "Running channels.sql"
+    echo -e "${ORANGE}${ARROW} Running channels.sql${NC}"
     ${SUDO} -i -u postgres psql -d $psqldb -f ${REPO_DIR}/config/sql/channels.sql
-    echo "Running videos.sql"
+    echo -e "${ORANGE}${ARROW} Running videos.sql${NC}"
     ${SUDO} -i -u postgres psql -d $psqldb -f ${REPO_DIR}/config/sql/videos.sql
-    echo "Running channel_videos.sql"
+    echo -e "${ORANGE}${ARROW} Running channel_videos.sql${NC}"
     ${SUDO} -i -u postgres psql -d $psqldb -f ${REPO_DIR}/config/sql/channel_videos.sql
-    echo "Running users.sql"
+    echo -e "${ORANGE}${ARROW} Running users.sql${NC}"
     ${SUDO} -i -u postgres psql -d $psqldb -f ${REPO_DIR}/config/sql/users.sql
     if [[ -e ${REPO_DIR}/config/sql/session_ids.sql ]]; then
-      echo "Running session_ids.sql"
+      echo -e "${ORANGE}${ARROW} Running session_ids.sql${NC}"
       ${SUDO} -i -u postgres psql -d $psqldb -f ${REPO_DIR}/config/sql/session_ids.sql
     fi
-    echo "Running nonces.sql"
+    echo -e "${ORANGE}${ARROW} Running nonces.sql${NC}"
     ${SUDO} -i -u postgres psql -d $psqldb -f ${REPO_DIR}/config/sql/nonces.sql
-    echo "Finished Database section"
+    echo -e "${GREEN}${DONE} Finished Database section${NC}"
 
     update_config () {
       ######################
@@ -847,18 +850,18 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
       do
         if [ -f $f -a -r $f ]; then
           /bin/cp -f $f $BPATH
-          echo -e "${GREEN}Updating config.yml with new info...${NC}"
+          echo -e "${GREEN}${ARROW} Updating config.yml with new info...${NC}"
           sed "s/$OLDPASS/$NEWPASS/g; s/$OLDDBNAME/$NEWDBNAME/g; s/$OLDDOMAIN/$NEWDOMAIN/g; s/$OLDHTTPS/$NEWHTTPS/g" "$f" > $TFILE &&
           mv $TFILE "$f"
         else
-          echo -e "${RED}Error: Cannot read $f"
+          echo -e "${RED}${ERROR} Error: Cannot read $f"
         fi
       done
 
       if [[ -e $TFILE ]]; then
         /bin/rm $TFILE
       else
-        echo -e "${GREEN}Done updating config.yml with new info!${NC}"
+        echo -e "${GREEN}${DONE} Done.${NC}"
       fi
 
       ######################
@@ -894,11 +897,11 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
       ${SUDO} systemctl start ${SERVICE_NAME}
       if ( systemctl -q is-active ${SERVICE_NAME})
       then
-        echo -e "${GREEN}Invidious service has been successfully installed!${NC}"
+        echo -e "${GREEN}${DONE} Invidious service has been successfully installed!${NC}"
         ${SUDO} systemctl status ${SERVICE_NAME} --no-pager
         sleep 5
       else
-        echo -e "${RED}Invidious service installation failed...${NC}"
+        echo -e "${RED}${ERROR} Invidious service installation failed...${NC}"
         sleep 5
       fi
     }
@@ -915,12 +918,12 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
       echo ""
       echo ""
       echo ""
-      echo "Invidious install done. Now visit http://${ip}:${port}"
+      echo -e "${GREEN}${DONE} Invidious install done.${NC} Now visit http://${ip}:${port}"
       echo ""
       echo ""
       echo ""
       echo ""
-      echo -e "Documentation for this script is available here: ${ORANGE}\n https://github.com/tmiland/Invidious-Updater${NC}\n"
+      echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
     }
 
     show_install_banner
@@ -956,12 +959,12 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
     # Let's allow the user to confirm that what they've typed in is correct:
     echo -e "${GREEN}\n"
     echo -e "You entered: \n"
-    echo -e "     branch: $IN_BRANCH"
+    echo -e "${DONE} branch: $IN_BRANCH"
     echo -e "${NC}"
     echo ""
     read -n1 -r -p "Invidious is ready to be updated, press any key to continue..."
     echo ""
-    echo -e "${GREEN}Pulling Invidious from GitHub${NC}"
+    echo -e "${GREEN}${ARROW} Pulling Invidious from GitHub${NC}"
     #sudo -i -u $USER_NAME
     #cd $USER_DIR || exit 1
     cd ${REPO_DIR} || exit 1
@@ -1005,14 +1008,14 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
       if [[ ! -d "${REPO_DIR}/.git" ]]; then
         #if (systemctl -q is-active invidious.service) && -d "${REPO_DIR}/.git" then
         echo ""
-        echo -e "${RED}Looks like Invidious is not installed!${NC}"
+        echo -e "${RED}${ERROR} Looks like Invidious is not installed!${NC}"
         echo ""
         read -p "Do you want to download Invidious? [y/n/q]?" answer
         echo ""
 
         case $answer in
           [Yy]* )
-            echo -e "${GREEN}Setting up Dependencies${NC}"
+            echo -e "${GREEN}${ARROW} Setting up Dependencies${NC}"
             if ! ${PKGCHK} $PRE_INSTALL_PKGS >/dev/null 2>&1; then
               ${UPDATE}
               for i in $PRE_INSTALL_PKGS; do
@@ -1042,7 +1045,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
 
             mkdir -p $USER_DIR
 
-            echo -e "${GREEN}Downloading Invidious from GitHub${NC}"
+            echo -e "${GREEN}${ARROW} Downloading Invidious from GitHub${NC}"
 
             cd $USER_DIR || exit 1
 
@@ -1102,7 +1105,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
           if [[ $BUILD_DOCKER = "y" ]]; then
             cd ${REPO_DIR}
             docker-compose up -d
-            echo -e "${GREEN}Deployment done.${NC}"
+            echo -e "${GREEN}${DONE} Deployment done.${NC}"
             sleep 5
             cd ${CURRDIR}
             ./${SCRIPT_NAME}
@@ -1114,7 +1117,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
             ./${SCRIPT_NAME}
           fi
         else
-          echo -e "${RED}Docker is not installed, please choose option 5)${NC}"
+          echo -e "${RED}${ERROR} Docker is not installed, please choose option 5)${NC}"
         fi
         exit
         ;;
@@ -1164,7 +1167,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
           if [[ $REBUILD_DOCKER = "y" ]]; then
             cd ${REPO_DIR}
             docker-compose build
-            echo -e "${GREEN}Rebuild done.${NC}"
+            echo -e "${GREEN}${DONE} Rebuild done.${NC}"
             sleep 5
             cd ${CURRDIR}
             ./${SCRIPT_NAME}
@@ -1175,7 +1178,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
             ./${SCRIPT_NAME}
           fi
         else
-          echo -e "${RED}Docker is not installed, please choose option 5)${NC}"
+          echo -e "${RED}${ERROR} Docker is not installed, please choose option 5)${NC}"
         fi
         exit
         ;;
@@ -1194,7 +1197,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
             docker volume rm invidious_postgresdata
             sleep 5
             docker-compose build
-            echo -e "${GREEN}Data deleted and Rebuild done.${NC}"
+            echo -e "${GREEN}${DONE} Data deleted and Rebuild done.${NC}"
             sleep 5
             cd ${CURRDIR}
             ./${SCRIPT_NAME}
@@ -1204,7 +1207,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
             ./${SCRIPT_NAME}
           fi
         else
-          echo -e "${RED}Docker is not installed, please choose option 5)${NC}"
+          echo -e "${RED}${ERROR} Docker is not installed, please choose option 5)${NC}"
         fi
         exit
         ;;
@@ -1300,12 +1303,12 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
           # Verify that Docker CE is installed correctly by running the hello-world image.
           ${SUDO} docker run hello-world
         else
-          echo -e "${RED}Error: Sorry, your OS is not supported.${NC}"
+          echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
           exit 1;
         fi
 
         # We're almost done !
-        echo "Docker Installation done."
+        echo -e "${GREEN}${DONE} Docker Installation done.${NC}"
 
         while [[ $Docker_Compose !=  "y" && $Docker_Compose != "n" ]]; do
           read -p "       Install Docker Compose ? [y/n]: " -e Docker_Compose
@@ -1321,7 +1324,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
           ${SUDO} ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
         fi
         # We're done !
-        echo "Docker Installation done."
+        echo -e "${GREEN}${DONE}  Docker Installation done.${NC}"
     esac
     exit
     ;;
@@ -1345,11 +1348,11 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
 
     if ( systemctl -q is-active ${SERVICE_NAME})
     then
-      echo -e "${GREEN}Invidious service has been successfully installed!${NC}"
+      echo -e "${GREEN}${DONE} Invidious service has been successfully installed!${NC}"
       ${SUDO} systemctl status ${SERVICE_NAME} --no-pager
       sleep 5
     else
-      echo -e "${RED}Invidious service installation failed...${NC}"
+      echo -e "${RED}${ERROR} Invidious service installation failed...${NC}"
       sleep 5
     fi
 
@@ -1360,7 +1363,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
       echo ""
       echo "Invidious systemd install done."
       echo ""
-      echo -e "Documentation for this script is available here: ${ORANGE}\n https://github.com/tmiland/Invidious-Updater${NC}\n"
+      echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
     }
 
     show_systemd_install_banner
@@ -1387,7 +1390,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
       if [[ "$answer" = 'y' ]]; then
         if ( systemctl -q is-active ${PGSQL_SERVICE})
         then
-          echo -e "${RED}stopping Invidious..."
+          echo -e "${RED}${ERROR} stopping Invidious..."
           ${SUDO} systemctl stop ${SERVICE_NAME}
           sleep 3
           echo "Running Maintenance on $psqldb"
@@ -1403,28 +1406,28 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
           echo "Reindexing $psqldb."
           ${SUDO} -i -u postgres reindexdb --dbname=$psqldb
           sleep 3
-          echo -e "${GREEN}Maintenance on $psqldb done."
+          echo -e "${GREEN}${DONE} Maintenance on $psqldb done."
           # Restart postgresql
-          echo -e "${GREEN}Restarting postgresql..."
+          echo -e "${GREEN}${ARROW} Restarting postgresql..."
           ${SUDO} systemctl restart ${PGSQL_SERVICE}
-          echo -e "${GREEN}Restarting postgresql done."
+          echo -e "${GREEN}${DONE} Restarting postgresql done."
           ${SUDO} systemctl status ${PGSQL_SERVICE} --no-pager
           sleep 5
           # Restart Invidious
-          echo -e "${GREEN}Restarting Invidious..."
+          echo -e "${GREEN}${ARROW} Restarting Invidious..."
           ${SUDO} systemctl restart ${SERVICE_NAME}
-          echo -e "${GREEN}Restarting Invidious done."
+          echo -e "${GREEN}${DONE} Restarting Invidious done."
           ${SUDO} systemctl status ${SERVICE_NAME} --no-pager
           sleep 1
         else
-          echo -e "${RED}Database Maintenance failed. Is PostgreSQL running?"
+          echo -e "${RED}${ERROR} Database Maintenance failed. Is PostgreSQL running?"
           # Try to restart postgresql
-          echo -e "${GREEN}trying to start postgresql..."
+          echo -e "${GREEN}${ARROW} trying to start postgresql..."
           ${SUDO} systemctl start ${PGSQL_SERVICE}
-          echo -e "${GREEN}Postgresql started successfully"
+          echo -e "${GREEN}${DONE} Postgresql started successfully"
           ${SUDO} systemctl status ${PGSQL_SERVICE} --no-pager
           sleep 5
-          echo -e "${ORANGE}Restarting script. Please try again..."
+          echo -e "${ORANGE}${ARROW} Restarting script. Please try again..."
           sleep 5
           cd ${CURRDIR}
           ./${SCRIPT_NAME}
@@ -1441,12 +1444,12 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
       echo ""
       echo ""
       echo ""
-      echo "Invidious maintenance done."
+      echo -e "${GREEN}${DONE} Invidious maintenance done.${NC}"
       echo ""
       echo ""
       echo ""
       echo ""
-      echo -e "Documentation for this script is available here: ${ORANGE}\n https://github.com/tmiland/Invidious-Updater${NC}\n"
+      echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
     }
     show_maintenance_banner
     sleep 5
@@ -1464,9 +1467,9 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
     if [[ "$answer" = 'y' ]]; then
       if ( systemctl -q is-active ${PGSQL_SERVICE})
       then
-        echo -e "${ORANGE}stopping Invidious...${NC}"
+        echo -e "${ORANGE}${ARROW} stopping Invidious...${NC}"
         ${SUDO} systemctl stop ${SERVICE_NAME}
-        echo "Running Migration..."
+        echo -e "${GREEN}${ARROW} Running Migration...${NC}"
         cd ${REPO_DIR} || exit 1
         currentVersion=$(git rev-list --max-count=1 --abbrev-commit HEAD)
         latestVersion=$(git describe --tags `git rev-list --tags --max-count=1`)
@@ -1477,28 +1480,28 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
         done
 
         cd -
-        echo -e "${GREEN}Migration Done ${NC}"
+        echo -e "${GREEN}${DONE} Migration Done ${NC}"
         # Restart Invidious
-        echo -e "${GREEN}Restarting Invidious...${NC}"
+        echo -e "${GREEN}${ARROW} Restarting Invidious...${NC}"
         ${SUDO} systemctl restart ${SERVICE_NAME}
-        echo -e "${GREEN}Restarting Invidious done.${NC}"
+        echo -e "${GREEN}${DONE} Restarting Invidious done.${NC}"
         ${SUDO} systemctl status ${SERVICE_NAME} --no-pager
         sleep 1
         # Restart postgresql
-        echo -e "${GREEN}Restarting postgresql...${NC}"
+        echo -e "${GREEN}${ARROW} Restarting postgresql...${NC}"
         ${SUDO} systemctl restart ${PGSQL_SERVICE}
-        echo -e "${GREEN}Restarting postgresql done.${NC}"
+        echo -e "${GREEN}${DONE} Restarting postgresql done.${NC}"
         ${SUDO} systemctl status ${PGSQL_SERVICE} --no-pager
         sleep 5
       else
-        echo -e "${RED}Database Migration failed. Is PostgreSQL running?${NC}"
+        echo -e "${RED}${ERROR} Database Migration failed. Is PostgreSQL running?${NC}"
         # Restart postgresql
-        echo -e "${GREEN}trying to start postgresql...${NC}"
+        echo -e "${GREEN}${ARROW} trying to start postgresql...${NC}"
         ${SUDO} systemctl start ${PGSQL_SERVICE}
-        echo -e "${GREEN}Postgresql started successfully${NC}"
+        echo -e "${GREEN}${DONE} Postgresql started successfully${NC}"
         ${SUDO} systemctl status ${PGSQL_SERVICE} --no-pager
         sleep 5
-        echo -e "${ORANGE}Restarting script. Please try again...${NC}"
+        echo -e "${ORANGE}${ARROW} Restarting script. Please try again...${NC}"
         sleep 5
         cd ${CURRDIR}
         ./${SCRIPT_NAME}
@@ -1516,12 +1519,12 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
       echo ""
       echo ""
       echo ""
-      echo "Invidious migration done."
+      echo -e "${GREEN}${DONE} Invidious migration done.${NC}"
       echo ""
       echo ""
       echo ""
       echo ""
-      echo -e "Documentation for this script is available here: ${ORANGE}\n https://github.com/tmiland/Invidious-Updater${NC}\n"
+      echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
     }
 
     show_migration_banner
@@ -1543,12 +1546,12 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
     while [[ $RM_PostgreSQLDB !=  "y" && $RM_PostgreSQLDB != "n" ]]; do
       read -p "       Remove database for Invidious ? [y/n]: " -e RM_PostgreSQLDB
       if [[ ! $RM_PostgreSQLDB !=  "y" ]]; then
-        echo -e "       ${ORANGE}(( A backup will be placed in $PgDbBakPath ))${NC}"
+        echo -e "       ${ORANGE}${WARNING} (( A backup will be placed in ${ARROW} $PgDbBakPath ))${NC}"
         echo -e "       Your Invidious database name: $RM_PSQLDB"
       fi
       if [[ ! $RM_PostgreSQLDB !=  "y" ]]; then
         while [[ $RM_RE_PostgreSQLDB !=  "y" && $RM_RE_PostgreSQLDB != "n" ]]; do
-          echo -e "       ${ORANGE}(( If yes, only data will be dropped ))${NC}"
+          echo -e "       ${ORANGE}${WARNING} (( If yes, only data will be dropped ))${NC}"
           read -p "       Do you intend to reinstall?: " RM_RE_PostgreSQLDB
         done
       fi
@@ -1565,12 +1568,12 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
     fi
 
     while [[ $RM_FILES !=  "y" && $RM_FILES != "n" ]]; do
-      echo -e "       ${ORANGE}(( This option will remove ${REPO_DIR} ))${NC}"
+      echo -e "       ${ORANGE}${WARNING} (( This option will remove ${ARROW} ${REPO_DIR} ))${NC}"
       read -p "       Remove files ? [y/n]: " -e RM_FILES
       if [[ "$RM_FILES" = 'y' ]]; then
         while [[ $RM_USER !=  "y" && $RM_USER != "n" ]]; do
-          echo -e "       ${RED}(( This option will remove $USER_DIR ))${NC}"
-          echo -e "       ${ORANGE}(( Not needed for reinstall ))${NC}"
+          echo -e "       ${RED}${WARNING} (( This option will remove ${ARROW} $USER_DIR ))${NC}"
+          echo -e "       ${ORANGE}${WARNING} (( Not needed for reinstall ))${NC}"
           read -p "       Remove user ? [y/n]: " -e RM_USER
         done
       fi
@@ -1592,12 +1595,12 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
       sleep 1
       # If directory is not created
       if [[ ! -d $PgDbBakPath ]]; then
-        echo -e "${ORANGE}Backup Folder Not Found, adding folder${NC}"
+        echo -e "${ORANGE}${ARROW} Backup Folder Not Found, adding folder${NC}"
         ${SUDO} mkdir -p $PgDbBakPath
       fi
 
       echo ""
-      echo -e "${GREEN}Running database backup${NC}"
+      echo -e "${GREEN}${ARROW} Running database backup${NC}"
       echo ""
 
       ${SUDO} -i -u postgres pg_dump ${RM_PSQLDB} > ${PgDbBakPath}/${RM_PSQLDB}.sql
@@ -1606,23 +1609,23 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
 
       if [[ "$RM_RE_PostgreSQLDB" != 'n' ]]; then
         echo ""
-        echo -e "${RED}Dropping Invidious PostgreSQL data${NC}"
+        echo -e "${RED}${ARROW} Dropping Invidious PostgreSQL data${NC}"
         echo ""
         ${SUDO} -i -u postgres psql -c "DROP OWNED BY kemal CASCADE;"
         echo ""
-        echo -e "${ORANGE}Data dropped and backed up to ${PgDbBakPath}/${RM_PSQLDB}.sql ${NC}"
+        echo -e "${ORANGE}${DONE} Data dropped and backed up to ${ARROW} ${PgDbBakPath}/${RM_PSQLDB}.sql ${NC}"
         echo ""
       fi
 
       if [[ "$RM_RE_PostgreSQLDB" != 'y' ]]; then
         echo ""
-        echo -e "${RED}Dropping Invidious PostgreSQL database${NC}"
+        echo -e "${RED}${ARROW} Dropping Invidious PostgreSQL database${NC}"
         echo ""
         ${SUDO} -i -u postgres psql -c "DROP DATABASE $RM_PSQLDB;"
         echo ""
-        echo -e "${ORANGE}Database dropped and backed up to ${PgDbBakPath}/${RM_PSQLDB}.sql ${NC}"
+        echo -e "${ORANGE}${DONE} Database dropped and backed up to ${ARROW} ${PgDbBakPath}/${RM_PSQLDB}.sql ${NC}"
         echo ""
-        echo "Removing user kemal"
+        echo -e "${RED}${ARROW} Removing user kemal${NC}"
         ${SUDO} -i -u postgres psql -c "DROP ROLE IF EXISTS kemal;"
       fi
     fi
@@ -1632,7 +1635,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
     # Remove packages installed during installation
     if [[ "$RM_PACKAGES" = 'y' ]]; then
       echo ""
-      echo -e "${ORANGE}Removing packages installed during installation."
+      echo -e "${ORANGE}${ARROW} Removing packages installed during installation."
       echo ""
       echo -e "Note: PostgreSQL will not be removed due to unwanted complications${NC}"
       echo ""
@@ -1640,13 +1643,13 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
       if ${PKGCHK} $UNINSTALL_PKGS >/dev/null 2>&1; then
         for i in $UNINSTALL_PKGS; do
           echo ""
-          echo -e "removing packages."
+          echo -e "${ORANGE}${ARROW} removing packages.${NC}"
           echo ""
           ${UNINSTALL} $i
         done
       fi
       echo ""
-      echo -e "${GREEN}done."
+      echo -e "${GREEN}${DONE} done.${NC}"
       echo ""
     fi
 
@@ -1654,7 +1657,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
     if [[ "$RM_PURGE" = 'y' ]]; then
       # Removing invidious files and modules files
       echo ""
-      echo -e "${ORANGE}Removing invidious files and modules files.${NC}"
+      echo -e "${ORANGE}${ARROW} Removing invidious files and modules files.${NC}"
       echo ""
 
       if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
@@ -1670,25 +1673,25 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
       if ${PKGCHK} $UNINSTALL_PKGS >/dev/null 2>&1; then
         for i in $UNINSTALL_PKGS; do
           echo ""
-          echo -e "purging packages."
+          echo -e "${ORANGE}${ARROW} purging packages.${NC}"
           echo ""
           ${PURGE} $i
         done
       fi
 
       echo ""
-      echo -e "cleaning up."
+      echo -e "${ORANGE}${ARROW} cleaning up.${NC}"
       echo ""
       ${CLEAN}
       echo ""
-      echo -e "${GREEN}done.${NC}"
+      echo -e "${GREEN}${DONE} done.${NC}"
       echo ""
     fi
 
     if [[ "$RM_FILES" = 'y' ]]; then
       # If directory is present, remove
       if [[ -d ${REPO_DIR} ]]; then
-        echo -e "${ORANGE}Folder Found, removing folder${NC}"
+        echo -e "${ORANGE}${ARROW} Folder Found, removing folder${NC}"
         rm -r ${REPO_DIR}
       fi
     fi
@@ -1706,7 +1709,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
 
       if [ $? -eq 0 ] ; then
         echo ""
-        echo -e "${ORANGE}User $USER_NAME Found, removing user and files${NC}"
+        echo -e "${ORANGE}${ARROW} User $USER_NAME Found, removing user and files${NC}"
         echo ""
         if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
           deluser --remove-home $USER_NAME
@@ -1718,7 +1721,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
     fi
     # We're done !
     echo ""
-    echo -e "${GREEN}Un-installation done.${NC}"
+    echo -e "${GREEN}${DONE} Un-installation done.${NC}"
     echo ""
     sleep 3
     cd ${CURRDIR}
@@ -1726,9 +1729,16 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
     #exit
     ;;
   8) # Exit
-    echo ""
-    echo -e "${ORANGE}Goodbye.${NC}"
-    echo ""
+    echo -e "
+     If you like this script, buy me a coffee ☕ 
+
+     ${GREEN}${DONE}${NC} ${BBLUE}Paypal${NC} ${ARROW} ${ORANGE}https://paypal.me/milanddata${NC}
+     ${GREEN}${DONE}${NC} ${BBLUE}BTC${NC}    ${ARROW} ${ORANGE}3MV69DmhzCqwUnbryeHrKDQxBaM724iJC2${NC}
+     ${GREEN}${DONE}${NC} ${BBLUE}BCH${NC}    ${ARROW} ${ORANGE}qznnyvpxym7a8he2ps9m6l44s373fecfnv86h2vwq2${NC}
+     "
+     echo ""
+     echo -e "${ORANGE}${ARROW} Goodbye.${NC} ☺"
+     echo ""
     exit
     ;;
 esac
