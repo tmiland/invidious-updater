@@ -45,6 +45,14 @@ $ cd Invidious-Updater
 $ chmod +x invidious_update.sh
 $ ./invidious_update.sh
 ```
+
+#### Optionally
+
+ ```bash
+$ ln -s /home/invidious/Invidious-Updater/invidious_update.sh /usr/bin/invidious-updater
+$ invidious-updater
+```
+
 ***Note: you will be prompted to enter root password***
 
 If root password is not set, type:
@@ -53,12 +61,6 @@ If root password is not set, type:
 sudo passwd root
 ```
 
-#### Optionally
-
- ```bash
-$ ln -s /home/invidious/Invidious-Updater/invidious_update.sh /usr/bin/invidious-updater
-$ invidious-updater
-```
 
 ## Usage
 
