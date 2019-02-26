@@ -36,7 +36,8 @@ $ wget https://github.com/tmiland/Invidious-Updater/raw/master/invidious_update.
 $ chmod +x invidious_update.sh
 $ ./invidious_update.sh
 ```
-#### Or : 
+#### Or :
+
  ```bash
 $ cd /home/invidious
 $ git clone https://github.com/tmiland/Invidious-Updater.git
@@ -53,6 +54,7 @@ sudo passwd root
 ```
 
 #### Optionally
+
  ```bash
 $ ln -s /home/invidious/Invidious-Updater/invidious_update.sh /usr/bin/invidious-updater
 $ invidious-updater
@@ -164,11 +166,14 @@ Tested on:
   - [X] Docker option tested and working
 - [X] Tested on Fedora 29
   - [X] Docker option tested and working
+- [X] On Bash on Debian on Windows (in Gnome-Boxes)
+  - [X] Systemd not working
+  - [X] Docker option not working
   
   If you get permission issues, set selinux to permissive. 
   See how to here: [Disable SELinux or Set it to Permissive mode in Fedora 28 / 29, RHEL or CentOS](https://www.kaizenuslife.com/disable-or-set-selinux-permissive-in-fedora-rhel-or-cent-os/)
 
-  ### ***Postgresql 11 will be installed by default in both Fedora and CentOS.***
+  #### ***Postgresql 11 will be installed by default in both Fedora and CentOS.***
   
 #### Latest install log - version: 1.1.6
 
@@ -220,7 +225,6 @@ Ideas:
 
 - Support for auto-update check
   - [ ] For Invidious
-- [ ] Support for running own forks
 - [ ] Support for database backup
 
 ## Compatibility and Requirements
