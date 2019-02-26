@@ -1390,44 +1390,44 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
       if [[ "$answer" = 'y' ]]; then
         if ( systemctl -q is-active ${PGSQL_SERVICE})
         then
-          echo -e "${RED}${ERROR} stopping Invidious..."
+          echo -e "${RED}${ERROR} stopping Invidious...${NC}"
           ${SUDO} systemctl stop ${SERVICE_NAME}
           sleep 3
-          echo "Running Maintenance on $psqldb"
-          echo "Deleting expired tokens"
+          echo -e "${GREEN}${ARROW} Running Maintenance on $psqldb ${NC}"
+          echo -e "${ORANGE}${ARROW} Deleting expired tokens${NC}"
           ${SUDO} -i -u postgres psql $psqldb -c "DELETE FROM nonces * WHERE expire < current_timestamp;"
           sleep 1
-          echo "Truncating videos table."
+          echo -e "${ORANGE}${ARROW} Truncating videos table.${NC}"
           ${SUDO} -i -u postgres psql $psqldb -c "TRUNCATE TABLE videos;"
           sleep 1
-          echo "Vacuuming $psqldb."
+          echo -e "${ORANGE}${ARROW} Vacuuming $psqldb.${NC}"
           ${SUDO} -i -u postgres vacuumdb --dbname=$psqldb --analyze --verbose --table 'videos'
           sleep 1
-          echo "Reindexing $psqldb."
+          echo -e "${ORANGE}${ARROW} Reindexing $psqldb.${NC}"
           ${SUDO} -i -u postgres reindexdb --dbname=$psqldb
           sleep 3
-          echo -e "${GREEN}${DONE} Maintenance on $psqldb done."
+          echo -e "${GREEN}${DONE} Maintenance on $psqldb done.${NC}"
           # Restart postgresql
-          echo -e "${GREEN}${ARROW} Restarting postgresql..."
+          echo -e "${ORANGE}${ARROW} Restarting postgresql...${NC}"
           ${SUDO} systemctl restart ${PGSQL_SERVICE}
-          echo -e "${GREEN}${DONE} Restarting postgresql done."
+          echo -e "${GREEN}${DONE} Restarting postgresql done.${NC}"
           ${SUDO} systemctl status ${PGSQL_SERVICE} --no-pager
           sleep 5
           # Restart Invidious
-          echo -e "${GREEN}${ARROW} Restarting Invidious..."
+          echo -e "${ORANGE}${ARROW} Restarting Invidious...${NC}"
           ${SUDO} systemctl restart ${SERVICE_NAME}
-          echo -e "${GREEN}${DONE} Restarting Invidious done."
+          echo -e "${GREEN}${DONE} Restarting Invidious done.${NC}"
           ${SUDO} systemctl status ${SERVICE_NAME} --no-pager
           sleep 1
         else
-          echo -e "${RED}${ERROR} Database Maintenance failed. Is PostgreSQL running?"
+          echo -e "${RED}${ERROR} Database Maintenance failed. Is PostgreSQL running?${NC}"
           # Try to restart postgresql
-          echo -e "${GREEN}${ARROW} trying to start postgresql..."
+          echo -e "${GREEN}${ARROW} trying to start postgresql...${NC}"
           ${SUDO} systemctl start ${PGSQL_SERVICE}
-          echo -e "${GREEN}${DONE} Postgresql started successfully"
+          echo -e "${GREEN}${DONE} Postgresql started successfully${NC}"
           ${SUDO} systemctl status ${PGSQL_SERVICE} --no-pager
           sleep 5
-          echo -e "${ORANGE}${ARROW} Restarting script. Please try again..."
+          echo -e "${ORANGE}${ARROW} Restarting script. Please try again...${NC}"
           sleep 5
           cd ${CURRDIR}
           ./${SCRIPT_NAME}
