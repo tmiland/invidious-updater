@@ -11,33 +11,33 @@
 ####                   Maintained by @tmiland                     ####
 ######################################################################
 
-version='1.2.6' # Must stay on line 14 for updater to fetch the numbers
+version='1.2.7' # Must stay on line 14 for updater to fetch the numbers
 
-#------------------------------------------------------------------------------------#
-#                                                                                    #
-#   MIT License                                                                      #
-#                                                                                    #
-#   Copyright (c) 2019 Tommy Miland                                                  #
-#                                                                                    #
-#   Permission is hereby granted, free of charge, to any person obtaining a copy     #
-#   of this software and associated documentation files (the "Software"), to deal    #
-#   in the Software without restriction, including without limitation the rights     #
-#   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell        #
-#   copies of the Software, and to permit persons to whom the Software is            #
-#   furnished to do so, subject to the following conditions:                         #
-#                                                                                    #
-#   The above copyright notice and this permission notice shall be included in all   #
-#   copies or substantial portions of the Software.                                  #
-#                                                                                    #
-#   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR       #
-#   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,         #
-#   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE      #
-#   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER           #
-#   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,    #
-#   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE    #
-#   SOFTWARE.                                                                        #
-#                                                                                    #
-#------------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
+#
+# MIT License
+# 
+# Copyright (c) 2019 Tommy Miland
+# 
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE 
+# SOFTWARE.
+#
+#------------------------------------------------------------------------------#
 ## Uncomment for debugging purpose
 #set -o errexit
 #set -o pipefail
@@ -46,12 +46,11 @@ version='1.2.6' # Must stay on line 14 for updater to fetch the numbers
 # Detect absolute and full path as well as filename of this script
 cd "$(dirname $0)"
 CURRDIR=$(pwd)
-SCRIPT_NAME=$(basename $0)
+SCRIPT_FILENAME=$(basename $0)
 cd - > /dev/null
 sfp=$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || greadlink -f "${BASH_SOURCE[0]}" 2>/dev/null)
 if [ -z "$sfp" ]; then sfp=${BASH_SOURCE[0]}; fi
 SCRIPT_DIR=$(dirname "${sfp}")
-
 # Icons used for printing
 ARROW='➜'
 DONE='✔'
@@ -65,6 +64,7 @@ GREEN='\033[0;32m'
 ORANGE='\033[0;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
+SCRIPT_NAME="Invidious Update.sh"
 # Set update check
 UPDATE_SCRIPT='check'
 # Set username
@@ -139,18 +139,14 @@ if ! lsb_release -si >/dev/null 2>&1; then
       # Make sure that the script runs with root permissions
       if [[ "$EUID" != 0 ]]; then
         echo -e "${RED}${ERROR} This action needs root permissions.${NC} Please enter your root password...";
-        if [[ "$PKGCMD" = 'yum' || "$PKGCMD" = 'dnf' ]]; then
-          su -s "$(which bash)" -c "${PKGCMD} install -y ${LSB}"
-        elif [[ "$PKGCMD" = 'apt' || "$PKGCMD" = 'apt-get' ]]; then
-          su -s "$(which bash)" -c "${PKGCMD} install -y ${LSB}"
-        else
-          echo -e "${RED}${ERROR} Error: could not install ${LSB}!${NC}"
-        fi
+        su -s "$(which bash)" -c "${PKGCMD} install -y ${LSB}"
+      else
+        echo -e "${RED}${ERROR} Error: could not install ${LSB}!${NC}"
       fi
       echo -e "${GREEN}${DONE} Done${NC}"
       sleep 3
       cd ${CURRDIR}
-      ./${SCRIPT_NAME}
+      ./${SCRIPT_FILENAME}
       ;;
     [Nn]* )
       exit 1;
@@ -171,11 +167,11 @@ if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
   # ImageMagick package name
   IMAGICKPKG=imagemagick
   SUDO="sudo"
-  UPDATE="apt-get update"
-  INSTALL="apt-get install -y"
-  UNINSTALL="apt-get remove -y"
-  PURGE="apt-get purge -y"
-  CLEAN="apt-get clean && apt-get autoremove -y"
+  UPDATE="apt-get -o Dpkg::Progress-Fancy="1" update -qq"
+  INSTALL="apt-get -o Dpkg::Progress-Fancy="1" install -qq"
+  UNINSTALL="apt-get -o Dpkg::Progress-Fancy="1" remove -qq"
+  PURGE="apt-get purge -o Dpkg::Progress-Fancy="1" -qq"
+  CLEAN="apt-get clean && apt-get autoremove -qq"
   PKGCHK="dpkg -s"
   # Pre-install packages
   PRE_INSTALL_PKGS="apt-transport-https git curl sudo"
@@ -191,11 +187,11 @@ elif [[ $(lsb_release -si) == "CentOS" ]]; then
   # ImageMagick package name
   IMAGICKPKG=ImageMagick
   SUDO="sudo"
-  UPDATE="yum update"
-  INSTALL="yum install -y"
-  UNINSTALL="yum remove -y"
-  PURGE="yum purge -y"
-  CLEAN="yum clean all -y"
+  UPDATE="yum update -q"
+  INSTALL="yum install -y -q"
+  UNINSTALL="yum remove -y -q"
+  PURGE="yum purge -y -q"
+  CLEAN="yum clean all -y -q"
   PKGCHK="rpm --quiet --query"
   # Pre-install packages
   PRE_INSTALL_PKGS="epel-release git curl sudo"
@@ -209,11 +205,11 @@ elif [[ $(lsb_release -si) == "CentOS" ]]; then
   PGSQL_SERVICE="postgresql-11.service"
 elif [[ $(lsb_release -si) == "Fedora" ]]; then
   SUDO="sudo"
-  UPDATE="dnf update"
-  INSTALL="dnf install -y"
-  UNINSTALL="dnf remove -y"
-  PURGE="dnf purge -y"
-  CLEAN="dnf clean all -y"
+  UPDATE="dnf update -q"
+  INSTALL="dnf install -y -q"
+  UNINSTALL="dnf remove -y -q"
+  PURGE="dnf purge -y -q"
+  CLEAN="dnf clean all -y -q"
   PKGCHK="rpm --quiet --query"
   # Pre-install packages
   PRE_INSTALL_PKGS="git curl sudo"
@@ -225,119 +221,30 @@ elif [[ $(lsb_release -si) == "Fedora" ]]; then
   BUILD_DEP_PKGS="ImageMagick-devel"
   # PostgreSQL Service
   PGSQL_SERVICE="postgresql-11.service"
-  #elif [[ $(lsb_release -si) == "Darwin" ]]; then
-  #SUDO="sudo"
-  #UPDATE="brew update"
-  #INSTALL="brew install -y"
-  #UNINSTALL="brew remove -y"
-  #PURGE="brew purge -y"
-  #CLEAN="brew clean && brew autoremove -y"
-  #PKGCHK=""
-  #elif [[ $(lsb_release -si) == "Arch" ]]; then
-  #SUDO="sudo"
-  #UPDATE="pacman -Syu"
-  #INSTALL="pacman -S"
-  #UNINSTALL="pacman -R"
-  #PURGE="pacman -Rs"
-  #CLEAN="pacman -Sc"
-  #PKGCHK="pacman -Qi"
 else
   echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
   exit 1;
 fi
-header () {
-  echo -e "${GREEN}\n"
-  echo ' ╔═══════════════════════════════════════════════════════════════════╗'
-  echo ' ║                        Invidious Update.sh                        ║'
-  echo ' ║               Automatic update script for Invidio.us              ║'
-  echo ' ║                      Maintained by @tmiland                       ║'
-  echo ' ║                          version: '${version}'                           ║'
-  echo ' ╚═══════════════════════════════════════════════════════════════════╝'
-  echo -e "${NC}"
-}
-
+##
+# Make sure that the script runs with root permissions
+##
 chk_permissions () {
-  # Make sure that the script runs with root permissions
   if [[ "$EUID" != 0 ]]; then
     echo -e "${RED}${ERROR} This action needs root permissions.${NC} Please enter your root password...";
     cd "$CURRDIR"
-    su -s "$(which bash)" -c "./$SCRIPT_NAME"
+    su -s "$(which bash)" -c "./$SCRIPT_FILENAME"
     cd - > /dev/null
 
     exit 0;
   fi
 }
-
-# Set permissions
-set_permissions () {
-  ${SUDO} chown -R $USER_NAME:$USER_NAME $USER_DIR
-  ${SUDO} chmod -R 755 $USER_DIR
-  #${SUDO} chmod 664 ${REPO_DIR}/config/config.yml
-  #${SUDO} chmod 755 ${REPO_DIR}/invidious
-}
-# Get Crystal
-get_crystal () {
-  if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
-    if [[ ! -e /etc/apt/sources.list.d/crystal.list ]]; then
-      #apt-key adv --keyserver keys.gnupg.net --recv-keys 09617FD37CC06B54
-      curl -sL "https://keybase.io/crystal/pgp_keys.asc" | ${SUDO} apt-key add -
-      echo "deb https://dist.crystal-lang.org/apt crystal main" | ${SUDO} tee /etc/apt/sources.list.d/crystal.list
-    fi
-  elif [[ $(lsb_release -si) == "CentOS" || $(lsb_release -si) == "Fedora" ]]; then
-    if [[ ! -e /etc/yum.repos.d/crystal.repo ]]; then
-      curl https://dist.crystal-lang.org/rpm/setup.sh | ${SUDO} bash
-    fi
-  elif [[ $(lsb_release -si) == "Darwin" ]]; then
-    exit 1;
-  elif [[ $(lsb_release -si) == "Arch" ]]; then
-    exit 1;
-  else
-    echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
-    exit 1;
-  fi
-}
-# Checkout Master branch
-GetMaster () {
-  master=$(git rev-list --max-count=1 --abbrev-commit HEAD)
-  # Checkout master
-  git checkout $master
-  #git pull
-  #for i in `git rev-list --abbrev-commit $master..HEAD` ; do file=${REPO_DIR}/config/migrate-scripts/migrate-db-$i.sh ; [ -f $file ] && $file ; done
-}
-# Checkout Release Tag
-GetRelease () {
-  # Get new tags from remote
-  git fetch --tags
-  # Get latest tag name
-  latestVersion=$(git describe --tags `git rev-list --tags --max-count=1`)
-  # Checkout latest release tag
-  git checkout $latestVersion
-  #git pull
-  #for i in `git rev-list --abbrev-commit $currentVersion..HEAD` ; do file=${REPO_DIR}/config/migrate-scripts/migrate-db-$i.sh ; [ -f $file ] && $file ; done
-}
-# Rebuild Invidious
-rebuild () {
-  printf "\n-- Rebuilding ${REPO_DIR}\n"
-  cd ${REPO_DIR} || exit 1
-  shards
-  crystal build src/invidious.cr --release
-  #sudo chown -R 1000:$USER_NAME $USER_DIR
-  cd -
-  printf "\n"
-  echo -e "${GREEN}${DONE} Done Rebuilding ${REPO_DIR} ${NC}"
-  sleep 3
-}
-# Restart Invidious
-restart () {
-  printf "\n-- restarting Invidious\n"
-  ${SUDO} systemctl restart $SERVICE_NAME
-  sleep 2
-  ${SUDO} systemctl status $SERVICE_NAME --no-pager
-  printf "\n"
-  echo -e "${GREEN}${DONE} Invidious has been restarted ${NC}"
-  sleep 3
-}
+########################################################
+## Update invidious_update.sh                         ##
+## Source: ghacks-user.js updater for macOS and Linux ##
+########################################################
+##
 # Download method priority: curl -> wget
+##
 DOWNLOAD_METHOD=''
 if [[ $(command -v 'curl') ]]; then
   DOWNLOAD_METHOD='curl'
@@ -347,10 +254,9 @@ else
   echo -e "${RED}${ERROR} This script requires curl or wget.\nProcess aborted${NC}"
   exit 0
 fi
-#########################
-#     File Handling     #
-#########################
+##
 # Download files
+##
 download_file () {
   declare -r url=$1
   declare -r tf=$(mktemp)
@@ -364,7 +270,9 @@ download_file () {
 
   $dlcmd "${url}" &>/dev/null && echo "$tf" || echo '' # return the temp-filename (or empty string on error)
 }
+##
 # Open files
+##
 open_file () { #expects one argument: file_path
 
   if [ "$(uname)" == 'Darwin' ]; then
@@ -375,40 +283,17 @@ open_file () { #expects one argument: file_path
     echo -e "${RED}${ERROR} Error: Sorry, opening files is not supported for your OS.${NC}"
   fi
 }
-########################################################
-## Update invidious_update.sh                         ##
-## Source: ghacks-user.js updater for macOS and Linux ##
-########################################################
+##
 # Returns the version number of invidious_update.sh file on line 14
+##
 get_updater_version () {
   echo $(sed -n '14 s/[^0-9.]*\([0-9.]*\).*/\1/p' "$1")
 }
-# Get dbname from config file (used in db maintenance and uninstallation)
-get_dbname () {
-  echo $(sed -n 's/.*dbname *: *\([^ ]*.*\)/\1/p' "$1")
-}
-
-# Update banner
-show_update_banner () {
-  clear
-  header
-  echo "Welcome to the Invidious Update.sh script."
-  echo ""
-  echo "There is a newer version of Invidious Update.sh available."
-  echo ""
-  echo ""
-  echo ""
-  echo -e "    ${GREEN}${DONE} New version:${NC} "${LV}" "
-  echo ""
-  echo ""
-  echo ""
-  echo ""
-  echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
-}
+##
 # Update invidious_update.sh
+##
 # Default: Check for update, if available, ask user if they want to execute it
 update_updater () {
-
   # Get tmpfile from github
   declare -r tmpfile=$(download_file 'https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/invidious_update.sh')
   # Do the work
@@ -434,8 +319,9 @@ update_updater () {
     return 0 # No update available
   fi
 }
-
+##
 # Ask user to update yes/no
+##
 if [ $# != 0 ]; then
   while getopts ":ud" opt; do
     case $opt in
@@ -459,11 +345,305 @@ fi
 
 update_updater $@
 cd "$CURRDIR"
+##
+# Check which ImageMagick version is installed
+##
+chk_imagickpkg () {
 
+  if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
+    apt -qq list $IMAGICKPKG 2>/dev/null
+  elif [[ $(lsb_release -si) == "CentOS" || $(lsb_release -si) == "Fedora" ]]; then
+    if [[ $(identify -version 2>/dev/null) ]]; then
+      identify -version
+    else
+      echo -e "${ORANGE}${ERROR} ImageMagick is not installed.${NC}"
+    fi
+  else
+    echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
+    exit 1;
+  fi
+}
+##
+# Check Git repo
+##
+chk_git_repo () {
+  # Check if the folder is a git repo
+  if [[ -d "${REPO_DIR}/.git" ]]; then
+    echo ""
+    echo -e "${RED}${ERROR} Looks like Invidious is already installed!${NC}"
+    echo ""
+    echo -e "${ORANGE}${WARNING} If you want to reinstall, please choose option 7 to Uninstall Invidious first!${NC}"
+    echo ""
+    sleep 3
+    cd ${CURRDIR}
+    ./${SCRIPT_FILENAME}
+    #exit 1
+  fi
+}
+##
+# Set permissions
+##
+set_permissions () {
+  ${SUDO} chown -R $USER_NAME:$USER_NAME $USER_DIR
+  ${SUDO} chmod -R 755 $USER_DIR
+  #${SUDO} chmod 664 ${REPO_DIR}/config/config.yml
+  #${SUDO} chmod 755 ${REPO_DIR}/invidious
+}
+##
+# Update config
+##
+update_config () {
+  ######################
+  # Update config.yml with new info from user input
+  ######################
+  BAKPATH="/home/backup/$USER_NAME/config"
+  # Lets change the default password
+  OLDPASS="password: kemal"
+  NEWPASS="password: $psqlpass"
+  # Lets change the default database name
+  OLDDBNAME="dbname: invidious"
+  NEWDBNAME="dbname: $psqldb"
+  # Lets change the default domain
+  OLDDOMAIN="domain: invidio.us"
+  NEWDOMAIN="domain: $domain"
+  # Lets change https_only value
+  OLDHTTPS="https_only: false"
+  NEWHTTPS="https_only: $https_only"
+  DPATH="${REPO_DIR}/config/config.yml"
+  BPATH="$BAKPATH"
+  TFILE="/tmp/config.yml"
+  [ ! -d $BPATH ] && mkdir -p $BPATH || :
+  for f in $DPATH
+  do
+    if [ -f $f -a -r $f ]; then
+      /bin/cp -f $f $BPATH
+      echo -e "${GREEN}${ARROW} Updating config.yml with new info...${NC}"
+      sed "s/$OLDPASS/$NEWPASS/g; s/$OLDDBNAME/$NEWDBNAME/g; s/$OLDDOMAIN/$NEWDOMAIN/g; s/$OLDHTTPS/$NEWHTTPS/g" "$f" > $TFILE &&
+      mv $TFILE "$f"
+    else
+      echo -e "${RED}${ERROR} Error: Cannot read $f"
+    fi
+  done
+
+  if [[ -e $TFILE ]]; then
+    /bin/rm $TFILE
+  else
+    echo -e "${GREEN}${DONE} Done.${NC}"
+  fi
+
+  ######################
+  # Done updating config.yml with new info!
+  # Source: https://www.cyberciti.biz/faq/unix-linux-replace-string-words-in-many-files/
+  ######################
+}
+##
+# Systemd install
+##
+systemd_install () {
+  ######################
+  # Setup Systemd Service
+  ######################
+  cp ${REPO_DIR}/${SERVICE_NAME} /lib/systemd/system/${SERVICE_NAME}
+  ${SUDO} sed -i "s/invidious -o invidious.log/invidious -b ${ip} -p ${port} -o invidious.log/g" /lib/systemd/system/${SERVICE_NAME}
+  # Enable invidious start at boot
+  ${SUDO} systemctl enable ${SERVICE_NAME}
+  # Reload Systemd
+  ${SUDO} systemctl daemon-reload
+  # Restart Invidious
+  ${SUDO} systemctl start ${SERVICE_NAME}
+  if ( systemctl -q is-active ${SERVICE_NAME})
+  then
+    echo -e "${GREEN}${DONE} Invidious service has been successfully installed!${NC}"
+    ${SUDO} systemctl status ${SERVICE_NAME} --no-pager
+    sleep 5
+  else
+    echo -e "${RED}${ERROR} Invidious service installation failed...${NC}"
+    sleep 5
+  fi
+}
+##
+# Get Crystal
+##
+get_crystal () {
+  if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
+    if [[ ! -e /etc/apt/sources.list.d/crystal.list ]]; then
+      #apt-key adv --keyserver keys.gnupg.net --recv-keys 09617FD37CC06B54
+      curl -sL "https://keybase.io/crystal/pgp_keys.asc" | ${SUDO} apt-key add -
+      echo "deb https://dist.crystal-lang.org/apt crystal main" | ${SUDO} tee /etc/apt/sources.list.d/crystal.list
+    fi
+  elif [[ $(lsb_release -si) == "CentOS" || $(lsb_release -si) == "Fedora" ]]; then
+    if [[ ! -e /etc/yum.repos.d/crystal.repo ]]; then
+      curl https://dist.crystal-lang.org/rpm/setup.sh | ${SUDO} bash
+    fi
+  elif [[ $(lsb_release -si) == "Darwin" ]]; then
+    exit 1;
+  elif [[ $(lsb_release -si) == "Arch" ]]; then
+    exit 1;
+  else
+    echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
+    exit 1;
+  fi
+}
+##
+# Checkout Master branch
+##
+GetMaster () {
+  master=$(git rev-list --max-count=1 --abbrev-commit HEAD)
+  # Checkout master
+  git checkout $master
+  #git pull
+  #for i in `git rev-list --abbrev-commit $master..HEAD` ; do file=${REPO_DIR}/config/migrate-scripts/migrate-db-$i.sh ; [ -f $file ] && $file ; done
+}
+##
+# Checkout Release Tag
+##
+GetRelease () {
+  # Get new tags from remote
+  git fetch --tags
+  # Get latest tag name
+  latestVersion=$(git describe --tags `git rev-list --tags --max-count=1`)
+  # Checkout latest release tag
+  git checkout $latestVersion
+  #git pull
+  #for i in `git rev-list --abbrev-commit $currentVersion..HEAD` ; do file=${REPO_DIR}/config/migrate-scripts/migrate-db-$i.sh ; [ -f $file ] && $file ; done
+}
+##
+# Rebuild Invidious
+##
+rebuild () {
+  printf "\n-- Rebuilding ${REPO_DIR}\n"
+  cd ${REPO_DIR} || exit 1
+  shards
+  crystal build src/invidious.cr --release
+  #sudo chown -R 1000:$USER_NAME $USER_DIR
+  cd -
+  printf "\n"
+  echo -e "${GREEN}${DONE} Done Rebuilding ${REPO_DIR} ${NC}"
+  sleep 3
+}
+##
+# Restart Invidious
+##
+restart () {
+  printf "\n-- restarting Invidious\n"
+  ${SUDO} systemctl restart $SERVICE_NAME
+  sleep 2
+  ${SUDO} systemctl status $SERVICE_NAME --no-pager
+  printf "\n"
+  echo -e "${GREEN}${DONE} Invidious has been restarted ${NC}"
+  sleep 3
+}
+##
+# Get dbname from config file (used in db maintenance and uninstallation)
+##
+get_dbname () {
+  echo $(sed -n 's/.*dbname *: *\([^ ]*.*\)/\1/p' "$1")
+}
+##
+# BANNERS
+##
+##
+# Header
+##
+header () {
+  echo -e "${GREEN}\n"
+  echo ' ╔═══════════════════════════════════════════════════════════════════╗'
+  echo ' ║                        '${SCRIPT_NAME}'                        ║'
+  echo ' ║               Automatic update script for Invidio.us              ║'
+  echo ' ║                      Maintained by @tmiland                       ║'
+  echo ' ║                          version: '${version}'                           ║'
+  echo ' ╚═══════════════════════════════════════════════════════════════════╝'
+  echo -e "${NC}"
+}
+# Update banner
+##
+show_update_banner () {
+  clear
+  header
+  echo "Welcome to the ${SCRIPT_NAME} script."
+  echo ""
+  echo "There is a newer version of ${SCRIPT_NAME} available."
+  echo ""
+  echo ""
+  echo ""
+  echo -e "    ${GREEN}${DONE} New version:${NC} "${LV}" "
+  echo ""
+  echo ""
+  echo ""
+  echo ""
+  echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
+}
+##
+# Preinstall banner
+##
+show_preinstall_banner () {
+  clear
+  header
+  echo "Thank you for using the ${SCRIPT_NAME} script."
+  echo ""
+  echo ""
+  echo ""
+  echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
+}
+##
+# Install banner
+##
+show_install_banner () {
+  #clear
+  header
+  echo ""
+  echo ""
+  echo ""
+  echo "Thank you for using the ${SCRIPT_NAME} script."
+  echo ""
+  echo ""
+  echo ""
+  echo -e "${GREEN}${DONE} Invidious install done.${NC} Now visit http://${ip}:${port}"
+  echo ""
+  echo ""
+  echo ""
+  echo ""
+  echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
+}
+##
+# Systemd install banner
+##
+show_systemd_install_banner () {
+  #clear
+  header
+  echo "Thank you for using the ${SCRIPT_NAME} script."
+  echo ""
+  echo "Invidious systemd install done."
+  echo ""
+  echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
+}
+##
+# Maintenance banner
+##
+show_maintenance_banner () {
+  #clear
+  header
+  echo ""
+  echo ""
+  echo ""
+  echo "Thank you for using the ${SCRIPT_NAME} script."
+  echo ""
+  echo ""
+  echo ""
+  echo -e "${GREEN}${DONE} Invidious maintenance done.${NC}"
+  echo ""
+  echo ""
+  echo ""
+  echo ""
+  echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
+}
+##
+# Banner
+##
 show_banner () {
   #clear
   header
-  echo "Welcome to the Invidious Update.sh script."
+  echo "Welcome to the ${SCRIPT_NAME} script."
   echo ""
   echo "What do you want to do?"
   echo "   1) Install Invidious"
@@ -477,7 +657,30 @@ show_banner () {
   echo ""
   echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
 }
+##
+# Exit Script
+##
+exit_script () {
+  header
+  echo ""
+  echo ""
+  echo -e "
+   If you like this script, buy me a coffee ☕
 
+   ${GREEN}${DONE}${NC} ${BBLUE}Paypal${NC} ${ARROW} ${ORANGE}https://paypal.me/milanddata${NC}
+   ${GREEN}${DONE}${NC} ${BBLUE}BTC${NC}    ${ARROW} ${ORANGE}3MV69DmhzCqwUnbryeHrKDQxBaM724iJC2${NC}
+   ${GREEN}${DONE}${NC} ${BBLUE}BCH${NC}    ${ARROW} ${ORANGE}qznnyvpxym7a8he2ps9m6l44s373fecfnv86h2vwq2${NC}
+  "
+  echo ""
+  echo -e "Documentation for this script is available here: ${ORANGE}\n${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
+  echo -e "${ORANGE}${ARROW} Goodbye.${NC} ☺"
+  echo ""
+  exit
+}
+
+##
+# Start Script
+##
 show_banner
 
 while [[ $OPTION !=  "1" && $OPTION != "2" && $OPTION != "3" && $OPTION != "4" && $OPTION != "5" && $OPTION != "6" && $OPTION != "7" && $OPTION != "8" ]]; do
@@ -489,49 +692,7 @@ case $OPTION in
 
     chk_permissions
 
-    # Check which ImageMagick version is installed
-    chk_imagickpkg () {
-
-      if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
-        apt -qq list $IMAGICKPKG 2>/dev/null
-      elif [[ $(lsb_release -si) == "CentOS" || $(lsb_release -si) == "Fedora" ]]; then
-        if [[ $(identify -version 2>/dev/null) ]]; then
-          identify -version
-        else
-          echo -e "${ORANGE}${ERROR} ImageMagick is not installed.${NC}"
-        fi
-      else
-        echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
-        exit 1;
-      fi
-    }
-
-    chk_git_repo () {
-      # Check if the folder is a git repo
-      if [[ -d "${REPO_DIR}/.git" ]]; then
-        echo ""
-        echo -e "${RED}${ERROR} Looks like Invidious is already installed!${NC}"
-        echo ""
-        echo -e "${ORANGE}${WARNING} If you want to reinstall, please choose option 7 to Uninstall Invidious first!${NC}"
-        echo ""
-        sleep 3
-        cd ${CURRDIR}
-        ./${SCRIPT_NAME}
-        #exit 1
-      fi
-    }
-
     chk_git_repo
-
-    show_preinstall_banner () {
-      clear
-      header
-      echo "Thank you for using the Invidious Update.sh script."
-      echo ""
-      echo ""
-      echo ""
-      echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
-    }
 
     show_preinstall_banner
 
@@ -806,7 +967,7 @@ host    all             all             ::1/128                 md5
 # replication privilege.
 local   replication     all                                     peer
 host    replication     all             127.0.0.1/32            md5
-host    replication     all             ::1/128                 md5" | ${SUDO} tee /var/lib/pgsql/11/data/pg_hba.conf
+      host    replication     all             ::1/128                 md5" | ${SUDO} tee /var/lib/pgsql/11/data/pg_hba.conf
       ${SUDO} chmod 600 /var/lib/pgsql/11/data/postgresql.conf
       ${SUDO} chmod 600 /var/lib/pgsql/11/data/pg_hba.conf
     fi
@@ -839,51 +1000,6 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
     ${SUDO} -i -u postgres psql -d $psqldb -f ${REPO_DIR}/config/sql/nonces.sql
     echo -e "${GREEN}${DONE} Finished Database section${NC}"
 
-    update_config () {
-      ######################
-      # Update config.yml with new info from user input
-      ######################
-      BAKPATH="/home/backup/$USER_NAME/config"
-      # Lets change the default password
-      OLDPASS="password: kemal"
-      NEWPASS="password: $psqlpass"
-      # Lets change the default database name
-      OLDDBNAME="dbname: invidious"
-      NEWDBNAME="dbname: $psqldb"
-      # Lets change the default domain
-      OLDDOMAIN="domain: invidio.us"
-      NEWDOMAIN="domain: $domain"
-      # Lets change https_only value
-      OLDHTTPS="https_only: false"
-      NEWHTTPS="https_only: $https_only"
-      DPATH="${REPO_DIR}/config/config.yml"
-      BPATH="$BAKPATH"
-      TFILE="/tmp/config.yml"
-      [ ! -d $BPATH ] && mkdir -p $BPATH || :
-      for f in $DPATH
-      do
-        if [ -f $f -a -r $f ]; then
-          /bin/cp -f $f $BPATH
-          echo -e "${GREEN}${ARROW} Updating config.yml with new info...${NC}"
-          sed "s/$OLDPASS/$NEWPASS/g; s/$OLDDBNAME/$NEWDBNAME/g; s/$OLDDOMAIN/$NEWDOMAIN/g; s/$OLDHTTPS/$NEWHTTPS/g" "$f" > $TFILE &&
-          mv $TFILE "$f"
-        else
-          echo -e "${RED}${ERROR} Error: Cannot read $f"
-        fi
-      done
-
-      if [[ -e $TFILE ]]; then
-        /bin/rm $TFILE
-      else
-        echo -e "${GREEN}${DONE} Done.${NC}"
-      fi
-
-      ######################
-      # Done updating config.yml with new info!
-      # Source: https://www.cyberciti.biz/faq/unix-linux-replace-string-words-in-many-files/
-      ######################
-    }
-
     update_config
 
     # Crystal complaining about permissions on CentOS and somewhat Debian
@@ -897,54 +1013,13 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
     # Not figured out why yet, so let's set permissions after as well...
     set_permissions
 
-    systemd_install () {
-      ######################
-      # Setup Systemd Service
-      ######################
-      cp ${REPO_DIR}/${SERVICE_NAME} /lib/systemd/system/${SERVICE_NAME}
-      ${SUDO} sed -i "s/invidious -o invidious.log/invidious -b ${ip} -p ${port} -o invidious.log/g" /lib/systemd/system/${SERVICE_NAME}
-      # Enable invidious start at boot
-      ${SUDO} systemctl enable ${SERVICE_NAME}
-      # Reload Systemd
-      ${SUDO} systemctl daemon-reload
-      # Restart Invidious
-      ${SUDO} systemctl start ${SERVICE_NAME}
-      if ( systemctl -q is-active ${SERVICE_NAME})
-      then
-        echo -e "${GREEN}${DONE} Invidious service has been successfully installed!${NC}"
-        ${SUDO} systemctl status ${SERVICE_NAME} --no-pager
-        sleep 5
-      else
-        echo -e "${RED}${ERROR} Invidious service installation failed...${NC}"
-        sleep 5
-      fi
-    }
-
     systemd_install
-
-    show_install_banner () {
-      #clear
-      header
-      echo ""
-      echo ""
-      echo ""
-      echo "Thank you for using the Invidious Update.sh script."
-      echo ""
-      echo ""
-      echo ""
-      echo -e "${GREEN}${DONE} Invidious install done.${NC} Now visit http://${ip}:${port}"
-      echo ""
-      echo ""
-      echo ""
-      echo ""
-      echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
-    }
 
     show_install_banner
 
     sleep 5
     cd ${CURRDIR}
-    ./${SCRIPT_NAME}
+    ./${SCRIPT_FILENAME}
     #exit
     ;;
   2) # Update Invidious
@@ -1002,7 +1077,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
 
     sleep 3
     cd ${CURRDIR}
-    ./${SCRIPT_NAME}
+    ./${SCRIPT_FILENAME}
     #exit
     ;;
   3) # Deploy with Docker
@@ -1076,12 +1151,12 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
               git pull
             fi
             #cd -
-            #./${SCRIPT_NAME}
+            #./${SCRIPT_FILENAME}
             ;;
           [Nn]* )
             sleep 3
             cd ${CURRDIR}
-            ./${SCRIPT_NAME}
+            ./${SCRIPT_FILENAME}
             ;;
           * ) echo "Enter Y, N or Q, please." ;;
         esac
@@ -1108,7 +1183,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
     case $DOCKER_OPTION in
 
       1) # Build and start cluster
-
+        chk_permissions
         while [[ $BUILD_DOCKER !=  "y" && $BUILD_DOCKER != "n" ]]; do
           read -p "   Build and start cluster? [y/n]: " -e BUILD_DOCKER
         done
@@ -1122,13 +1197,13 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
             echo -e "${GREEN}${DONE} Deployment done.${NC}"
             sleep 5
             cd ${CURRDIR}
-            ./${SCRIPT_NAME}
+            ./${SCRIPT_FILENAME}
             #exit 0
           fi
 
           if [[ $BUILD_DOCKER = "n" ]]; then
             cd ${CURRDIR}
-            ./${SCRIPT_NAME}
+            ./${SCRIPT_FILENAME}
           fi
         else
           echo -e "${RED}${ERROR} Docker is not installed, please choose option 5)${NC}"
@@ -1136,7 +1211,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
         exit
         ;;
       2) # Start, Stop or Restart Invidious
-
+        chk_permissions
         echo ""
         echo "Do you want to start, stop or restart Docker?"
         echo "   1) Start"
@@ -1165,12 +1240,12 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
           docker-compose ${DOCKER_SERVICE}
           sleep 5
           cd ${CURRDIR}
-          ./${SCRIPT_NAME}
+          ./${SCRIPT_FILENAME}
         done
         exit
         ;;
       3) # Rebuild cluster
-
+        chk_permissions
         while [[ $REBUILD_DOCKER !=  "y" && $REBUILD_DOCKER != "n" ]]; do
           read -p "       Rebuild cluster ? [y/n]: " -e REBUILD_DOCKER
         done
@@ -1184,12 +1259,12 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
             echo -e "${GREEN}${DONE} Rebuild done.${NC}"
             sleep 5
             cd ${CURRDIR}
-            ./${SCRIPT_NAME}
+            ./${SCRIPT_FILENAME}
           fi
 
           if [[ $REBUILD_DOCKER = "n" ]]; then
             cd ${CURRDIR}
-            ./${SCRIPT_NAME}
+            ./${SCRIPT_FILENAME}
           fi
         else
           echo -e "${RED}${ERROR} Docker is not installed, please choose option 5)${NC}"
@@ -1197,7 +1272,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
         exit
         ;;
       4) # Delete data and rebuild
-
+        chk_permissions
         while [[ $DEL_REBUILD_DOCKER !=  "y" && $DEL_REBUILD_DOCKER != "n" ]]; do
           read -p "       Delete data and rebuild Docker? [y/n]: " -e DEL_REBUILD_DOCKER
         done
@@ -1214,11 +1289,11 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
             echo -e "${GREEN}${DONE} Data deleted and Rebuild done.${NC}"
             sleep 5
             cd ${CURRDIR}
-            ./${SCRIPT_NAME}
+            ./${SCRIPT_FILENAME}
           fi
           if [[ $DEL_REBUILD_DOCKER = "n" ]]; then
             cd ${CURRDIR}
-            ./${SCRIPT_NAME}
+            ./${SCRIPT_FILENAME}
           fi
         else
           echo -e "${RED}${ERROR} Docker is not installed, please choose option 5)${NC}"
@@ -1226,7 +1301,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
         exit
         ;;
       5) # Install Docker CE
-
+        chk_permissions
         echo ""
         echo "This will install Docker CE."
         echo ""
@@ -1258,6 +1333,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
         # Update the apt package index:
         ${SUDO} ${UPDATE}
         if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
+          DISTRO=$(printf '%s\n' $(lsb_release -si) | LC_ALL=C tr '[:upper:]' '[:lower:]')
           #Install packages to allow apt to use a repository over HTTPS:
           ${SUDO} ${INSTALL} \
             apt-transport-https \
@@ -1266,12 +1342,12 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
             gnupg2 \
             software-properties-common
           # Add Docker’s official GPG key:
-          curl -fsSL https://download.docker.com/linux/debian/gpg | ${SUDO} apt-key add -
+          curl -fsSL https://download.docker.com/linux/${DISTRO}/gpg | ${SUDO} apt-key add -
           # Verify that you now have the key with the fingerprint 9DC8 5822 9FC7 DD38 854A E2D8 8D81 803C 0EBF CD88, by searching for the last 8 characters of the fingerprint.
           ${SUDO} apt-key fingerprint 0EBFCD88
 
           ${SUDO} add-apt-repository \
-            "deb [arch=amd64] https://download.docker.com/linux/debian \
+            "deb [arch=amd64] https://download.docker.com/linux/${DISTRO} \
             $(lsb_release -cs) \
             ${DOCKER_VER}"
           # Update the apt package index:
@@ -1340,7 +1416,10 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
         # We're done !
         echo -e "${GREEN}${DONE}  Docker Installation done.${NC}"
     esac
-    exit
+    sleep 5
+    cd ${CURRDIR}
+    ./${SCRIPT_FILENAME}
+    #exit 1
     ;;
   4) # Install Invidious service
 
@@ -1370,21 +1449,11 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
       sleep 5
     fi
 
-    show_systemd_install_banner () {
-      #clear
-      header
-      echo "Thank you for using the Invidious Update.sh script."
-      echo ""
-      echo "Invidious systemd install done."
-      echo ""
-      echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
-    }
-
     show_systemd_install_banner
 
     sleep 3
     cd ${CURRDIR}
-    ./${SCRIPT_NAME}
+    ./${SCRIPT_FILENAME}
     #exit 1
     ;;
   5) # Database maintenance
@@ -1444,31 +1513,15 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
           echo -e "${ORANGE}${ARROW} Restarting script. Please try again...${NC}"
           sleep 5
           cd ${CURRDIR}
-          ./${SCRIPT_NAME}
+          ./${SCRIPT_FILENAME}
         fi
       fi
     fi
-    show_maintenance_banner () {
-      #clear
-      header
-      echo ""
-      echo ""
-      echo ""
-      echo "Thank you for using the Invidious Update.sh script."
-      echo ""
-      echo ""
-      echo ""
-      echo -e "${GREEN}${DONE} Invidious maintenance done.${NC}"
-      echo ""
-      echo ""
-      echo ""
-      echo ""
-      echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
-    }
+
     show_maintenance_banner
     sleep 5
     cd ${CURRDIR}
-    ./${SCRIPT_NAME}
+    ./${SCRIPT_FILENAME}
     #exit 1
     ;;
   6) # Database migration
@@ -1518,7 +1571,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
         echo -e "${ORANGE}${ARROW} Restarting script. Please try again...${NC}"
         sleep 5
         cd ${CURRDIR}
-        ./${SCRIPT_NAME}
+        ./${SCRIPT_FILENAME}
         #exit
       fi
     fi
@@ -1529,7 +1582,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
       echo ""
       echo ""
       echo ""
-      echo "Thank you for using the Invidious Update.sh script."
+      echo "Thank you for using the ${SCRIPT_NAME} script."
       echo ""
       echo ""
       echo ""
@@ -1545,7 +1598,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
 
     sleep 3
     cd ${CURRDIR}
-    ./${SCRIPT_NAME}
+    ./${SCRIPT_FILENAME}
     #exit 1
     ;;
   7) # Uninstall Invidious
@@ -1739,24 +1792,10 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
     echo ""
     sleep 3
     cd ${CURRDIR}
-    ./${SCRIPT_NAME}
+    ./${SCRIPT_FILENAME}
     #exit
     ;;
   8) # Exit
-    header
-    echo ""
-    echo ""
-    echo -e "
-     If you like this script, buy me a coffee ☕
-
-     ${GREEN}${DONE}${NC} ${BBLUE}Paypal${NC} ${ARROW} ${ORANGE}https://paypal.me/milanddata${NC}
-     ${GREEN}${DONE}${NC} ${BBLUE}BTC${NC}    ${ARROW} ${ORANGE}3MV69DmhzCqwUnbryeHrKDQxBaM724iJC2${NC}
-     ${GREEN}${DONE}${NC} ${BBLUE}BCH${NC}    ${ARROW} ${ORANGE}qznnyvpxym7a8he2ps9m6l44s373fecfnv86h2vwq2${NC}
-    "
-    echo ""
-    echo -e "Documentation for this script is available here: ${ORANGE}\n${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
-    echo -e "${ORANGE}${ARROW} Goodbye.${NC} ☺"
-    echo ""
-    exit
+    exit_script
     ;;
 esac
