@@ -5,7 +5,7 @@
                   ║                        Invidious Update.sh                        ║
                   ║               Automatic update script for Invidio.us              ║
                   ║                      Maintained by @tmiland                       ║
-                  ║                          version: 1.2.6                           ║
+                  ║                          version: 1.2.7                           ║
                   ╚═══════════════════════════════════════════════════════════════════╝
 ```
 
@@ -185,7 +185,7 @@ Tested and working on:
 
   #### ***Postgresql 11 will be installed by default in both Fedora and CentOS.***
   
-#### Latest install log - version: 1.1.6
+#### Latest install log - version: 1.2.7
 
 [install log Debian 9](https://github.com/tmiland/Invidious-Updater/blob/master/log/install_log_debian.log)
 
