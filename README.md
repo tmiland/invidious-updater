@@ -160,13 +160,18 @@ sudo passwd root
    
 ## Testing
 
-Tested on:
+Tested and working on:
+
+| Debian | Ubuntu | CentOS | Fedora |
+| ------ | ------ | ------ | ------ |
+| [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/os_icons/debian.svg?sanitize=true" height="128" width="128">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/os_icons/debian.svg?sanitize=true) | [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/os_icons/ubuntu.svg?sanitize=true" height="128" width="128">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/os_icons/ubuntu.svg?sanitize=true) | [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/os_icons/cent-os.svg?sanitize=true" height="128" width="128">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/os_icons/cent-os.svg?sanitize=true) | [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/os_icons/fedora.svg?sanitize=true" height="128" width="128">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/os_icons/fedora.svg?sanitize=true)
 
 - [X] Tested extensively on Debian 9
   - [X] Docker option tested and working
 - [X] Tested on Ubuntu 16.04
   - [X] Docker option tested, not working
-- [ ] Tested on Ubuntu 18.04
+- [X] Tested on Ubuntu 18.10
+  - [X] Docker option tested and working
 - [X] Tested on CentOS 7
   - [X] Docker option tested and working
 - [X] Tested on Fedora 29
