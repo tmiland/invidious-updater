@@ -38,7 +38,11 @@ version='1.2.6' # Must stay on line 14 for updater to fetch the numbers
 #   SOFTWARE.                                                                        #
 #                                                                                    #
 #------------------------------------------------------------------------------------#
-
+## Uncomment for debugging purpose
+#set -o errexit
+#set -o pipefail
+#set -o nounset
+#set -o xtrace
 # Detect absolute and full path as well as filename of this script
 cd "$(dirname $0)"
 CURRDIR=$(pwd)
@@ -97,14 +101,31 @@ IMAGICK_SEVEN_VER=7.0.8-28
 Docker_Compose_Ver=1.23.2
 # Distro support
 if ! lsb_release -si >/dev/null 2>&1; then
-
   if [[ -f /etc/debian_version ]]; then
-    LSB=lsb-release
-    PKGCMD="apt/apt-get"
+    DISTRO=$(cat /etc/issue.net)
   elif [[ -f /etc/redhat-release ]]; then
-    LSB=redhat-lsb
-    PKGCMD="yum/dnf"
+    DISTRO=$(cat /etc/redhat-release)
   fi
+
+  case "$DISTRO" in
+    Debian*)
+      PKGCMD="apt-get"
+      LSB=lsb-release
+      ;;
+    Ubuntu*)
+      PKGCMD="apt"
+      LSB=lsb-release
+      ;;
+    CentOS*)
+      PKGCMD="yum"
+      LSB=redhat-lsb
+      ;;
+    Fedora*)
+      PKGCMD="dnf"
+      LSB=redhat-lsb
+      ;;
+    *) echo -e "${RED}${ERROR} unknown distro: '$DISTRO'${NC}" ; exit 1 ;;
+  esac
 
   echo ""
   echo -e "${RED}${ERROR} Looks like ${LSB} is not installed!${NC}"
@@ -114,21 +135,14 @@ if ! lsb_release -si >/dev/null 2>&1; then
 
   case $answer in
     [Yy]* )
-      echo ""
-      echo -e "${ORANGE}${WARNING} Since ${LSB} is used to get OS info in this script,\n"
-      echo -e "and the package is not installed,\n"
-      echo -e "you need to manually provide your package manager cmd${NC}"
-      echo ""
-      read -p "Enter cmd: [${PKGCMD}]: " INSTALL_CMD
-      echo ""
-      echo -e "${GREEN}${ARROW} Installing ${LSB}...${NC}"
+      echo -e "${GREEN}${ARROW} Installing ${LSB} on ${DISTRO}...${NC}"
       # Make sure that the script runs with root permissions
       if [[ "$EUID" != 0 ]]; then
         echo -e "${RED}${ERROR} This action needs root permissions.${NC} Please enter your root password...";
-        if [[ "$INSTALL_CMD" = 'yum' || "$INSTALL_CMD" = 'dnf' ]]; then
-          su -s "$(which bash)" -c "${INSTALL_CMD} install -y ${LSB}"
-        elif [[ "$INSTALL_CMD" = 'apt' || "$INSTALL_CMD" = 'apt-get' ]]; then
-          su -s "$(which bash)" -c "${INSTALL_CMD} install -y ${LSB}"
+        if [[ "$PKGCMD" = 'yum' || "$PKGCMD" = 'dnf' ]]; then
+          su -s "$(which bash)" -c "${PKGCMD} install -y ${LSB}"
+        elif [[ "$PKGCMD" = 'apt' || "$PKGCMD" = 'apt-get' ]]; then
+          su -s "$(which bash)" -c "${PKGCMD} install -y ${LSB}"
         else
           echo -e "${RED}${ERROR} Error: could not install ${LSB}!${NC}"
         fi
@@ -1729,16 +1743,20 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
     #exit
     ;;
   8) # Exit
+    header
+    echo ""
+    echo ""
     echo -e "
-     If you like this script, buy me a coffee ☕ 
+     If you like this script, buy me a coffee ☕
 
      ${GREEN}${DONE}${NC} ${BBLUE}Paypal${NC} ${ARROW} ${ORANGE}https://paypal.me/milanddata${NC}
      ${GREEN}${DONE}${NC} ${BBLUE}BTC${NC}    ${ARROW} ${ORANGE}3MV69DmhzCqwUnbryeHrKDQxBaM724iJC2${NC}
      ${GREEN}${DONE}${NC} ${BBLUE}BCH${NC}    ${ARROW} ${ORANGE}qznnyvpxym7a8he2ps9m6l44s373fecfnv86h2vwq2${NC}
-     "
-     echo ""
-     echo -e "${ORANGE}${ARROW} Goodbye.${NC} ☺"
-     echo ""
+    "
+    echo ""
+    echo -e "Documentation for this script is available here: ${ORANGE}\n${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
+    echo -e "${ORANGE}${ARROW} Goodbye.${NC} ☺"
+    echo ""
     exit
     ;;
 esac
