@@ -226,6 +226,8 @@ What's done:
 - [X] Add support for Fedora 
   - Added in [1.2.6](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.2.6)
 - [X] Added prompt to install redhat-lsb/lsb-release if not installed.
+- [X] Added support for Ubuntu 18.10
+  - [X] Added in [1.2.7](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.2.7)
 
   
 
