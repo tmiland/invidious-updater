@@ -11,7 +11,7 @@
 ####                   Maintained by @tmiland                     ####
 ######################################################################
 
-version='1.2.7' # Must stay on line 14 for updater to fetch the numbers
+version='1.2.8' # Must stay on line 14 for updater to fetch the numbers
 
 #------------------------------------------------------------------------------#
 #
@@ -265,11 +265,11 @@ download_file () {
   declare -r tf=$(mktemp)
   local dlcmd=''
 
-  if [ $DOWNLOAD_METHOD = 'curl' ]; then
-    dlcmd="curl -o $tf"
-  else
+  #if [ $DOWNLOAD_METHOD = 'curl' ]; then
+  #  dlcmd="curl -o $tf"
+  #else
     dlcmd="wget -O $tf"
-  fi
+  #fi
 
   $dlcmd "${url}" &>/dev/null && echo "$tf" || echo '' # return the temp-filename (or empty string on error)
 }
@@ -286,6 +286,34 @@ open_file () { #expects one argument: file_path
     echo -e "${RED}${ERROR} Error: Sorry, opening files is not supported for your OS.${NC}"
   fi
 }
+# Get latest release tag from GitHub
+get_latest_release_tag() {
+  curl --silent "https://api.github.com/repos/$1/releases/latest" | 
+    grep '"tag_name":' | 
+    sed -n 's/[^0-9.]*\([0-9.]*\).*/\1/p'
+}
+RELEASE_TAG=$(get_latest_release_tag ${REPO_NAME})
+# Get latest release download url
+get_latest_release() {
+  curl --silent "https://api.github.com/repos/$1/releases/latest" |
+    grep '"browser_download_url":' |
+    sed -n 's#.*\(https*://[^"]*\).*#\1#;p'
+}
+LATEST_RELEASE=$(get_latest_release ${REPO_NAME})
+# Get latest release notes
+get_latest_release_note() {
+  curl --silent "https://api.github.com/repos/$1/releases/latest" | 
+    grep '"body":' | 
+    sed -n 's/.*"\([^"]*\)".*/\1/;p'
+}
+RELEASE_NOTE=$(get_latest_release_note ${REPO_NAME})
+# Get latest release title
+get_latest_release_title() {
+  curl --silent "https://api.github.com/repos/$1/releases/latest" | 
+    grep -m 1 '"name":' | 
+    sed -n 's/.*"\([^"]*\)".*/\1/;p'
+}
+RELEASE_TITLE=$(get_latest_release_title ${REPO_NAME})
 ##
 # Returns the version number of invidious_update.sh file on line 14
 ##
@@ -293,15 +321,154 @@ get_updater_version () {
   echo $(sed -n '14 s/[^0-9.]*\([0-9.]*\).*/\1/p' "$1")
 }
 ##
+# BANNERS
+##
+##
+# Header
+##
+header () {
+  echo -e "${GREEN}\n"
+  echo ' ╔═══════════════════════════════════════════════════════════════════╗'
+  echo ' ║                        '${SCRIPT_NAME}'                        ║'
+  echo ' ║               Automatic update script for Invidio.us              ║'
+  echo ' ║                      Maintained by @tmiland                       ║'
+  echo ' ║                          version: '${version}'                           ║'
+  echo ' ╚═══════════════════════════════════════════════════════════════════╝'
+  echo -e "${NC}"
+}
+# Update banner
+##
+show_update_banner () {
+  clear
+  header
+  echo "Welcome to the ${SCRIPT_NAME} script."
+  echo ""
+  echo "There is a newer version of ${SCRIPT_NAME} available."
+  echo ""
+  echo ""
+  echo -e "${GREEN}${DONE} New version:${NC} "${RELEASE_TAG}" - ${RELEASE_TITLE}"
+  echo ""
+  echo -e "${ORANGE}${ARROW} Notes:${NC}\n"
+  echo -e "${BLUE}${RELEASE_NOTE}${NC}"
+  echo ""
+}
+##
+# Preinstall banner
+##
+show_preinstall_banner () {
+  clear
+  header
+  echo "Thank you for using the ${SCRIPT_NAME} script."
+  echo ""
+  echo ""
+  echo ""
+  echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
+}
+##
+# Install banner
+##
+show_install_banner () {
+  #clear
+  header
+  echo ""
+  echo ""
+  echo ""
+  echo "Thank you for using the ${SCRIPT_NAME} script."
+  echo ""
+  echo ""
+  echo ""
+  echo -e "${GREEN}${DONE} Invidious install done.${NC} Now visit http://${ip}:${port}"
+  echo ""
+  echo ""
+  echo ""
+  echo ""
+  echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
+}
+##
+# Systemd install banner
+##
+show_systemd_install_banner () {
+  #clear
+  header
+  echo "Thank you for using the ${SCRIPT_NAME} script."
+  echo ""
+  echo "Invidious systemd install done."
+  echo ""
+  echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
+}
+##
+# Maintenance banner
+##
+show_maintenance_banner () {
+  #clear
+  header
+  echo ""
+  echo ""
+  echo ""
+  echo "Thank you for using the ${SCRIPT_NAME} script."
+  echo ""
+  echo ""
+  echo ""
+  echo -e "${GREEN}${DONE} Invidious maintenance done.${NC}"
+  echo ""
+  echo ""
+  echo ""
+  echo ""
+  echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
+}
+##
+# Banner
+##
+show_banner () {
+  #clear
+  header
+  echo "Welcome to the ${SCRIPT_NAME} script."
+  echo ""
+  echo "What do you want to do?"
+  echo "   1) Install Invidious"
+  echo "   2) Update Invidious"
+  echo "   3) Deploy with Docker"
+  echo "   4) Install Invidious service"
+  echo "   5) Run Database Maintenance"
+  echo "   6) Run Database Migration"
+  echo "   7) Uninstall Invidious"
+  echo "   8) Exit"
+  echo ""
+  echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
+}
+##
+# Exit Script
+##
+exit_script () {
+  header
+  echo ""
+  echo ""
+  echo -e "
+   If you like this script, buy me a coffee ☕
+
+   ${GREEN}${DONE}${NC} ${BBLUE}Paypal${NC} ${ARROW} ${ORANGE}https://paypal.me/milanddata${NC}
+   ${GREEN}${DONE}${NC} ${BBLUE}BTC${NC}    ${ARROW} ${ORANGE}3MV69DmhzCqwUnbryeHrKDQxBaM724iJC2${NC}
+   ${GREEN}${DONE}${NC} ${BBLUE}BCH${NC}    ${ARROW} ${ORANGE}qznnyvpxym7a8he2ps9m6l44s373fecfnv86h2vwq2${NC}
+  "
+  echo ""
+  echo -e "Documentation for this script is available here: ${ORANGE}\n${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
+  echo -e "${ORANGE}${ARROW} Goodbye.${NC} ☺"
+  echo ""
+  exit
+}
+##
 # Update invidious_update.sh
 ##
 # Default: Check for update, if available, ask user if they want to execute it
 update_updater () {
+  echo -e "${GREEN}${ARROW} Checking for updates...${NC}"
   # Get tmpfile from github
-  declare -r tmpfile=$(download_file 'https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/invidious_update.sh')
+  declare -r tmpfile=$(download_file "$LATEST_RELEASE")
   # Do the work
-  if [[ $(get_updater_version "${SCRIPT_DIR}/${SCRIPT_FILENAME}") < $(get_updater_version "${tmpfile}") ]]; then
-    LV=$(get_updater_version "${tmpfile}")
+  # New function, fetch latest release from GitHub
+  if [[ $(get_updater_version "${SCRIPT_DIR}/$SCRIPT_FILENAME") < "${RELEASE_TAG}" ]]; then
+  #if [[ $(get_updater_version "${SCRIPT_DIR}/${SCRIPT_FILENAME}") < $(get_updater_version "${tmpfile}") ]]; then
+    #LV=$(get_updater_version "${tmpfile}")
     if [ $UPDATE_SCRIPT = 'check' ]; then
       show_update_banner
       echo -e "${RED}${ARROW} Do you want to update [Y/N?]${NC}"
@@ -315,10 +482,13 @@ update_updater () {
       fi
       if [[ $REPLY =~ ^[Nn]$ ]]; then
         show_banner
+        rm "${tmpfile}"
         return 1 # Update available, but user chooses not to update
       fi
     fi
   else
+    echo -e "${GREEN}${DONE} No update available.${NC}"
+    rm "${tmpfile}"
     return 0 # No update available
   fi
 }
@@ -542,145 +712,6 @@ restart () {
 get_dbname () {
   echo $(sed -n 's/.*dbname *: *\([^ ]*.*\)/\1/p' "$1")
 }
-##
-# BANNERS
-##
-##
-# Header
-##
-header () {
-  echo -e "${GREEN}\n"
-  echo ' ╔═══════════════════════════════════════════════════════════════════╗'
-  echo ' ║                        '${SCRIPT_NAME}'                        ║'
-  echo ' ║               Automatic update script for Invidio.us              ║'
-  echo ' ║                      Maintained by @tmiland                       ║'
-  echo ' ║                          version: '${version}'                           ║'
-  echo ' ╚═══════════════════════════════════════════════════════════════════╝'
-  echo -e "${NC}"
-}
-# Update banner
-##
-show_update_banner () {
-  clear
-  header
-  echo "Welcome to the ${SCRIPT_NAME} script."
-  echo ""
-  echo "There is a newer version of ${SCRIPT_NAME} available."
-  echo ""
-  echo ""
-  echo ""
-  echo -e "    ${GREEN}${DONE} New version:${NC} "${LV}" "
-  echo ""
-  echo ""
-  echo ""
-  echo ""
-  echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
-}
-##
-# Preinstall banner
-##
-show_preinstall_banner () {
-  clear
-  header
-  echo "Thank you for using the ${SCRIPT_NAME} script."
-  echo ""
-  echo ""
-  echo ""
-  echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
-}
-##
-# Install banner
-##
-show_install_banner () {
-  #clear
-  header
-  echo ""
-  echo ""
-  echo ""
-  echo "Thank you for using the ${SCRIPT_NAME} script."
-  echo ""
-  echo ""
-  echo ""
-  echo -e "${GREEN}${DONE} Invidious install done.${NC} Now visit http://${ip}:${port}"
-  echo ""
-  echo ""
-  echo ""
-  echo ""
-  echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
-}
-##
-# Systemd install banner
-##
-show_systemd_install_banner () {
-  #clear
-  header
-  echo "Thank you for using the ${SCRIPT_NAME} script."
-  echo ""
-  echo "Invidious systemd install done."
-  echo ""
-  echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
-}
-##
-# Maintenance banner
-##
-show_maintenance_banner () {
-  #clear
-  header
-  echo ""
-  echo ""
-  echo ""
-  echo "Thank you for using the ${SCRIPT_NAME} script."
-  echo ""
-  echo ""
-  echo ""
-  echo -e "${GREEN}${DONE} Invidious maintenance done.${NC}"
-  echo ""
-  echo ""
-  echo ""
-  echo ""
-  echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
-}
-##
-# Banner
-##
-show_banner () {
-  #clear
-  header
-  echo "Welcome to the ${SCRIPT_NAME} script."
-  echo ""
-  echo "What do you want to do?"
-  echo "   1) Install Invidious"
-  echo "   2) Update Invidious"
-  echo "   3) Deploy with Docker"
-  echo "   4) Install Invidious service"
-  echo "   5) Run Database Maintenance"
-  echo "   6) Run Database Migration"
-  echo "   7) Uninstall Invidious"
-  echo "   8) Exit"
-  echo ""
-  echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
-}
-##
-# Exit Script
-##
-exit_script () {
-  header
-  echo ""
-  echo ""
-  echo -e "
-   If you like this script, buy me a coffee ☕
-
-   ${GREEN}${DONE}${NC} ${BBLUE}Paypal${NC} ${ARROW} ${ORANGE}https://paypal.me/milanddata${NC}
-   ${GREEN}${DONE}${NC} ${BBLUE}BTC${NC}    ${ARROW} ${ORANGE}3MV69DmhzCqwUnbryeHrKDQxBaM724iJC2${NC}
-   ${GREEN}${DONE}${NC} ${BBLUE}BCH${NC}    ${ARROW} ${ORANGE}qznnyvpxym7a8he2ps9m6l44s373fecfnv86h2vwq2${NC}
-  "
-  echo ""
-  echo -e "Documentation for this script is available here: ${ORANGE}\n${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
-  echo -e "${ORANGE}${ARROW} Goodbye.${NC} ☺"
-  echo ""
-  exit
-}
-
 ##
 # Start Script
 ##
