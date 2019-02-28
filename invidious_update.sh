@@ -64,7 +64,10 @@ GREEN='\033[0;32m'
 ORANGE='\033[0;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
+# Script name
 SCRIPT_NAME="Invidious Update.sh"
+# Repo name
+REPO_NAME="tmiland/Invidious-Updater"
 # Set update check
 UPDATE_SCRIPT='check'
 # Set username
@@ -297,7 +300,7 @@ update_updater () {
   # Get tmpfile from github
   declare -r tmpfile=$(download_file 'https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/invidious_update.sh')
   # Do the work
-  if [[ $(get_updater_version "${SCRIPT_DIR}/invidious_update.sh") < $(get_updater_version "${tmpfile}") ]]; then
+  if [[ $(get_updater_version "${SCRIPT_DIR}/${SCRIPT_FILENAME}") < $(get_updater_version "${tmpfile}") ]]; then
     LV=$(get_updater_version "${tmpfile}")
     if [ $UPDATE_SCRIPT = 'check' ]; then
       show_update_banner
@@ -305,9 +308,9 @@ update_updater () {
       read -p "" -n 1 -r
       echo -e "\n\n"
       if [[ $REPLY =~ ^[Yy]$ ]]; then
-        mv "${tmpfile}" "${SCRIPT_DIR}/invidious_update.sh"
-        chmod u+x "${SCRIPT_DIR}/invidious_update.sh"
-        "${SCRIPT_DIR}/invidious_update.sh" "$@" -d
+        mv "${tmpfile}" "${SCRIPT_DIR}/${SCRIPT_FILENAME}"
+        chmod u+x "${SCRIPT_DIR}/${SCRIPT_FILENAME}"
+        "${SCRIPT_DIR}/${SCRIPT_FILENAME}" "$@" -d
         exit 1 # Update available, user chooses to update
       fi
       if [[ $REPLY =~ ^[Nn]$ ]]; then
