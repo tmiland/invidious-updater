@@ -440,9 +440,20 @@ show_banner () {
 # Exit Script
 ##
 exit_script () {
-  header
-  echo ""
-  echo ""
+  #header
+  echo -e "${GREEN}"
+  echo    '      ____          _     ___                    '
+  echo    '     /  _/___ _  __(_)___/ (_)___  __  _______   '
+  echo    '    / // __ \ | / / / __  / / __ \/ / / / ___/   '
+  echo    '  _/ // / / / |/ / / /_/ / / /_/ / /_/ (__  )    '
+  echo    ' /___/_/ /_/|___/_/\__,_/_/\____/\__,_/____/     '                                         
+  echo    '    __  __          __      __              __   '
+  echo    '   / / / /___  ____/ /___ _/ /____    _____/ /_  '
+  echo    '  / / / / __ \/ __  / __ `/ __/ _ \  / ___/ __ \ '
+  echo    ' / /_/ / /_/ / /_/ / /_/ / /_/  __/ (__  ) / / / '
+  echo    ' \____/ .___/\__,_/\__,_/\__/\___(_)____/_/ /_/  '
+  echo -e '     /_/                                         ' "${NC}"
+  #echo -e "${NC}"
   echo -e "
    If you like this script, buy me a coffee ☕
 
@@ -450,7 +461,6 @@ exit_script () {
    ${GREEN}${DONE}${NC} ${BBLUE}BTC${NC}    ${ARROW} ${ORANGE}3MV69DmhzCqwUnbryeHrKDQxBaM724iJC2${NC}
    ${GREEN}${DONE}${NC} ${BBLUE}BCH${NC}    ${ARROW} ${ORANGE}qznnyvpxym7a8he2ps9m6l44s373fecfnv86h2vwq2${NC}
   "
-  echo ""
   echo -e "Documentation for this script is available here: ${ORANGE}\n${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
   echo -e "${ORANGE}${ARROW} Goodbye.${NC} ☺"
   echo ""
