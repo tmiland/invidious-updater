@@ -5,7 +5,7 @@
                   ║                        Invidious Update.sh                        ║
                   ║               Automatic update script for Invidio.us              ║
                   ║                      Maintained by @tmiland                       ║
-                  ║                          version: 1.2.8                           ║
+                  ║                          version: 1.2.9                           ║
                   ╚═══════════════════════════════════════════════════════════════════╝
 ```
 
