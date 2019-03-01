@@ -212,7 +212,7 @@ What's done:
 - [X] Add Deb Packages
 - Support for auto-update check
   - [X] For Script 
-  - Added in 1.1.7
+    - Added in 1.1.7
 - [X] Rewrite the update procedure 
   - Done in 1.2.2
 - [X] Add support to deploy in Docker 
@@ -227,7 +227,11 @@ What's done:
   - Added in [1.2.6](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.2.6)
 - [X] Added prompt to install redhat-lsb/lsb-release if not installed.
 - [X] Added support for Ubuntu 18.10
-  - [X] Added in [1.2.7](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.2.7)
+  - Added in [1.2.7](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.2.7)
+- [X] Changed script update function
+  - Changed in [1.2.8](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.2.8)
+- [X] Added service and docker status indicators
+  - Added in [1.2.9](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.2.9)
 
   
 
