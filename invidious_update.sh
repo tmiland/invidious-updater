@@ -167,6 +167,7 @@ CLEAN=""
 PKGCHK=""
 PGSQL_SERVICE=""
 if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
+  export DEBIAN_FRONTEND=noninteractive
   # ImageMagick package name
   IMAGICKPKG=imagemagick
   SUDO="sudo"
@@ -696,7 +697,7 @@ GetRelease () {
 rebuild () {
   printf "\n-- Rebuilding ${REPO_DIR}\n"
   cd ${REPO_DIR} || exit 1
-  shards
+  shards update && shards install
   crystal build src/invidious.cr --release
   #sudo chown -R 1000:$USER_NAME $USER_DIR
   cd -
@@ -832,7 +833,7 @@ case $OPTION in
     if ! ${PKGCHK} $PRE_INSTALL_PKGS >/dev/null 2>&1; then
       ${UPDATE}
       for i in $PRE_INSTALL_PKGS; do
-        ${INSTALL} $i  # || exit 1
+        ${INSTALL} $i 2> /dev/null # || exit 1
       done
     fi
 
@@ -841,7 +842,7 @@ case $OPTION in
     if ! ${PKGCHK} $INSTALL_PKGS >/dev/null 2>&1; then
       ${SUDO} ${UPDATE}
       for i in $INSTALL_PKGS; do
-        ${SUDO} ${INSTALL} $i  # || exit 1 #--allow-unauthenticated
+        ${SUDO} ${INSTALL} $i 2> /dev/null # || exit 1 #--allow-unauthenticated
       done
     fi
 
@@ -852,7 +853,7 @@ case $OPTION in
 
       if ! ${PKGCHK} $BUILD_DEP_PKGS >/dev/null 2>&1; then
         for i in $BUILD_DEP_PKGS; do
-          ${INSTALL} $i  # || exit 1
+          ${INSTALL} $i 2> /dev/null # || exit 1
         done
       fi
 
@@ -1052,7 +1053,7 @@ host    replication     all             127.0.0.1/32            md5
     ######################
     cd ${REPO_DIR} || exit 1
     #sudo -i -u invidious \
-      shards
+      shards update && shards install
     crystal build src/invidious.cr --release
     # Not figured out why yet, so let's set permissions after as well...
     set_permissions
@@ -1152,7 +1153,7 @@ host    replication     all             127.0.0.1/32            md5
             if ! ${PKGCHK} $PRE_INSTALL_PKGS >/dev/null 2>&1; then
               ${UPDATE}
               for i in $PRE_INSTALL_PKGS; do
-                ${INSTALL} $i  # || exit 1
+                ${INSTALL} $i 2> /dev/null # || exit 1
               done
             fi
 
@@ -1756,7 +1757,7 @@ host    replication     all             127.0.0.1/32            md5
           echo ""
           echo -e "${ORANGE}${ARROW} removing packages.${NC}"
           echo ""
-          ${UNINSTALL} $i
+          ${UNINSTALL} $i 2> /dev/null
         done
       fi
       echo ""
@@ -1786,7 +1787,7 @@ host    replication     all             127.0.0.1/32            md5
           echo ""
           echo -e "${ORANGE}${ARROW} purging packages.${NC}"
           echo ""
-          ${PURGE} $i
+          ${PURGE} $i 2> /dev/null
         done
       fi
 
