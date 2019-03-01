@@ -11,14 +11,14 @@
 ####                   Maintained by @tmiland                     ####
 ######################################################################
 
-version='1.2.8' # Must stay on line 14 for updater to fetch the numbers
+version='1.2.9' # Must stay on line 14 for updater to fetch the numbers
 
 #------------------------------------------------------------------------------#
 #
 # MIT License
-# 
+#
 # Copyright (c) 2019 Tommy Miland
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
@@ -28,13 +28,13 @@ version='1.2.8' # Must stay on line 14 for updater to fetch the numbers
 #
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-# 
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE 
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
 #------------------------------------------------------------------------------#
@@ -62,8 +62,16 @@ BLUE='\033[0;34m'
 BBLUE='\033[1;34m'
 GREEN='\033[0;32m'
 ORANGE='\033[0;33m'
+DARKORANGE="\033[38;5;208m"
 CYAN='\033[0;36m'
+DARKGREY="\033[48;5;236m"
 NC='\033[0m' # No Color
+# Text formatting used for printing
+BOLD="\033[1m"
+DIM="\033[2m"
+UNDERLINED="\033[4m"
+INVERT="\033[7m"
+HIDDEN="\033[8m"
 # Script name
 SCRIPT_NAME="Invidious Update.sh"
 # Repo name
@@ -269,7 +277,7 @@ download_file () {
   #if [ $DOWNLOAD_METHOD = 'curl' ]; then
   #  dlcmd="curl -o $tf"
   #else
-    dlcmd="wget -O $tf"
+  dlcmd="wget -O $tf"
   #fi
 
   $dlcmd "${url}" &>/dev/null && echo "$tf" || echo '' # return the temp-filename (or empty string on error)
@@ -289,30 +297,30 @@ open_file () { #expects one argument: file_path
 }
 # Get latest release tag from GitHub
 get_latest_release_tag() {
-  curl --silent "https://api.github.com/repos/$1/releases/latest" | 
-    grep '"tag_name":' | 
-    sed -n 's/[^0-9.]*\([0-9.]*\).*/\1/p'
+  curl --silent "https://api.github.com/repos/$1/releases/latest" |
+  grep '"tag_name":' |
+  sed -n 's/[^0-9.]*\([0-9.]*\).*/\1/p'
 }
 RELEASE_TAG=$(get_latest_release_tag ${REPO_NAME})
 # Get latest release download url
 get_latest_release() {
   curl --silent "https://api.github.com/repos/$1/releases/latest" |
-    grep '"browser_download_url":' |
-    sed -n 's#.*\(https*://[^"]*\).*#\1#;p'
+  grep '"browser_download_url":' |
+  sed -n 's#.*\(https*://[^"]*\).*#\1#;p'
 }
 LATEST_RELEASE=$(get_latest_release ${REPO_NAME})
 # Get latest release notes
 get_latest_release_note() {
-  curl --silent "https://api.github.com/repos/$1/releases/latest" | 
-    grep '"body":' | 
-    sed -n 's/.*"\([^"]*\)".*/\1/;p'
+  curl --silent "https://api.github.com/repos/$1/releases/latest" |
+  grep '"body":' |
+  sed -n 's/.*"\([^"]*\)".*/\1/;p'
 }
 RELEASE_NOTE=$(get_latest_release_note ${REPO_NAME})
 # Get latest release title
 get_latest_release_title() {
-  curl --silent "https://api.github.com/repos/$1/releases/latest" | 
-    grep -m 1 '"name":' | 
-    sed -n 's/.*"\([^"]*\)".*/\1/;p'
+  curl --silent "https://api.github.com/repos/$1/releases/latest" |
+  grep -m 1 '"name":' |
+  sed -n 's/.*"\([^"]*\)".*/\1/;p'
 }
 RELEASE_TITLE=$(get_latest_release_title ${REPO_NAME})
 ##
@@ -321,6 +329,85 @@ RELEASE_TITLE=$(get_latest_release_title ${REPO_NAME})
 get_updater_version () {
   echo $(sed -n '14 s/[^0-9.]*\([0-9.]*\).*/\1/p' "$1")
 }
+##
+# Show service status - @FalconStats
+##
+show_status () {
+
+  declare -a services=(
+    "invidious"
+    "postgresql"
+  )
+  declare -a serviceName=(
+    "Invidious"
+    "PostgreSQL"
+  )
+  declare -a serviceStatus=()
+
+  for service in "${services[@]}"
+  do
+    serviceStatus+=($(systemctl is-active "$service.service"))
+  done
+
+  echo ""
+  echo "Services running:"
+
+  for i in ${!serviceStatus[@]}
+  do
+
+    if [[ "${serviceStatus[$i]}" == "active" ]]; then
+      line+="${GREEN}${NC}${serviceName[$i]}: ${GREEN}● ${serviceStatus[$i]}${NC} "
+    else
+      line+="${serviceName[$i]}: ${RED}▲ ${serviceStatus[$i]}${NC} "
+    fi
+  done
+
+  echo -e "$line"
+}
+
+if ( systemctl -q is-active ${SERVICE_NAME}); then
+  SHOW_STATUS=$(show_status)
+fi
+##
+# Show Docker Status
+##
+show_docker_status() {
+
+  declare -a container=(
+    "invidious_invidious_1"
+    "invidious_postgres_1"
+  )
+  declare -a containerName=(
+    "Invidious"
+    "PostgreSQL"
+  )
+  declare -a status=()
+
+  echo ""
+  echo "Docker Status:"
+
+  running_containers="$( docker ps )"
+  for container_name in "${container[@]}"
+  do
+    #status+=($(docker ps "$container_name"))
+    status+=($( echo -n "$running_containers" | grep -oP "(?<= )$container_name$" | wc -l ))
+  done
+
+  for i in ${!status[@]}
+  do
+
+    if [[ "$status"  = "1" ]] ; then
+      line+="${containerName[$i]}: ${GREEN}● running${NC} "
+    else
+      line+="${containerName[$i]}: ${RED}▲ stopped${NC} "
+    fi
+  done
+
+  echo -e "$line"
+}
+if docker ps >/dev/null 2>&1; then
+  SHOW_DOCKER_STATUS=$(show_docker_status)
+fi
 ##
 # BANNERS
 ##
@@ -426,14 +513,12 @@ show_banner () {
   echo "Welcome to the ${SCRIPT_NAME} script."
   echo ""
   echo "What do you want to do?"
-  echo "   1) Install Invidious"
-  echo "   2) Update Invidious"
-  echo "   3) Deploy with Docker"
-  echo "   4) Install Invidious service"
-  echo "   5) Run Database Maintenance"
-  echo "   6) Run Database Migration"
-  echo "   7) Uninstall Invidious"
-  echo "   8) Exit"
+  echo ""
+  echo "  1) Install Invidious          5) Run Database Maintenance "
+  echo "  2) Update Invidious           6) Run Database Migration   "
+  echo "  3) Deploy with Docker         7) Uninstall Invidious      "
+  echo "  4) Install Invidious service  8) Exit                     "
+  echo "${SHOW_STATUS} ${SHOW_DOCKER_STATUS}"
   echo ""
   echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
 }
@@ -447,7 +532,7 @@ exit_script () {
   echo    '     /  _/___ _  __(_)___/ (_)___  __  _______   '
   echo    '    / // __ \ | / / / __  / / __ \/ / / / ___/   '
   echo    '  _/ // / / / |/ / / /_/ / / /_/ / /_/ (__  )    '
-  echo    ' /___/_/ /_/|___/_/\__,_/_/\____/\__,_/____/     '                                         
+  echo    ' /___/_/ /_/|___/_/\__,_/_/\____/\__,_/____/     '
   echo    '    __  __          __      __              __   '
   echo    '   / / / /___  ____/ /___ _/ /____    _____/ /_  '
   echo    '  / / / / __ \/ __  / __ `/ __/ _ \  / ___/ __ \ '
@@ -472,13 +557,16 @@ exit_script () {
 ##
 # Default: Check for update, if available, ask user if they want to execute it
 update_updater () {
+  if [ $UPDATE_SCRIPT = 'no' ]; then
+    return 0 # User signified not to check for updates
+  fi
   echo -e "${GREEN}${ARROW} Checking for updates...${NC}"
   # Get tmpfile from github
   declare -r tmpfile=$(download_file "$LATEST_RELEASE")
   # Do the work
   # New function, fetch latest release from GitHub
   if [[ $(get_updater_version "${SCRIPT_DIR}/$SCRIPT_FILENAME") < "${RELEASE_TAG}" ]]; then
-  #if [[ $(get_updater_version "${SCRIPT_DIR}/${SCRIPT_FILENAME}") < $(get_updater_version "${tmpfile}") ]]; then
+    #if [[ $(get_updater_version "${SCRIPT_DIR}/${SCRIPT_FILENAME}") < $(get_updater_version "${tmpfile}") ]]; then
     #LV=$(get_updater_version "${tmpfile}")
     if [ $UPDATE_SCRIPT = 'check' ]; then
       show_update_banner
