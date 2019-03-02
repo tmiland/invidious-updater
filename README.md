@@ -69,7 +69,7 @@ sudo passwd root
 
 1. Install invidious
 
-[![asciicast](https://asciinema.org/a/NdRo8mFKvNNFsVGp5QbzqRvtK.svg)](https://asciinema.org/a/NdRo8mFKvNNFsVGp5QbzqRvtK)
+[![asciicast](https://asciinema.org/a/NdRo8mFKvNNFsVGp5QbzqRvtK.svg)](https://asciinema.org/a/NdRo8mFKvNNFsVGp5QbzqRvtK?t=5)
 
 
 2. Update Invidious
