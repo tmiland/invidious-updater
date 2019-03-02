@@ -157,6 +157,8 @@ sudo passwd root
 8. Exit
 
    * Exits the script
+
+   ![screenshot](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/exit.png)
    
 ## Testing
 
