@@ -68,42 +68,8 @@ sudo passwd root
 ## Usage
 
 1. Install invidious
-   
-   * Select an option [1-8]: 1
 
-   * Let's go through some configuration options.
-   
-   * Do you want to install Invidious release or master?
-     * 1) release
-     * 2) master
-
-   Select an option [1-2]: 2
-   * Do you want to enter advanced options? [y/n]: y
-   * (Selecting "no" will load default values)
-     * Enter the desired domain name:invidio.us
-     * Enter the desired ip adress:10.0.2.15
-     * Enter the desired port number:3003
-     * Select database name:invidious
-     * Select database password:invidious123
-     * Are you going to use https only? [y/n]: n
-   * You entered: 
-
-      * branch     : master
-      * domain     : invidio.us
-      * ip adress  : 10.0.2.15
-      * port       : 3003
-      * dbname     : invidious
-      * dbpass     : invidious123
-      * https only : false
-
-   * Choose your Imagemagick version :
-     * 1) System's Imagemagick
-       * (Currently installed version)
-     * 2) Imagemagick 6 from source
-     * 3) Imagemagick 7 from source
-
-
-   * Invidious is ready to be installed, press any key to continue...
+[![asciicast](https://asciinema.org/a/NdRo8mFKvNNFsVGp5QbzqRvtK.svg)](https://asciinema.org/a/NdRo8mFKvNNFsVGp5QbzqRvtK)
 
 
 2. Update Invidious
