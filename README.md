@@ -109,16 +109,7 @@ sudo passwd root
 
 7. Uninstall Invidious
 
-  * Uninstallation of Invidious, and everything installed during setup.
-    * Remove PostgreSQL database for Invidious ? [y/n]
-      * Enter Invidious PostgreSQL database name: invidious
-      * Backup will be placed in /home/backup
-    * Remove Packages ? [y/n]
-    * Purge Package configuration files ? [y/n]
-    * Remove files ? [y/n]: <-- ***This is required for reinstalling.***
-    * Remove user ? [y/n]: <-- ***This is not required for reinstalling.***
-    * Is that correct? [y/n]:
-  * Invidious is ready to be uninstalled, press any key to continue...
+[![asciicast](https://asciinema.org/a/NexOg7FcaGVMLZ2iZwwiT4luo.svg)](https://asciinema.org/a/NexOg7FcaGVMLZ2iZwwiT4luo?t=5)
 
 8. Exit
 
