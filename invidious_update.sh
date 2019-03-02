@@ -405,8 +405,10 @@ show_docker_status() {
 
   echo -e "$line"
 }
-if docker ps >/dev/null 2>&1; then
-  SHOW_DOCKER_STATUS=$(show_docker_status)
+if ( ! systemctl -q is-active ${SERVICE_NAME}); then
+  if docker ps >/dev/null 2>&1; then
+    SHOW_DOCKER_STATUS=$(show_docker_status)
+  fi
 fi
 ##
 # BANNERS
