@@ -61,6 +61,7 @@ RED='\033[0;31m'
 BLUE='\033[0;34m'
 BBLUE='\033[1;34m'
 GREEN='\033[0;32m'
+LIME="\033[38;5;10m"
 ORANGE='\033[0;33m'
 DARKORANGE="\033[38;5;208m"
 CYAN='\033[0;36m'
@@ -155,7 +156,7 @@ if ! lsb_release -si >/dev/null 2>&1; then
         echo -e "${RED}${ERROR} Error: could not install ${LSB}!${NC}"
       fi
       echo -e "${GREEN}${DONE} Done${NC}"
-      sleep 3
+      read_sleep 3
       cd ${CURRDIR}
       ./${SCRIPT_FILENAME}
       ;;
@@ -165,6 +166,20 @@ if ! lsb_release -si >/dev/null 2>&1; then
     * ) echo "Enter Y, N, please." ;;
   esac
 fi
+
+user () {
+  : \\u
+  # Expand the parameter as if it were a prompt string.
+  printf '%s\n' "${_@P}"
+}
+
+user=$(user)
+
+read_sleep() {
+  # Usage: sleep 1
+  #        sleep 0.2
+  read -rst "${1:-1}" -N 999
+}
 
 SUDO=""
 UPDATE=""
@@ -356,7 +371,7 @@ show_status () {
   do
 
     if [[ "${serviceStatus[$i]}" == "active" ]]; then
-      line+="${GREEN}${NC}${serviceName[$i]}: ${GREEN}● ${serviceStatus[$i]}${NC} "
+      line+="${LIME}${NC}${serviceName[$i]}: ${LIME}● ${serviceStatus[$i]}${NC} "
     else
       line+="${serviceName[$i]}: ${RED}▲ ${serviceStatus[$i]}${NC} "
     fi
@@ -431,7 +446,7 @@ header () {
 show_update_banner () {
   clear
   header
-  echo "Welcome to the ${SCRIPT_NAME} script."
+  echo "Welcome to the ${SCRIPT_NAME} script ${user}."
   echo ""
   echo "There is a newer version of ${SCRIPT_NAME} available."
   echo ""
@@ -512,7 +527,7 @@ show_maintenance_banner () {
 show_banner () {
   #clear
   header
-  echo "Welcome to the ${SCRIPT_NAME} script."
+  echo "Welcome to the ${SCRIPT_NAME} script ${user}."
   echo ""
   echo "What do you want to do?"
   echo ""
@@ -550,7 +565,7 @@ exit_script () {
    ${GREEN}${DONE}${NC} ${BBLUE}BCH${NC}    ${ARROW} ${ORANGE}qznnyvpxym7a8he2ps9m6l44s373fecfnv86h2vwq2${NC}
   "
   echo -e "Documentation for this script is available here: ${ORANGE}\n${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
-  echo -e "${ORANGE}${ARROW} Goodbye.${NC} ☺"
+  echo -e "${ORANGE}${ARROW} Goodbye ${user}.${NC} ☺"
   echo ""
   exit
 }
@@ -648,7 +663,7 @@ chk_git_repo () {
     echo ""
     echo -e "${ORANGE}${WARNING} If you want to reinstall, please choose option 7 to Uninstall Invidious first!${NC}"
     echo ""
-    sleep 3
+    read_sleep 3
     cd ${CURRDIR}
     ./${SCRIPT_FILENAME}
     #exit 1
@@ -729,10 +744,10 @@ systemd_install () {
   then
     echo -e "${GREEN}${DONE} Invidious service has been successfully installed!${NC}"
     ${SUDO} systemctl status ${SERVICE_NAME} --no-pager
-    sleep 5
+    read_sleep 5
   else
     echo -e "${RED}${ERROR} Invidious service installation failed...${NC}"
-    sleep 5
+    read_sleep 5
   fi
 }
 ##
@@ -762,24 +777,46 @@ get_crystal () {
 # Checkout Master branch
 ##
 GetMaster () {
+  
   master=$(git rev-list --max-count=1 --abbrev-commit HEAD)
+  
   # Checkout master
   git checkout $master
+  
   #git pull
-  #for i in `git rev-list --abbrev-commit $master..HEAD` ; do file=${REPO_DIR}/config/migrate-scripts/migrate-db-$i.sh ; [ -f $file ] && $file ; done
 }
 ##
-# Checkout Release Tag
+# Checkout Release
 ##
 GetRelease () {
+
   # Get new tags from remote
   git fetch --tags
-  # Get latest tag name
-  latestVersion=$(git describe --tags `git rev-list --tags --max-count=1`)
-  # Checkout latest release tag
-  git checkout $latestVersion
-  #git pull
-  #for i in `git rev-list --abbrev-commit $currentVersion..HEAD` ; do file=${REPO_DIR}/config/migrate-scripts/migrate-db-$i.sh ; [ -f $file ] && $file ; done
+
+  # Get latest release
+  latestRelease=$(git describe --tags $(git rev-list --tags --max-count=1))
+
+  # Checkout latest release
+  git checkout $latestRelease
+  git pull
+}
+##
+# Update
+##
+update () {
+  printf "\n-- Updating ${REPO_DIR}"
+  cd ${REPO_DIR} || exit 1
+  git stash > /tmp/repoUpdate
+  editedFiles=`cat /tmp/repoUpdate`
+  printf "\n"
+  echo $editedFiles
+  git pull --rebase
+  if [[ $editedFiles != *"No local changes to save"* ]]
+  then
+    git stash pop
+  fi
+  cd -
+  printf "\n"
 }
 ##
 # Rebuild Invidious
@@ -793,7 +830,7 @@ rebuild () {
   cd -
   printf "\n"
   echo -e "${GREEN}${DONE} Done Rebuilding ${REPO_DIR} ${NC}"
-  sleep 3
+  read_sleep 3
 }
 ##
 # Restart Invidious
@@ -801,11 +838,11 @@ rebuild () {
 restart () {
   printf "\n-- restarting Invidious\n"
   ${SUDO} systemctl restart $SERVICE_NAME
-  sleep 2
+  read_sleep 2
   ${SUDO} systemctl status $SERVICE_NAME --no-pager
   printf "\n"
   echo -e "${GREEN}${DONE} Invidious has been restarted ${NC}"
-  sleep 3
+  read_sleep 3
 }
 ##
 # Get dbname from config file (used in db maintenance and uninstallation)
@@ -971,7 +1008,7 @@ case $OPTION in
       ${SUDO} ldconfig /usr/local/lib
 
       identify -version
-      sleep 5
+      read_sleep 5
 
       rm -r /tmp/ImageMagick6-${IMAGICK_VER}
       rm -r /tmp/${IMAGICK_VER}.tar.gz
@@ -1011,7 +1048,7 @@ case $OPTION in
       ${SUDO} ldconfig /usr/local/lib
 
       identify -version
-      sleep 5
+      read_sleep 5
 
       rm -r /tmp/ImageMagick-${IMAGICK_SEVEN_VER}
       rm -r /tmp/ImageMagick-${IMAGICK_SEVEN_VER}.tar.gz
@@ -1058,11 +1095,11 @@ case $OPTION in
     # Checkout
     if [[ ! "$IN_BRANCH" = 'master' ]]; then
       GetRelease
-      git pull
+      #git pull
     fi
 
     if [[ ! "$IN_BRANCH" = 'release' ]]; then
-      GetMaster
+      #GetMaster
       git pull
     fi
     echo -e "${GREEN}${ARROW} Done${NC}"
@@ -1084,7 +1121,7 @@ case $OPTION in
       ${SUDO} /usr/pgsql-11/bin/postgresql-11-setup initdb
       ${SUDO} chmod 775 /var/lib/pgsql/11/data/postgresql.conf
       ${SUDO} chmod 775 /var/lib/pgsql/11/data/pg_hba.conf
-      sleep 1
+      read_sleep 1
       ${SUDO} sed -i "s/#port = 5432/port = 5432/g" /var/lib/pgsql/11/data/postgresql.conf
       cp -rp /var/lib/pgsql/11/data/pg_hba.conf /var/lib/pgsql/11/data/pg_hba.conf.bak
       echo "# Database administrative login by Unix domain socket
@@ -1108,9 +1145,9 @@ host    replication     all             127.0.0.1/32            md5
     fi
 
     ${SUDO} systemctl enable ${PGSQL_SERVICE}
-    sleep 1
+    read_sleep 1
     ${SUDO} systemctl restart ${PGSQL_SERVICE}
-    sleep 1
+    read_sleep 1
     # Create users and set privileges
     echo -e "${ORANGE}${ARROW} Creating user kemal with password $psqlpass ${NC}"
     ${SUDO} -u postgres psql -c "CREATE USER kemal WITH PASSWORD '$psqlpass';"
@@ -1152,7 +1189,7 @@ host    replication     all             127.0.0.1/32            md5
 
     show_install_banner
 
-    sleep 5
+    read_sleep 5
     cd ${CURRDIR}
     ./${SCRIPT_FILENAME}
     #exit
@@ -1161,30 +1198,30 @@ host    replication     all             127.0.0.1/32            md5
 
     chk_permissions
 
-    echo ""
-    echo "Let's go through some configuration options."
-    echo ""
-    echo "Do you want to checkout Invidious release or master?"
-    echo ""
-    echo "   1) $IN_RELEASE"
-    echo "   2) $IN_MASTER"
-    echo ""
-    while [[ $IN_BRANCH != "1" && $IN_BRANCH != "2" ]]; do
-      read -p "Select an option [1-2]: " IN_BRANCH
-    done
-    case $IN_BRANCH in
-      1)
-        IN_BRANCH=$IN_RELEASE
-        ;;
-      2)
-        IN_BRANCH=$IN_MASTER
-        ;;
-    esac
-    # Let's allow the user to confirm that what they've typed in is correct:
-    echo -e "${GREEN}\n"
-    echo -e "You entered: \n"
-    echo -e "${DONE} branch: $IN_BRANCH"
-    echo -e "${NC}"
+    # echo ""
+    # echo "Let's go through some configuration options."
+    # echo ""
+    # echo "Do you want to checkout Invidious release or master?"
+    # echo ""
+    # echo "   1) $IN_RELEASE"
+    # echo "   2) $IN_MASTER"
+    # echo ""
+    # while [[ $IN_BRANCH != "1" && $IN_BRANCH != "2" ]]; do
+    #   read -p "Select an option [1-2]: " IN_BRANCH
+    # done
+    # case $IN_BRANCH in
+    #   1)
+    #     IN_BRANCH=$IN_RELEASE
+    #     ;;
+    #   2)
+    #     IN_BRANCH=$IN_MASTER
+    #     ;;
+    # esac
+    # # Let's allow the user to confirm that what they've typed in is correct:
+    # echo -e "${GREEN}\n"
+    # echo -e "You entered: \n"
+    # echo -e "${DONE} branch: $IN_BRANCH"
+    # echo -e "${NC}"
     echo ""
     read -n1 -r -p "Invidious is ready to be updated, press any key to continue..."
     echo ""
@@ -1192,25 +1229,27 @@ host    replication     all             127.0.0.1/32            md5
     #sudo -i -u $USER_NAME
     #cd $USER_DIR || exit 1
     cd ${REPO_DIR} || exit 1
-    # Checkout
-    if [[ ! "$IN_BRANCH" = 'master' ]]; then
-      GetRelease
-      git pull
-    fi
-
-    if [[ ! "$IN_BRANCH" = 'release' ]]; then
-      GetMaster
-      git pull
-    fi
+    # # Checkout
+    # if [[ ! "$IN_BRANCH" = 'master' ]]; then
+    #   GetRelease
+    #   git pull
+    # fi
+    #
+    # if [[ ! "$IN_BRANCH" = 'release' ]]; then
+    #   GetMaster
+    #   git pull
+    # fi
+    update
 
     rebuild
 
-    ${SUDO} chown -R $USER_NAME:$USER_NAME ${REPO_DIR}
+    set_permissions
+    #${SUDO} chown -R $USER_NAME:$USER_NAME ${REPO_DIR}
     #cd -
 
     restart
 
-    sleep 3
+    read_sleep 3
     cd ${CURRDIR}
     ./${SCRIPT_FILENAME}
     #exit
@@ -1279,17 +1318,17 @@ host    replication     all             127.0.0.1/32            md5
             # Checkout
             if [[ ! "$IN_BRANCH" = 'master' ]]; then
               GetRelease
-              git pull
+              #git pull
             fi
             if [[ ! "$IN_BRANCH" = 'release' ]]; then
-              GetMaster
+              #GetMaster
               git pull
             fi
             #cd -
             #./${SCRIPT_FILENAME}
             ;;
           [Nn]* )
-            sleep 3
+            read_sleep 3
             cd ${CURRDIR}
             ./${SCRIPT_FILENAME}
             ;;
@@ -1330,7 +1369,7 @@ host    replication     all             127.0.0.1/32            md5
             cd ${REPO_DIR}
             docker-compose up -d
             echo -e "${GREEN}${DONE} Deployment done.${NC}"
-            sleep 5
+            read_sleep 5
             cd ${CURRDIR}
             ./${SCRIPT_FILENAME}
             #exit 0
@@ -1373,7 +1412,7 @@ host    replication     all             127.0.0.1/32            md5
         while true; do
           cd ${REPO_DIR}
           docker-compose ${DOCKER_SERVICE}
-          sleep 5
+          read_sleep 5
           cd ${CURRDIR}
           ./${SCRIPT_FILENAME}
         done
@@ -1392,7 +1431,7 @@ host    replication     all             127.0.0.1/32            md5
             cd ${REPO_DIR}
             docker-compose build
             echo -e "${GREEN}${DONE} Rebuild done.${NC}"
-            sleep 5
+            read_sleep 5
             cd ${CURRDIR}
             ./${SCRIPT_FILENAME}
           fi
@@ -1419,10 +1458,10 @@ host    replication     all             127.0.0.1/32            md5
             cd ${REPO_DIR}
             docker-compose down
             docker volume rm invidious_postgresdata
-            sleep 5
+            read_sleep 5
             docker-compose build
             echo -e "${GREEN}${DONE} Data deleted and Rebuild done.${NC}"
-            sleep 5
+            read_sleep 5
             cd ${CURRDIR}
             ./${SCRIPT_FILENAME}
           fi
@@ -1542,7 +1581,7 @@ host    replication     all             127.0.0.1/32            md5
         if [[ "$Docker_Compose" = 'y' ]]; then
           # download the latest version of Docker Compose:
           ${SUDO} curl -L "https://github.com/docker/compose/releases/download/${Docker_Compose_Ver}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-          sleep 5
+          read_sleep 5
           # Apply executable permissions to the binary:
           ${SUDO} chmod +x /usr/local/bin/docker-compose
           # Create a symbolic link to /usr/bin
@@ -1551,7 +1590,7 @@ host    replication     all             127.0.0.1/32            md5
         # We're done !
         echo -e "${GREEN}${DONE}  Docker Installation done.${NC}"
     esac
-    sleep 5
+    read_sleep 5
     cd ${CURRDIR}
     ./${SCRIPT_FILENAME}
     #exit 1
@@ -1578,15 +1617,15 @@ host    replication     all             127.0.0.1/32            md5
     then
       echo -e "${GREEN}${DONE} Invidious service has been successfully installed!${NC}"
       ${SUDO} systemctl status ${SERVICE_NAME} --no-pager
-      sleep 5
+      read_sleep 5
     else
       echo -e "${RED}${ERROR} Invidious service installation failed...${NC}"
-      sleep 5
+      read_sleep 5
     fi
 
     show_systemd_install_banner
 
-    sleep 3
+    read_sleep 3
     cd ${CURRDIR}
     ./${SCRIPT_FILENAME}
     #exit 1
@@ -1610,33 +1649,33 @@ host    replication     all             127.0.0.1/32            md5
         then
           echo -e "${RED}${ERROR} stopping Invidious...${NC}"
           ${SUDO} systemctl stop ${SERVICE_NAME}
-          sleep 3
+          read_sleep 3
           echo -e "${GREEN}${ARROW} Running Maintenance on $psqldb ${NC}"
           echo -e "${ORANGE}${ARROW} Deleting expired tokens${NC}"
           ${SUDO} -i -u postgres psql $psqldb -c "DELETE FROM nonces * WHERE expire < current_timestamp;"
-          sleep 1
+          read_sleep 1
           echo -e "${ORANGE}${ARROW} Truncating videos table.${NC}"
           ${SUDO} -i -u postgres psql $psqldb -c "TRUNCATE TABLE videos;"
-          sleep 1
+          read_sleep 1
           echo -e "${ORANGE}${ARROW} Vacuuming $psqldb.${NC}"
           ${SUDO} -i -u postgres vacuumdb --dbname=$psqldb --analyze --verbose --table 'videos'
-          sleep 1
+          read_sleep 1
           echo -e "${ORANGE}${ARROW} Reindexing $psqldb.${NC}"
           ${SUDO} -i -u postgres reindexdb --dbname=$psqldb
-          sleep 3
+          read_sleep 3
           echo -e "${GREEN}${DONE} Maintenance on $psqldb done.${NC}"
           # Restart postgresql
           echo -e "${ORANGE}${ARROW} Restarting postgresql...${NC}"
           ${SUDO} systemctl restart ${PGSQL_SERVICE}
           echo -e "${GREEN}${DONE} Restarting postgresql done.${NC}"
           ${SUDO} systemctl status ${PGSQL_SERVICE} --no-pager
-          sleep 5
+          read_sleep 5
           # Restart Invidious
           echo -e "${ORANGE}${ARROW} Restarting Invidious...${NC}"
           ${SUDO} systemctl restart ${SERVICE_NAME}
           echo -e "${GREEN}${DONE} Restarting Invidious done.${NC}"
           ${SUDO} systemctl status ${SERVICE_NAME} --no-pager
-          sleep 1
+          read_sleep 1
         else
           echo -e "${RED}${ERROR} Database Maintenance failed. Is PostgreSQL running?${NC}"
           # Try to restart postgresql
@@ -1644,9 +1683,9 @@ host    replication     all             127.0.0.1/32            md5
           ${SUDO} systemctl start ${PGSQL_SERVICE}
           echo -e "${GREEN}${DONE} Postgresql started successfully${NC}"
           ${SUDO} systemctl status ${PGSQL_SERVICE} --no-pager
-          sleep 5
+          read_sleep 5
           echo -e "${ORANGE}${ARROW} Restarting script. Please try again...${NC}"
-          sleep 5
+          read_sleep 5
           cd ${CURRDIR}
           ./${SCRIPT_FILENAME}
         fi
@@ -1654,7 +1693,7 @@ host    replication     all             127.0.0.1/32            md5
     fi
 
     show_maintenance_banner
-    sleep 5
+    read_sleep 5
     cd ${CURRDIR}
     ./${SCRIPT_FILENAME}
     #exit 1
@@ -1688,13 +1727,13 @@ host    replication     all             127.0.0.1/32            md5
         ${SUDO} systemctl restart ${SERVICE_NAME}
         echo -e "${GREEN}${DONE} Restarting Invidious done.${NC}"
         ${SUDO} systemctl status ${SERVICE_NAME} --no-pager
-        sleep 1
+        read_sleep 1
         # Restart postgresql
         echo -e "${GREEN}${ARROW} Restarting postgresql...${NC}"
         ${SUDO} systemctl restart ${PGSQL_SERVICE}
         echo -e "${GREEN}${DONE} Restarting postgresql done.${NC}"
         ${SUDO} systemctl status ${PGSQL_SERVICE} --no-pager
-        sleep 5
+        read_sleep 5
       else
         echo -e "${RED}${ERROR} Database Migration failed. Is PostgreSQL running?${NC}"
         # Restart postgresql
@@ -1702,9 +1741,9 @@ host    replication     all             127.0.0.1/32            md5
         ${SUDO} systemctl start ${PGSQL_SERVICE}
         echo -e "${GREEN}${DONE} Postgresql started successfully${NC}"
         ${SUDO} systemctl status ${PGSQL_SERVICE} --no-pager
-        sleep 5
+        read_sleep 5
         echo -e "${ORANGE}${ARROW} Restarting script. Please try again...${NC}"
-        sleep 5
+        read_sleep 5
         cd ${CURRDIR}
         ./${SCRIPT_FILENAME}
         #exit
@@ -1731,7 +1770,7 @@ host    replication     all             127.0.0.1/32            md5
 
     show_migration_banner
 
-    sleep 3
+    read_sleep 3
     cd ${CURRDIR}
     ./${SCRIPT_FILENAME}
     #exit 1
@@ -1792,9 +1831,9 @@ host    replication     all             127.0.0.1/32            md5
     if [[ "$RM_PostgreSQLDB" = 'y' ]]; then
       # Stop and disable invidious
       ${SUDO} systemctl stop ${SERVICE_NAME}
-      sleep 1
+      read_sleep 1
       ${SUDO} systemctl restart ${PGSQL_SERVICE}
-      sleep 1
+      read_sleep 1
       # If directory is not created
       if [[ ! -d $PgDbBakPath ]]; then
         echo -e "${ORANGE}${ARROW} Backup Folder Not Found, adding folder${NC}"
@@ -1806,7 +1845,7 @@ host    replication     all             127.0.0.1/32            md5
       echo ""
 
       ${SUDO} -i -u postgres pg_dump ${RM_PSQLDB} > ${PgDbBakPath}/${RM_PSQLDB}.sql
-      sleep 2
+      read_sleep 2
       ${SUDO} chown -R 1000:1000 "/home/backup"
 
       if [[ "$RM_RE_PostgreSQLDB" != 'n' ]]; then
@@ -1902,11 +1941,11 @@ host    replication     all             127.0.0.1/32            md5
     if [[ "$RM_USER" = 'y' ]]; then
       # Stop and disable invidious
       ${SUDO} systemctl stop ${SERVICE_NAME}
-      sleep 1
+      read_sleep 1
       ${SUDO} systemctl restart ${PGSQL_SERVICE}
-      sleep 1
+      read_sleep 1
       ${SUDO} systemctl daemon-reload
-      sleep 1
+      read_sleep 1
       grep $USER_NAME /etc/passwd >/dev/null 2>&1
 
       if [ $? -eq 0 ] ; then
@@ -1925,7 +1964,7 @@ host    replication     all             127.0.0.1/32            md5
     echo ""
     echo -e "${GREEN}${DONE} Un-installation done.${NC}"
     echo ""
-    sleep 3
+    read_sleep 3
     cd ${CURRDIR}
     ./${SCRIPT_FILENAME}
     #exit
