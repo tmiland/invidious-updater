@@ -5,7 +5,7 @@
                   ║                        Invidious Update.sh                        ║
                   ║               Automatic update script for Invidio.us              ║
                   ║                      Maintained by @tmiland                       ║
-                  ║                          version: 1.2.9                           ║
+                  ║                          version: 1.3.0                           ║
                   ╚═══════════════════════════════════════════════════════════════════╝
 ```
 
@@ -191,7 +191,8 @@ What's done:
   - Changed in [1.2.8](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.2.8)
 - [X] Added service and docker status indicators
   - Added in [1.2.9](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.2.9)
-
+- [X] Changed update procedure to avoid "Detached HEAD state"
+  - Changed in [1.3.0](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.0)
   
 
 ### Possible options
