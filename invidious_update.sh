@@ -11,7 +11,7 @@
 ####                   Maintained by @tmiland                     ####
 ######################################################################
 
-version='1.2.9' # Must stay on line 14 for updater to fetch the numbers
+version='1.3.0' # Must stay on line 14 for updater to fetch the numbers
 
 #------------------------------------------------------------------------------#
 #
@@ -759,27 +759,40 @@ get_crystal () {
   fi
 }
 ##
-# Checkout Master branch
+# Checkout Master branch to branch master (to avoid detached HEAD state)
 ##
 GetMaster () {
-  master=$(git rev-list --max-count=1 --abbrev-commit HEAD)
-  # Checkout master
-  git checkout $master
-  #git pull
-  #for i in `git rev-list --abbrev-commit $master..HEAD` ; do file=${REPO_DIR}/config/migrate-scripts/migrate-db-$i.sh ; [ -f $file ] && $file ; done
+  git checkout origin/${IN_BRANCH} -B ${IN_BRANCH}
 }
 ##
-# Checkout Release Tag
+# Update Master branch
+##
+UpdateMaster () {
+  currentVersion=$(git rev-list --max-count=1 --abbrev-commit HEAD)
+  git pull
+  for i in `git rev-list --abbrev-commit $currentVersion..HEAD` ; do file=${REPO_DIR}/config/migrate-scripts/migrate-db-$i.sh ; [ -f $file ] && $file ; done
+  git stash
+  git checkout origin/${IN_BRANCH} -B ${IN_BRANCH}
+}
+##
+# Checkout Release tag to branch release (to avoid detached HEAD state)
 ##
 GetRelease () {
-  # Get new tags from remote
   git fetch --tags
-  # Get latest tag name
   latestVersion=$(git describe --tags `git rev-list --tags --max-count=1`)
-  # Checkout latest release tag
-  git checkout $latestVersion
-  #git pull
-  #for i in `git rev-list --abbrev-commit $currentVersion..HEAD` ; do file=${REPO_DIR}/config/migrate-scripts/migrate-db-$i.sh ; [ -f $file ] && $file ; done
+  git checkout tags/$latestVersion -B ${IN_RELEASE}
+}
+##
+# Update Release
+##
+UpdateRelease () {
+  currentVersion=$(git rev-list --max-count=1 --abbrev-commit HEAD)
+  git pull
+  latestVersion=$(git describe --tags --abbrev=0)
+  #git checkout $latestVersion
+  for i in `git rev-list --abbrev-commit $currentVersion..HEAD` ; do file=${REPO_DIR}/config/migrate-scripts/migrate-db-$i.sh ; [ -f $file ] && $file ; done
+  git stash
+  git checkout tags/$latestVersion -B ${IN_RELEASE}
 }
 ##
 # Rebuild Invidious
@@ -1058,12 +1071,10 @@ case $OPTION in
     # Checkout
     if [[ ! "$IN_BRANCH" = 'master' ]]; then
       GetRelease
-      git pull
     fi
 
     if [[ ! "$IN_BRANCH" = 'release' ]]; then
       GetMaster
-      git pull
     fi
     echo -e "${GREEN}${ARROW} Done${NC}"
     set_permissions
@@ -1194,13 +1205,11 @@ host    replication     all             127.0.0.1/32            md5
     cd ${REPO_DIR} || exit 1
     # Checkout
     if [[ ! "$IN_BRANCH" = 'master' ]]; then
-      GetRelease
-      git pull
+      UpdateRelease
     fi
 
     if [[ ! "$IN_BRANCH" = 'release' ]]; then
-      GetMaster
-      git pull
+      UpdateMaster
     fi
 
     rebuild
@@ -1279,11 +1288,9 @@ host    replication     all             127.0.0.1/32            md5
             # Checkout
             if [[ ! "$IN_BRANCH" = 'master' ]]; then
               GetRelease
-              git pull
             fi
             if [[ ! "$IN_BRANCH" = 'release' ]]; then
               GetMaster
-              git pull
             fi
             #cd -
             #./${SCRIPT_FILENAME}
