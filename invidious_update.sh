@@ -11,7 +11,7 @@
 ####                   Maintained by @tmiland                     ####
 ######################################################################
 
-version='1.3.0' # Must stay on line 14 for updater to fetch the numbers
+version='1.3.1' # Must stay on line 14 for updater to fetch the numbers
 
 #------------------------------------------------------------------------------#
 #
@@ -104,6 +104,8 @@ psqldb=invidious
 psqlpass=kemal
 # Default https only
 https_only=false
+# Default external port
+external_port=
 # ImageMagick 6 version
 IMAGICK_VER=6.9.10-28
 # ImageMagick 7 version
@@ -295,34 +297,37 @@ open_file () { #expects one argument: file_path
     echo -e "${RED}${ERROR} Error: Sorry, opening files is not supported for your OS.${NC}"
   fi
 }
-# Get latest release tag from GitHub
-get_latest_release_tag() {
-  curl --silent "https://api.github.com/repos/$1/releases/latest" |
-  grep '"tag_name":' |
-  sed -n 's/[^0-9.]*\([0-9.]*\).*/\1/p'
+
+get_release_info () {
+  # Get latest release tag from GitHub
+  get_latest_release_tag() {
+    curl --silent "https://api.github.com/repos/$1/releases/latest" |
+    grep '"tag_name":' |
+    sed -n 's/[^0-9.]*\([0-9.]*\).*/\1/p'
+  }
+  RELEASE_TAG=$(get_latest_release_tag ${REPO_NAME})
+  # Get latest release download url
+  get_latest_release() {
+    curl --silent "https://api.github.com/repos/$1/releases/latest" |
+    grep '"browser_download_url":' |
+    sed -n 's#.*\(https*://[^"]*\).*#\1#;p'
+  }
+  LATEST_RELEASE=$(get_latest_release ${REPO_NAME})
+  # Get latest release notes
+  get_latest_release_note() {
+    curl --silent "https://api.github.com/repos/$1/releases/latest" |
+    grep '"body":' |
+    sed -n 's/.*"\([^"]*\)".*/\1/;p'
+  }
+  RELEASE_NOTE=$(get_latest_release_note ${REPO_NAME})
+  # Get latest release title
+  get_latest_release_title() {
+    curl --silent "https://api.github.com/repos/$1/releases/latest" |
+    grep -m 1 '"name":' |
+    sed -n 's/.*"\([^"]*\)".*/\1/;p'
+  }
+  RELEASE_TITLE=$(get_latest_release_title ${REPO_NAME})
 }
-RELEASE_TAG=$(get_latest_release_tag ${REPO_NAME})
-# Get latest release download url
-get_latest_release() {
-  curl --silent "https://api.github.com/repos/$1/releases/latest" |
-  grep '"browser_download_url":' |
-  sed -n 's#.*\(https*://[^"]*\).*#\1#;p'
-}
-LATEST_RELEASE=$(get_latest_release ${REPO_NAME})
-# Get latest release notes
-get_latest_release_note() {
-  curl --silent "https://api.github.com/repos/$1/releases/latest" |
-  grep '"body":' |
-  sed -n 's/.*"\([^"]*\)".*/\1/;p'
-}
-RELEASE_NOTE=$(get_latest_release_note ${REPO_NAME})
-# Get latest release title
-get_latest_release_title() {
-  curl --silent "https://api.github.com/repos/$1/releases/latest" |
-  grep -m 1 '"name":' |
-  sed -n 's/.*"\([^"]*\)".*/\1/;p'
-}
-RELEASE_TITLE=$(get_latest_release_title ${REPO_NAME})
 ##
 # Returns the version number of invidious_update.sh file on line 14
 ##
@@ -426,6 +431,7 @@ header () {
   echo ' ╚═══════════════════════════════════════════════════════════════════╝'
   echo -e "${NC}"
 }
+##
 # Update banner
 ##
 show_update_banner () {
@@ -563,6 +569,7 @@ update_updater () {
     return 0 # User signified not to check for updates
   fi
   echo -e "${GREEN}${ARROW} Checking for updates...${NC}"
+  get_release_info
   # Get tmpfile from github
   declare -r tmpfile=$(download_file "$LATEST_RELEASE")
   # Do the work
@@ -589,7 +596,9 @@ update_updater () {
     fi
   else
     echo -e "${GREEN}${DONE} No update available.${NC}"
-    rm "${tmpfile}"
+    if [[ "${tmpfile}" ]]; then
+      rm "${tmpfile}"
+    fi
     return 0 # No update available
   fi
 }
@@ -667,6 +676,7 @@ set_permissions () {
 # Update config
 ##
 update_config () {
+
   ######################
   # Update config.yml with new info from user input
   ######################
@@ -678,11 +688,14 @@ update_config () {
   OLDDBNAME="dbname: invidious"
   NEWDBNAME="dbname: $psqldb"
   # Lets change the default domain
-  OLDDOMAIN="domain: invidio.us"
+  OLDDOMAIN="domain:"
   NEWDOMAIN="domain: $domain"
   # Lets change https_only value
   OLDHTTPS="https_only: false"
   NEWHTTPS="https_only: $https_only"
+  # Lets change external_port
+  OLDEXTERNAL="external_port:"
+  NEWEXTERNAL="external_port: $external_port"
   DPATH="${REPO_DIR}/config/config.yml"
   BPATH="$BAKPATH"
   TFILE="/tmp/config.yml"
@@ -692,7 +705,9 @@ update_config () {
     if [ -f $f -a -r $f ]; then
       /bin/cp -f $f $BPATH
       echo -e "${GREEN}${ARROW} Updating config.yml with new info...${NC}"
-      sed "s/$OLDPASS/$NEWPASS/g; s/$OLDDBNAME/$NEWDBNAME/g; s/$OLDDOMAIN/$NEWDOMAIN/g; s/$OLDHTTPS/$NEWHTTPS/g" "$f" > $TFILE &&
+      # Add external_port: to config on line 13
+      sed -i "13i\external_port:" "$f" > $TFILE
+      sed "s/$OLDPASS/$NEWPASS/g; s/$OLDDBNAME/$NEWDBNAME/g; s/$OLDDOMAIN/$NEWDOMAIN/g; s/$OLDHTTPS/$NEWHTTPS/g; s/$OLDEXTERNAL/$NEWEXTERNAL/g;" "$f" > $TFILE &&
       mv $TFILE "$f"
     else
       echo -e "${RED}${ERROR} Error: Cannot read $f"
@@ -889,22 +904,25 @@ case $OPTION in
       case $https_only in
         [Yy]* )
           https_only=true
+          external_port=443
           break ;;
         [Nn]* )
           https_only=false
+          external_port=
           break ;;
       esac
     done
 
     echo -e "${GREEN}\n"
     echo -e "You entered: \n"
-    echo -e " ${DONE} branch     : $IN_BRANCH"
-    echo -e " ${DONE} domain     : $domain"
-    echo -e " ${DONE} ip adress  : $ip"
-    echo -e " ${DONE} port       : $port"
-    echo -e " ${DONE} dbname     : $psqldb"
-    echo -e " ${DONE} dbpass     : $psqlpass"
-    echo -e " ${DONE} https only : $https_only"
+    echo -e " ${DONE} branch        : $IN_BRANCH"
+    echo -e " ${DONE} domain        : $domain"
+    echo -e " ${DONE} ip adress     : $ip"
+    echo -e " ${DONE} port          : $port"
+    echo -e " ${DONE} external port : $external_port"
+    echo -e " ${DONE} dbname        : $psqldb"
+    echo -e " ${DONE} dbpass        : $psqlpass"
+    echo -e " ${DONE} https only    : $https_only"
     echo -e " ${NC}"
     echo ""
     echo "Choose your Imagemagick version :"
@@ -1113,7 +1131,7 @@ host    all             all             ::1/128                 md5
 # replication privilege.
 local   replication     all                                     peer
 host    replication     all             127.0.0.1/32            md5
-      host    replication     all             ::1/128                 md5" | ${SUDO} tee /var/lib/pgsql/11/data/pg_hba.conf
+host    replication     all             ::1/128                 md5" | ${SUDO} tee /var/lib/pgsql/11/data/pg_hba.conf
       ${SUDO} chmod 600 /var/lib/pgsql/11/data/postgresql.conf
       ${SUDO} chmod 600 /var/lib/pgsql/11/data/pg_hba.conf
     fi
@@ -1226,16 +1244,6 @@ host    replication     all             127.0.0.1/32            md5
     ;;
   3) # Deploy with Docker
 
-    #if [[ $(lsb_release -si) == "CentOS" ]]; then
-    #  echo -e "${RED}DOCKER OPTION NOT SUPPORTED FOR CENTOS YET!${NC}"
-    #  exit 1;
-    #fi
-    # Check if not Debian/Ubuntu
-    # if [[ ! $(lsb_release -si) == "Debian" && ! $(lsb_release -si) == "Ubuntu" ]]
-    # then
-    #   echo -e "${RED}SORRY, DOCKER OPTION NOT SUPPORTED FOR YOUR OS YET!${NC}"
-    #   exit 1
-    # fi
     docker_repo_chk () {
       # Check if the folder is a git repo
       if [[ ! -d "${REPO_DIR}/.git" ]]; then

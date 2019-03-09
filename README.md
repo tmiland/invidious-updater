@@ -5,7 +5,7 @@
                   ║                        Invidious Update.sh                        ║
                   ║               Automatic update script for Invidio.us              ║
                   ║                      Maintained by @tmiland                       ║
-                  ║                          version: 1.3.0                           ║
+                  ║                          version: 1.3.1                           ║
                   ╚═══════════════════════════════════════════════════════════════════╝
 ```
 
@@ -193,7 +193,12 @@ What's done:
   - Added in [1.2.9](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.2.9)
 - [X] Changed update procedure to avoid "Detached HEAD state"
   - Changed in [1.3.0](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.0)
-  
+- [X] Added external_port to config.yml [Configuration](https://github.com/omarroth/invidious/wiki/Configuration)
+    - Changed update check on first run to exclude notes (since curl might not be installed)
+    - external_port will be set to 443 if https_only = true, else < blank > (assuming use of reverse proxy with https.)
+    - Set default domain to invidio.us since option now is blank in config. (blank domain doesn't work on local instance)
+    - Created IRC Channel on Freenode.net/#InvidiousUpdater
+    - Changed in [1.3.1](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.1)  
 
 ### Possible options
 
@@ -222,6 +227,7 @@ Ideas:
 ## Feature request and bug reports
 - [Bug report](https://github.com/tmiland/Invidious-Updater/issues/new?assignees=tmiland&labels=bug&template=bug_report.md&title=Bug-report:)
 - [Feature request](https://github.com/tmiland/Invidious-Updater/issues/new?assignees=tmiland&labels=enhancement&template=feature_request.md&title=Feature-request:)
+- [IRC Freenode: #InvidiousUpdater](irc://freenode.net/#InvidiousUpdater)
 
 ## Donations 
 - [PayPal me](https://paypal.me/milanddata)
