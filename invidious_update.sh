@@ -11,7 +11,7 @@
 ####                   Maintained by @tmiland                     ####
 ######################################################################
 
-version='1.3.1' # Must stay on line 14 for updater to fetch the numbers
+version='1.3.2' # Must stay on line 14 for updater to fetch the numbers
 
 #------------------------------------------------------------------------------#
 #
@@ -773,16 +773,23 @@ get_crystal () {
     exit 1;
   fi
 }
+ignore_config () {
+  #sed -i '$ a config/config.yml' ${REPO_DIR}/.git/info/exclude
+  #git rm --cached ${REPO_DIR}/config/config.yml
+  git update-index --skip-worktree ${REPO_DIR}/config/config.yml
+}
 ##
 # Checkout Master branch to branch master (to avoid detached HEAD state)
 ##
 GetMaster () {
+  ignore_config
   git checkout origin/${IN_BRANCH} -B ${IN_BRANCH}
 }
 ##
 # Update Master branch
 ##
 UpdateMaster () {
+  ignore_config
   currentVersion=$(git rev-list --max-count=1 --abbrev-commit HEAD)
   git pull
   for i in `git rev-list --abbrev-commit $currentVersion..HEAD` ; do file=${REPO_DIR}/config/migrate-scripts/migrate-db-$i.sh ; [ -f $file ] && $file ; done
@@ -793,6 +800,7 @@ UpdateMaster () {
 # Checkout Release tag to branch release (to avoid detached HEAD state)
 ##
 GetRelease () {
+  ignore_config
   git fetch --tags
   latestVersion=$(git describe --tags `git rev-list --tags --max-count=1`)
   git checkout tags/$latestVersion -B ${IN_RELEASE}
@@ -801,6 +809,7 @@ GetRelease () {
 # Update Release
 ##
 UpdateRelease () {
+  ignore_config
   currentVersion=$(git rev-list --max-count=1 --abbrev-commit HEAD)
   git pull
   latestVersion=$(git describe --tags --abbrev=0)

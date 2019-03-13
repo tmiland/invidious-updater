@@ -5,7 +5,7 @@
                   ║                        Invidious Update.sh                        ║
                   ║               Automatic update script for Invidio.us              ║
                   ║                      Maintained by @tmiland                       ║
-                  ║                          version: 1.3.1                           ║
+                  ║                          version: 1.3.2                           ║
                   ╚═══════════════════════════════════════════════════════════════════╝
 ```
 
@@ -198,7 +198,9 @@ What's done:
     - external_port will be set to 443 if https_only = true, else < blank > (assuming use of reverse proxy with https.)
     - Set default domain to invidio.us since option now is blank in config. (blank domain doesn't work on local instance)
     - Created IRC Channel on Freenode.net/#InvidiousUpdater
-    - Changed in [1.3.1](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.1)  
+    - Changed in [1.3.1](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.1)
+- [X] Ignore config.yml on install and update.
+    - Changed in [1.3.2](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.2)
 
 ### Possible options
 
