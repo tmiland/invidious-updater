@@ -8,6 +8,9 @@
                   ║                          version: 1.3.2                           ║
                   ╚═══════════════════════════════════════════════════════════════════╝
 ```
+[![GitHub release](https://img.shields.io/github/release/tmiland/Invidious-Updater.svg?style=for-the-badge)](https://github.com/tmiland/Invidious-Updater/releases)
+[![licence](https://img.shields.io/github/license/tmiland/Invidious-Updater.svg?style=for-the-badge)](https://github.com/tmiland/Invidious-Updater/blob/master/LICENSE)
+![Bash](https://img.shields.io/badge/Language-SH-4EAA25.svg?style=for-the-badge)
 
 ## Script to install and update [Invidious](https://github.com/omarroth/invidious)
 
