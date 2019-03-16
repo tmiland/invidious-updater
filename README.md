@@ -239,6 +239,12 @@ Ideas:
 - [BTC] : 3MV69DmhzCqwUnbryeHrKDQxBaM724iJC2
 - [BCH] : qznnyvpxym7a8he2ps9m6l44s373fecfnv86h2vwq2
 
+## Web Hosting
+
+Sign up for web hosting using this link, and receive $100 in credit over 60 days.
+
+[DigitalOcean](https://m.do.co/c/f1f2b475fca0)
+
 #### Disclaimer 
 
 *** ***Use at own risk*** ***
