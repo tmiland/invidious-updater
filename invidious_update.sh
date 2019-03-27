@@ -11,7 +11,7 @@
 ####                   Maintained by @tmiland                     ####
 ######################################################################
 
-version='1.3.2' # Must stay on line 14 for updater to fetch the numbers
+version='1.3.3' # Must stay on line 14 for updater to fetch the numbers
 
 #------------------------------------------------------------------------------#
 #
@@ -43,6 +43,8 @@ version='1.3.2' # Must stay on line 14 for updater to fetch the numbers
 #set -o pipefail
 #set -o nounset
 #set -o xtrace
+#timestamp
+time_stamp=`date`
 # Detect absolute and full path as well as filename of this script
 cd "$(dirname $0)"
 CURRDIR=$(pwd)
@@ -773,6 +775,17 @@ get_crystal () {
     exit 1;
   fi
 }
+# Backup config file
+backupConfig() {
+  # Set config backup path
+  ConfigBakPath="/home/backup/$USER_NAME/config"
+  # If directory is not created
+  [ ! -d $ConfigBakPath ] && mkdir -p $ConfigBakPath || :
+  configBackup=${REPO_DIR}/config/config.yml
+  backupConfigFile=`date +%F`.config.yml
+  /bin/cp -f $configBackup $ConfigBakPath/$backupConfigFile
+}
+# Ignore config file
 ignore_config () {
   #sed -i '$ a config/config.yml' ${REPO_DIR}/.git/info/exclude
   #git rm --cached ${REPO_DIR}/config/config.yml
@@ -782,6 +795,7 @@ ignore_config () {
 # Checkout Master branch to branch master (to avoid detached HEAD state)
 ##
 GetMaster () {
+  backupConfig
   ignore_config
   git checkout origin/${IN_BRANCH} -B ${IN_BRANCH}
 }
@@ -789,6 +803,7 @@ GetMaster () {
 # Update Master branch
 ##
 UpdateMaster () {
+  backupConfig
   ignore_config
   if [[ $(lsb_release -rs) == "16.04" ]]; then
     mv ${REPO_DIR}/config/config.yml /tmp
@@ -806,6 +821,7 @@ UpdateMaster () {
 # Checkout Release tag to branch release (to avoid detached HEAD state)
 ##
 GetRelease () {
+  backupConfig
   ignore_config
   git fetch --tags
   latestVersion=$(git describe --tags `git rev-list --tags --max-count=1`)
@@ -815,7 +831,11 @@ GetRelease () {
 # Update Release
 ##
 UpdateRelease () {
+  backupConfig
   ignore_config
+  if [[ $(lsb_release -rs) == "16.04" ]]; then
+    mv ${REPO_DIR}/config/config.yml /tmp
+  fi
   currentVersion=$(git rev-list --max-count=1 --abbrev-commit HEAD)
   git pull
   latestVersion=$(git describe --tags --abbrev=0)
@@ -823,6 +843,9 @@ UpdateRelease () {
   for i in `git rev-list --abbrev-commit $currentVersion..HEAD` ; do file=${REPO_DIR}/config/migrate-scripts/migrate-db-$i.sh ; [ -f $file ] && $file ; done
   git stash
   git checkout tags/$latestVersion -B ${IN_RELEASE}
+  if [[ $(lsb_release -rs) == "16.04" ]]; then
+    mv /tmp/config.yml ${REPO_DIR}/config
+  fi
 }
 ##
 # Rebuild Invidious
