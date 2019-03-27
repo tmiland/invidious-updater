@@ -11,7 +11,7 @@
 ####                   Maintained by @tmiland                     ####
 ######################################################################
 
-version='1.3.3' # Must stay on line 14 for updater to fetch the numbers
+version='1.3.4' # Must stay on line 14 for updater to fetch the numbers
 
 #------------------------------------------------------------------------------#
 #
@@ -525,7 +525,7 @@ show_banner () {
   echo "What do you want to do?"
   echo ""
   echo "  1) Install Invidious          5) Run Database Maintenance "
-  echo "  2) Update Invidious           6) Run Database Migration   "
+  echo "  2) Update Invidious           6) Start, Stop or Restart   "
   echo "  3) Deploy with Docker         7) Uninstall Invidious      "
   echo "  4) Install Invidious service  8) Exit                     "
   echo "${SHOW_STATUS} ${SHOW_DOCKER_STATUS}"
@@ -1712,82 +1712,63 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
     ./${SCRIPT_FILENAME}
     #exit 1
     ;;
-  6) # Database migration
-
+  6) # Start, Stop or Restart Invidious
     chk_permissions
+    echo ""
+    echo "Do you want to start, stop or restart Invidious?"
+    echo "   1) Start"
+    echo "   2) Stop"
+    echo "   3) Restart"
+    echo ""
 
-    read -p "Are you sure you want to migrate the PostgreSQL database? " answer
-    echo "You entered: $answer"
+    while [[ $SERVICE_ACTION != "1" && $SERVICE_ACTION != "2" && $SERVICE_ACTION != "3" ]]; do
+      read -p "Select an option [1-3]: " SERVICE_ACTION
+    done
 
-    if [[ "$answer" = 'y' ]]; then
-      if ( systemctl -q is-active ${PGSQL_SERVICE})
-      then
-        echo -e "${ORANGE}${ARROW} stopping Invidious...${NC}"
-        ${SUDO} systemctl stop ${SERVICE_NAME}
-        echo -e "${GREEN}${ARROW} Running Migration...${NC}"
-        cd ${REPO_DIR} || exit 1
-        currentVersion=$(git rev-list --max-count=1 --abbrev-commit HEAD)
-        latestVersion=$(git describe --tags `git rev-list --tags --max-count=1`)
-        git checkout $latestVersion
-        for i in `git rev-list --abbrev-commit $currentVersion..HEAD` ;
-        do
-          file=./config/migrate-scripts/migrate-db-$i.sh ; [ -f $file ] && $file ;
-        done
+    case $SERVICE_ACTION in
+      1)
+        SERVICE_ACTION=start
+        ;;
+      2)
+        SERVICE_ACTION=stop
+        ;;
+      3)
+        SERVICE_ACTION=restart
+        ;;
+    esac
 
-        cd -
-        echo -e "${GREEN}${DONE} Migration Done ${NC}"
-        # Restart Invidious
-        echo -e "${GREEN}${ARROW} Restarting Invidious...${NC}"
-        ${SUDO} systemctl restart ${SERVICE_NAME}
-        echo -e "${GREEN}${DONE} Restarting Invidious done.${NC}"
-        ${SUDO} systemctl status ${SERVICE_NAME} --no-pager
-        sleep 1
-        # Restart postgresql
-        echo -e "${GREEN}${ARROW} Restarting postgresql...${NC}"
-        ${SUDO} systemctl restart ${PGSQL_SERVICE}
-        echo -e "${GREEN}${DONE} Restarting postgresql done.${NC}"
-        ${SUDO} systemctl status ${PGSQL_SERVICE} --no-pager
-        sleep 5
-      else
-        echo -e "${RED}${ERROR} Database Migration failed. Is PostgreSQL running?${NC}"
-        # Restart postgresql
-        echo -e "${GREEN}${ARROW} trying to start postgresql...${NC}"
-        ${SUDO} systemctl start ${PGSQL_SERVICE}
-        echo -e "${GREEN}${DONE} Postgresql started successfully${NC}"
-        ${SUDO} systemctl status ${PGSQL_SERVICE} --no-pager
-        sleep 5
-        echo -e "${ORANGE}${ARROW} Restarting script. Please try again...${NC}"
-        sleep 5
-        cd ${CURRDIR}
-        ./${SCRIPT_FILENAME}
-        #exit
-      fi
-    fi
-    show_migration_banner () {
+    while true; do
+      cd ${REPO_DIR}
+      # Restart Invidious
+      echo -e "${ORANGE}${ARROW} ${SERVICE_ACTION} Invidious...${NC}"
+      ${SUDO} systemctl ${SERVICE_ACTION} ${SERVICE_NAME}
+      echo -e "${GREEN}${DONE} done.${NC}"
+      ${SUDO} systemctl status ${SERVICE_NAME} --no-pager
 
-      header
+      show_status_banner () {
 
-      echo ""
-      echo ""
-      echo ""
-      echo "Thank you for using the ${SCRIPT_NAME} script."
-      echo ""
-      echo ""
-      echo ""
-      echo -e "${GREEN}${DONE} Invidious migration done.${NC}"
-      echo ""
-      echo ""
-      echo ""
-      echo ""
-      echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
-    }
+        header
 
-    show_migration_banner
+        echo ""
+        echo ""
+        echo ""
+        echo "Thank you for using the ${SCRIPT_NAME} script."
+        echo ""
+        echo ""
+        echo ""
+        echo -e "${GREEN}${DONE} Invidious ${SERVICE_ACTION} done.${NC}"
+        echo ""
+        echo ""
+        echo ""
+        echo ""
+        echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
+      }
 
-    sleep 3
-    cd ${CURRDIR}
-    ./${SCRIPT_FILENAME}
-    #exit 1
+      show_status_banner
+      sleep 5
+      cd ${CURRDIR}
+      ./${SCRIPT_FILENAME}
+    done
     ;;
   7) # Uninstall Invidious
 
