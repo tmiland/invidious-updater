@@ -5,7 +5,7 @@
                   ║                        Invidious Update.sh                        ║
                   ║               Automatic update script for Invidio.us              ║
                   ║                      Maintained by @tmiland                       ║
-                  ║                          version: 1.3.2                           ║
+                  ║                          version: 1.3.3                           ║
                   ╚═══════════════════════════════════════════════════════════════════╝
 ```
 [![GitHub release](https://img.shields.io/github/release/tmiland/Invidious-Updater.svg?style=for-the-badge)](https://github.com/tmiland/Invidious-Updater/releases)
@@ -204,6 +204,9 @@ What's done:
     - Changed in [1.3.1](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.1)
 - [X] Ignore config.yml on install and update.
     - Changed in [1.3.2](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.2)
+- [X] Fix to move config out of the way on Ubuntu 16.04 (git ignored changes in 1.3.2)
+- [X] Added config backup
+    - Changed in [1.3.3](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.3)
 
 ### Possible options
 
