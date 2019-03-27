@@ -790,11 +790,17 @@ GetMaster () {
 ##
 UpdateMaster () {
   ignore_config
+  if [[ $(lsb_release -rs) == "16.04" ]]; then
+    mv ${REPO_DIR}/config/config.yml /tmp
+  fi
   currentVersion=$(git rev-list --max-count=1 --abbrev-commit HEAD)
   git pull
   for i in `git rev-list --abbrev-commit $currentVersion..HEAD` ; do file=${REPO_DIR}/config/migrate-scripts/migrate-db-$i.sh ; [ -f $file ] && $file ; done
   git stash
   git checkout origin/${IN_BRANCH} -B ${IN_BRANCH}
+  if [[ $(lsb_release -rs) == "16.04" ]]; then
+    mv /tmp/config.yml ${REPO_DIR}/config
+  fi
 }
 ##
 # Checkout Release tag to branch release (to avoid detached HEAD state)
