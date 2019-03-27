@@ -5,7 +5,7 @@
                   ║                        Invidious Update.sh                        ║
                   ║               Automatic update script for Invidio.us              ║
                   ║                      Maintained by @tmiland                       ║
-                  ║                          version: 1.3.3                           ║
+                  ║                          version: 1.3.4                           ║
                   ╚═══════════════════════════════════════════════════════════════════╝
 ```
 [![GitHub release](https://img.shields.io/github/release/tmiland/Invidious-Updater.svg?style=for-the-badge)](https://github.com/tmiland/Invidious-Updater/releases)
@@ -207,6 +207,8 @@ What's done:
 - [X] Fix to move config out of the way on Ubuntu 16.04 (git ignored changes in 1.3.2)
 - [X] Added config backup
     - Changed in [1.3.3](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.3)
+- [X] Replaced migration with Start, Stop or Restart
+    - Changed in [1.3.4](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.4)
 
 ### Possible options
 
