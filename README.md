@@ -5,7 +5,7 @@
                   ║                        Invidious Update.sh                        ║
                   ║               Automatic update script for Invidio.us              ║
                   ║                      Maintained by @tmiland                       ║
-                  ║                          version: 1.3.4                           ║
+                  ║                          version: 1.3.5                           ║
                   ╚═══════════════════════════════════════════════════════════════════╝
 ```
 [![GitHub release](https://img.shields.io/github/release/tmiland/Invidious-Updater.svg?style=for-the-badge)](https://github.com/tmiland/Invidious-Updater/releases)
@@ -209,6 +209,8 @@ What's done:
     - Changed in [1.3.3](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.3)
 - [X] Replaced migration with Start, Stop or Restart
     - Changed in [1.3.4](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.4)
+- [X] Support for database backup
+  - Added in [1.3.5](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.5)
 
 ### Possible options
 
@@ -216,7 +218,6 @@ Ideas:
 
 - Support for auto-update check
   - [ ] For Invidious
-- [ ] Support for database backup
 
 ## Compatibility and Requirements
 
