@@ -418,6 +418,54 @@ if ( ! systemctl -q is-active ${SERVICE_NAME}); then
   fi
 fi
 ##
+# Run pgbackup
+##
+pgbackup() {
+  if [[ ! -d "${CURRDIR}/pgbackup" ]]; then
+  printf "\n-- Setting up pgbackup\n"
+  git clone https://github.com/tmiland/pgbackup.git
+  cd pgbackup
+  if [[ $(lsb_release -si) == "CentOS" || $(lsb_release -si) == "Fedora" ]]; then
+    pgsqlConfigPath=/var/lib/pgsql/11/data
+  elif [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
+    pgsqlConfigPath=/etc/postgresql/9.6/main
+  else
+    echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
+    exit 1;
+  fi
+  cp -rp $pgsqlConfigPath/pg_hba.conf $pgsqlConfigPath/pg_hba.conf.bak
+  #sed -i "s/USERNAME=postgres/USERNAME=$USER_NAME/g" ./pg_backup.conf
+  echo "# Database administrative login by Unix domain socket
+local   all             postgres                                trust
+# TYPE  DATABASE        USER            ADDRESS                 METHOD
+
+# local is for Unix domain socket connections only
+local   all             all                                     peer
+# IPv4 local connections:
+host    all             all             127.0.0.1/32            md5
+# IPv6 local connections:
+host    all             all             ::1/128                 md5
+# Allow replication connections from localhost, by a user with the
+# replication privilege.
+local   replication     all                                     peer
+host    replication     all             127.0.0.1/32            md5
+host    replication     all             ::1/128                 md5" | ${SUDO} tee $pgsqlConfigPath/pg_hba.conf
+  #${SUDO} -i -u postgres sed -i "s/local   all             postgres                                peer/local   all             postgres                                trust/g" /etc/postgresql/9.6/main/pg_hba.conf
+  ${SUDO} systemctl restart ${PGSQL_SERVICE}
+  sleep 1
+  chmod +x pg_backup_rotated.sh && chmod +x pg_backup.sh
+  fi
+  printf "\n-- Running pgbackup\n"
+  cd ${CURRDIR}/pgbackup
+  bash ./pg_backup.sh
+  cd -
+  printf "\n"
+  echo -e "${GREEN}${DONE} Done ${REPO_DIR} ${NC}"
+  sleep 3
+  cd ${CURRDIR}
+  ./${SCRIPT_FILENAME}
+}
+##
 # BANNERS
 ##
 ##
@@ -527,7 +575,8 @@ show_banner () {
   echo "  1) Install Invidious          5) Run Database Maintenance "
   echo "  2) Update Invidious           6) Start, Stop or Restart   "
   echo "  3) Deploy with Docker         7) Uninstall Invidious      "
-  echo "  4) Install Invidious service  8) Exit                     "
+  echo "  4) Install Invidious service  8) Set up PostgreSQL Backup "
+  echo "  9) Exit                                                   "
   echo "${SHOW_STATUS} ${SHOW_DOCKER_STATUS}"
   echo ""
   echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
@@ -884,8 +933,8 @@ get_dbname () {
 ##
 show_banner
 
-while [[ $OPTION !=  "1" && $OPTION != "2" && $OPTION != "3" && $OPTION != "4" && $OPTION != "5" && $OPTION != "6" && $OPTION != "7" && $OPTION != "8" ]]; do
-  read -p "Select an option [1-8]: " OPTION
+while [[ $OPTION !=  "1" && $OPTION != "2" && $OPTION != "3" && $OPTION != "4" && $OPTION != "5" && $OPTION != "6" && $OPTION != "7" && $OPTION != "8" && $OPTION != "9" ]]; do
+  read -p "Select an option [1-9]: " OPTION
 done
 
 case $OPTION in
@@ -1964,7 +2013,12 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
     ./${SCRIPT_FILENAME}
     #exit
     ;;
-  8) # Exit
+
+  8) # Set up PostgreSQL Backup
+    chk_permissions
+    pgbackup
+    ;;
+  9) # Exit
     exit_script
     ;;
 esac
