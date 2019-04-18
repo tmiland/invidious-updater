@@ -1247,6 +1247,10 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
       echo -e "${ORANGE}${ARROW} Running session_ids.sql${NC}"
       ${SUDO} -i -u postgres psql -d $psqldb -f ${REPO_DIR}/config/sql/session_ids.sql
     fi
+    if [[ -e ${REPO_DIR}/config/sql/annotations.sql ]]; then
+      echo -e "${ORANGE}${ARROW} Running annotations.sql${NC}"
+      ${SUDO} -i -u postgres psql -d $psqldb -f ${REPO_DIR}/config/sql/annotations.sql
+    fi
     echo -e "${ORANGE}${ARROW} Running nonces.sql${NC}"
     ${SUDO} -i -u postgres psql -d $psqldb -f ${REPO_DIR}/config/sql/nonces.sql
     echo -e "${GREEN}${DONE} Finished Database section${NC}"
