@@ -241,10 +241,9 @@ else
   echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
   exit 1;
 fi
-##
+
 # Make sure that the script runs with root permissions
-##
-chk_permissions () {
+chk_permissions() {
   if [[ "$EUID" != 0 ]]; then
     echo -e "${RED}${ERROR} This action needs root permissions.${NC} Please enter your root password...";
     cd "$CURRDIR"
@@ -254,13 +253,10 @@ chk_permissions () {
     exit 0;
   fi
 }
-########################################################
-## Update invidious_update.sh                         ##
-## Source: ghacks-user.js updater for macOS and Linux ##
-########################################################
-##
+
+## Update invidious_update.sh
+## Source: ghacks-user.js updater for macOS and Linux
 # Download method priority: curl -> wget
-##
 DOWNLOAD_METHOD=''
 if [[ $(command -v 'curl') ]]; then
   DOWNLOAD_METHOD='curl'
@@ -270,10 +266,9 @@ else
   echo -e "${RED}${ERROR} This script requires curl or wget.\nProcess aborted${NC}"
   exit 0
 fi
-##
+
 # Download files
-##
-download_file () {
+download_file() {
   declare -r url=$1
   declare -r tf=$(mktemp)
   local dlcmd=''
@@ -286,10 +281,9 @@ download_file () {
 
   $dlcmd "${url}" &>/dev/null && echo "$tf" || echo '' # return the temp-filename (or empty string on error)
 }
-##
+
 # Open files
-##
-open_file () { #expects one argument: file_path
+open_file() { #expects one argument: file_path
 
   if [ "$(uname)" == 'Darwin' ]; then
     open "$1"
@@ -300,7 +294,7 @@ open_file () { #expects one argument: file_path
   fi
 }
 
-get_release_info () {
+get_release_info() {
   # Get latest release tag from GitHub
   get_latest_release_tag() {
     curl --silent "https://api.github.com/repos/$1/releases/latest" |
@@ -330,16 +324,14 @@ get_release_info () {
   }
   RELEASE_TITLE=$(get_latest_release_title ${REPO_NAME})
 }
-##
+
 # Returns the version number of invidious_update.sh file on line 14
-##
-get_updater_version () {
+get_updater_version() {
   echo $(sed -n '14 s/[^0-9.]*\([0-9.]*\).*/\1/p' "$1")
 }
-##
+
 # Show service status - @FalconStats
-##
-show_status () {
+show_status() {
 
   declare -a services=(
     "invidious"
@@ -375,9 +367,8 @@ show_status () {
 if ( systemctl -q is-active ${SERVICE_NAME}); then
   SHOW_STATUS=$(show_status)
 fi
-##
+
 # Show Docker Status
-##
 show_docker_status() {
 
   declare -a container=(
@@ -417,9 +408,8 @@ if ( ! systemctl -q is-active ${SERVICE_NAME}); then
     SHOW_DOCKER_STATUS=$(show_docker_status)
   fi
 fi
-##
+
 # Run pgbackup
-##
 pgbackup() {
   if [[ ! -d "${CURRDIR}/pgbackup" ]]; then
   printf "\n-- Setting up pgbackup\n"
@@ -465,13 +455,11 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
   cd ${CURRDIR}
   ./${SCRIPT_FILENAME}
 }
-##
+
 # BANNERS
-##
-##
+
 # Header
-##
-header () {
+header() {
   echo -e "${GREEN}\n"
   echo ' ╔═══════════════════════════════════════════════════════════════════╗'
   echo ' ║                        '${SCRIPT_NAME}'                        ║'
@@ -481,10 +469,9 @@ header () {
   echo ' ╚═══════════════════════════════════════════════════════════════════╝'
   echo -e "${NC}"
 }
-##
+
 # Update banner
-##
-show_update_banner () {
+show_update_banner() {
   clear
   header
   echo "Welcome to the ${SCRIPT_NAME} script."
@@ -498,10 +485,9 @@ show_update_banner () {
   echo -e "${BLUE}${RELEASE_NOTE}${NC}"
   echo ""
 }
-##
+
 # Preinstall banner
-##
-show_preinstall_banner () {
+show_preinstall_banner() {
   clear
   header
   echo "Thank you for using the ${SCRIPT_NAME} script."
@@ -510,10 +496,9 @@ show_preinstall_banner () {
   echo ""
   echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
 }
-##
+
 # Install banner
-##
-show_install_banner () {
+show_install_banner() {
   #clear
   header
   echo ""
@@ -530,10 +515,9 @@ show_install_banner () {
   echo ""
   echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
 }
-##
+
 # Systemd install banner
-##
-show_systemd_install_banner () {
+show_systemd_install_banner() {
   #clear
   header
   echo "Thank you for using the ${SCRIPT_NAME} script."
@@ -542,10 +526,9 @@ show_systemd_install_banner () {
   echo ""
   echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
 }
-##
+
 # Maintenance banner
-##
-show_maintenance_banner () {
+show_maintenance_banner() {
   #clear
   header
   echo ""
@@ -562,10 +545,9 @@ show_maintenance_banner () {
   echo ""
   echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
 }
-##
+
 # Banner
-##
-show_banner () {
+show_banner() {
   #clear
   header
   echo "Welcome to the ${SCRIPT_NAME} script."
@@ -581,10 +563,9 @@ show_banner () {
   echo ""
   echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
 }
-##
+
 # Exit Script
-##
-exit_script () {
+exit_script() {
   #header
   echo -e "${GREEN}"
   echo    '      ____          _     ___                    '
@@ -611,11 +592,11 @@ exit_script () {
   echo ""
   exit
 }
-##
+
 # Update invidious_update.sh
-##
+
 # Default: Check for update, if available, ask user if they want to execute it
-update_updater () {
+update_updater() {
   if [ $UPDATE_SCRIPT = 'no' ]; then
     return 0 # User signified not to check for updates
   fi
@@ -653,9 +634,8 @@ update_updater () {
     return 0 # No update available
   fi
 }
-##
+
 # Ask user to update yes/no
-##
 if [ $# != 0 ]; then
   while getopts ":ud" opt; do
     case $opt in
@@ -679,10 +659,9 @@ fi
 
 update_updater $@
 cd "$CURRDIR"
-##
+
 # Check which ImageMagick version is installed
-##
-chk_imagickpkg () {
+chk_imagickpkg() {
 
   if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
     apt -qq list $IMAGICKPKG 2>/dev/null
@@ -697,10 +676,9 @@ chk_imagickpkg () {
     exit 1;
   fi
 }
-##
+
 # Check Git repo
-##
-chk_git_repo () {
+chk_git_repo() {
   # Check if the folder is a git repo
   if [[ -d "${REPO_DIR}/.git" ]]; then
     echo ""
@@ -714,23 +692,19 @@ chk_git_repo () {
     #exit 1
   fi
 }
-##
+
 # Set permissions
-##
-set_permissions () {
+set_permissions() {
   ${SUDO} chown -R $USER_NAME:$USER_NAME $USER_DIR
   ${SUDO} chmod -R 755 $USER_DIR
   #${SUDO} chmod 664 ${REPO_DIR}/config/config.yml
   #${SUDO} chmod 755 ${REPO_DIR}/invidious
 }
-##
-# Update config
-##
-update_config () {
 
-  ######################
+# Update config
+update_config() {
+
   # Update config.yml with new info from user input
-  ######################
   BAKPATH="/home/backup/$USER_NAME/config"
   # Lets change the default password
   OLDPASS="password: kemal"
@@ -770,19 +744,13 @@ update_config () {
   else
     echo -e "${GREEN}${DONE} Done.${NC}"
   fi
-
-  ######################
   # Done updating config.yml with new info!
   # Source: https://www.cyberciti.biz/faq/unix-linux-replace-string-words-in-many-files/
-  ######################
 }
-##
+
 # Systemd install
-##
-systemd_install () {
-  ######################
+systemd_install() {
   # Setup Systemd Service
-  ######################
   cp ${REPO_DIR}/${SERVICE_NAME} /lib/systemd/system/${SERVICE_NAME}
   ${SUDO} sed -i "s/invidious -o invidious.log/invidious -b ${ip} -p ${port} -o invidious.log/g" /lib/systemd/system/${SERVICE_NAME}
   # Enable invidious start at boot
@@ -801,10 +769,9 @@ systemd_install () {
     sleep 5
   fi
 }
-##
+
 # Get Crystal
-##
-get_crystal () {
+get_crystal() {
   if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
     if [[ ! -e /etc/apt/sources.list.d/crystal.list ]]; then
       #apt-key adv --keyserver keys.gnupg.net --recv-keys 09617FD37CC06B54
@@ -824,6 +791,7 @@ get_crystal () {
     exit 1;
   fi
 }
+
 # Backup config file
 backupConfig() {
   # Set config backup path
@@ -834,24 +802,23 @@ backupConfig() {
   backupConfigFile=`date +%F`.config.yml
   /bin/cp -f $configBackup $ConfigBakPath/$backupConfigFile
 }
+
 # Ignore config file
-ignore_config () {
+ignore_config() {
   #sed -i '$ a config/config.yml' ${REPO_DIR}/.git/info/exclude
   #git rm --cached ${REPO_DIR}/config/config.yml
   git update-index --skip-worktree ${REPO_DIR}/config/config.yml
 }
-##
+
 # Checkout Master branch to branch master (to avoid detached HEAD state)
-##
-GetMaster () {
+GetMaster() {
   backupConfig
   ignore_config
   git checkout origin/${IN_BRANCH} -B ${IN_BRANCH}
 }
-##
+
 # Update Master branch
-##
-UpdateMaster () {
+UpdateMaster() {
   backupConfig
   ignore_config
   if [[ $(lsb_release -rs) == "16.04" ]]; then
@@ -866,20 +833,18 @@ UpdateMaster () {
     mv /tmp/config.yml ${REPO_DIR}/config
   fi
 }
-##
+
 # Checkout Release tag to branch release (to avoid detached HEAD state)
-##
-GetRelease () {
+GetRelease() {
   backupConfig
   ignore_config
   git fetch --tags
   latestVersion=$(git describe --tags `git rev-list --tags --max-count=1`)
   git checkout tags/$latestVersion -B ${IN_RELEASE}
 }
-##
+
 # Update Release
-##
-UpdateRelease () {
+UpdateRelease() {
   backupConfig
   ignore_config
   if [[ $(lsb_release -rs) == "16.04" ]]; then
@@ -896,10 +861,9 @@ UpdateRelease () {
     mv /tmp/config.yml ${REPO_DIR}/config
   fi
 }
-##
+
 # Rebuild Invidious
-##
-rebuild () {
+rebuild() {
   printf "\n-- Rebuilding ${REPO_DIR}\n"
   cd ${REPO_DIR} || exit 1
   shards update && shards install
@@ -910,10 +874,9 @@ rebuild () {
   echo -e "${GREEN}${DONE} Done Rebuilding ${REPO_DIR} ${NC}"
   sleep 3
 }
-##
+
 # Restart Invidious
-##
-restart () {
+restart() {
   printf "\n-- restarting Invidious\n"
   ${SUDO} systemctl restart $SERVICE_NAME
   sleep 2
@@ -922,15 +885,13 @@ restart () {
   echo -e "${GREEN}${DONE} Invidious has been restarted ${NC}"
   sleep 3
 }
-##
+
 # Get dbname from config file (used in db maintenance and uninstallation)
-##
-get_dbname () {
+get_dbname() {
   echo $(sed -n 's/.*dbname *: *\([^ ]*.*\)/\1/p' "$1")
 }
-##
+
 # Start Script
-##
 show_banner
 
 while [[ $OPTION !=  "1" && $OPTION != "2" && $OPTION != "3" && $OPTION != "4" && $OPTION != "5" && $OPTION != "6" && $OPTION != "7" && $OPTION != "8" && $OPTION != "9" ]]; do
@@ -1035,9 +996,7 @@ case $OPTION in
     read -n1 -r -p "Invidious is ready to be installed, press any key to continue..."
     echo ""
 
-    ######################
     # Setup Dependencies
-    ######################
     if ! ${PKGCHK} $PRE_INSTALL_PKGS >/dev/null 2>&1; then
       ${UPDATE}
       for i in $PRE_INSTALL_PKGS; do
@@ -1054,9 +1013,7 @@ case $OPTION in
       done
     fi
 
-    #################
     # ImageMagick 6
-    ################
     if [[ "$IMAGEMAGICK" = 'y' ]]; then
 
       if ! ${PKGCHK} $BUILD_DEP_PKGS >/dev/null 2>&1; then
@@ -1095,9 +1052,8 @@ case $OPTION in
       rm -r /tmp/${IMAGICK_VER}.tar.gz
 
     fi
-    #################
+
     # ImageMagick 7
-    ################
     if [[ "$IMAGEMAGICK_SEVEN" = 'y' ]]; then
       if ! ${PKGCHK} $BUILD_DEP_PKGS >/dev/null 2>&1; then
         for i in $BUILD_DEP_PKGS; do
@@ -1148,10 +1104,8 @@ case $OPTION in
         fi
       fi
     fi
-
-    ######################
+    
     # Setup Repository
-    ######################
     # https://stackoverflow.com/a/51894266
     grep $USER_NAME /etc/passwd >/dev/null 2>&1
     if [ ! $? -eq 0 ] ; then
@@ -1256,11 +1210,10 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
     echo -e "${GREEN}${DONE} Finished Database section${NC}"
 
     update_config
-
     # Crystal complaining about permissions on CentOS and somewhat Debian
     # So before we build, make sure permissions are set.
     set_permissions
-    ######################
+    
     cd ${REPO_DIR} || exit 1
     #sudo -i -u invidious \
       shards update && shards install
@@ -1335,7 +1288,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
     ;;
   3) # Deploy with Docker
 
-    docker_repo_chk () {
+    docker_repo_chk() {
       # Check if the folder is a git repo
       if [[ ! -d "${REPO_DIR}/.git" ]]; then
         #if (systemctl -q is-active invidious.service) && -d "${REPO_DIR}/.git" then
@@ -1665,10 +1618,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
   4) # Install Invidious service
 
     chk_permissions
-
-    ######################
     # Setup Systemd Service
-    ######################
     if ( ! systemctl -q is-active ${SERVICE_NAME})
     then
       cp ${REPO_DIR}/${SERVICE_NAME} /lib/systemd/system/${SERVICE_NAME}
@@ -1798,7 +1748,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
       echo -e "${GREEN}${DONE} done.${NC}"
       ${SUDO} systemctl status ${SERVICE_NAME} --no-pager
 
-      show_status_banner () {
+      show_status_banner() {
 
         header
 
