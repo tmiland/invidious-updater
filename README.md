@@ -19,7 +19,7 @@
 * Deploy Invidious with Docker
 * Install Invidious service
 * Run database maintenance
-* Run database migration
+* Start, Stop or Restart Invidious
 * Uninstall Invidious
 
 ## Screenshots
@@ -106,9 +106,7 @@ sudo passwd root
    * Database maintenance option [Database Information and Maintenance](https://github.com/omarroth/invidious/wiki/Database-Information-and-Maintenance)
 
 
-6. Run database migration
-
-   * Database migration option [migrate-scripts](https://github.com/omarroth/invidious/tree/master/config/migrate-scripts)
+6. Start, Stop or Restart Invidious
 
 7. Uninstall Invidious
 
