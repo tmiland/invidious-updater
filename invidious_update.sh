@@ -11,7 +11,7 @@
 ####                   Maintained by @tmiland                     ####
 ######################################################################
 
-version='1.3.6' # Must stay on line 14 for updater to fetch the numbers
+version='1.3.7' # Must stay on line 14 for updater to fetch the numbers
 
 #------------------------------------------------------------------------------#
 #
@@ -109,11 +109,11 @@ https_only=false
 # Default external port
 external_port=
 # ImageMagick 6 version
-IMAGICK_VER=6.9.10-28
+IMAGICK_VER=6.9.10-49
 # ImageMagick 7 version
-IMAGICK_SEVEN_VER=7.0.8-28
+IMAGICK_SEVEN_VER=7.0.8-49
 # Docker Compose version
-Docker_Compose_Ver=1.23.2
+Docker_Compose_Ver=1.24.0
 # Distro support
 if ! lsb_release -si >/dev/null 2>&1; then
   if [[ -f /etc/debian_version ]]; then
