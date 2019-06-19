@@ -11,7 +11,7 @@
 ####                   Maintained by @tmiland                     ####
 ######################################################################
 
-version='1.3.7' # Must stay on line 14 for updater to fetch the numbers
+version='1.3.8' # Must stay on line 14 for updater to fetch the numbers
 
 #------------------------------------------------------------------------------#
 #
@@ -866,7 +866,7 @@ UpdateRelease() {
 rebuild() {
   printf "\n-- Rebuilding ${REPO_DIR}\n"
   cd ${REPO_DIR} || exit 1
-  shards update
+  shards update && shards install
   crystal build src/invidious.cr --release
   #sudo chown -R 1000:$USER_NAME $USER_DIR
   cd -
@@ -1216,7 +1216,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
     
     cd ${REPO_DIR} || exit 1
     #sudo -i -u invidious \
-      shards update
+      shards update && shards install
     crystal build src/invidious.cr --release
     # Not figured out why yet, so let's set permissions after as well...
     set_permissions
