@@ -11,7 +11,7 @@
 ####                   Maintained by @tmiland                     ####
 ######################################################################
 
-version='1.3.8' # Must stay on line 14 for updater to fetch the numbers
+version='1.3.9' # Must stay on line 14 for updater to fetch the numbers
 
 #------------------------------------------------------------------------------#
 #
@@ -731,7 +731,7 @@ update_config() {
       /bin/cp -f $f $BPATH
       echo -e "${GREEN}${ARROW} Updating config.yml with new info...${NC}"
       # Add external_port: to config on line 13
-      sed -i "13i\external_port:" "$f" > $TFILE
+      sed -i "11i\external_port:" "$f" > $TFILE
       sed "s/$OLDPASS/$NEWPASS/g; s/$OLDDBNAME/$NEWDBNAME/g; s/$OLDDOMAIN/$NEWDOMAIN/g; s/$OLDHTTPS/$NEWHTTPS/g; s/$OLDEXTERNAL/$NEWEXTERNAL/g;" "$f" > $TFILE &&
       mv $TFILE "$f"
     else
