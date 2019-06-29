@@ -5,7 +5,7 @@
                   ║                        Invidious Update.sh                        ║
                   ║               Automatic update script for Invidio.us              ║
                   ║                      Maintained by @tmiland                       ║
-                  ║                          version: 1.3.8                           ║
+                  ║                          version: 1.3.9                           ║
                   ╚═══════════════════════════════════════════════════════════════════╝
 ```
 [![GitHub release](https://img.shields.io/github/release/tmiland/Invidious-Updater.svg?style=for-the-badge)](https://github.com/tmiland/Invidious-Updater/releases)
@@ -209,6 +209,15 @@ What's done:
     - Changed in [1.3.4](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.4)
 - [X] Support for database backup
   - Added in [1.3.5](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.5)
+- [X] Fixed shards update cmd
+    - Added in [1.3.6](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.6)
+- [X] Update Software Versions
+    - Added in [1.3.7](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.7)
+- [X] Revert Shards update/install
+    - Added in [1.3.8](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.8)
+- [X] Fix add external_port: to config.yml
+    - Added in [1.3.9](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.9)
+
 
 ### Possible options
 
