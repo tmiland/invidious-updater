@@ -210,13 +210,13 @@ What's done:
 - [X] Support for database backup
   - Added in [1.3.5](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.5)
 - [X] Fixed shards update cmd
-    - Added in [1.3.6](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.6)
+    - Changed in [1.3.6](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.6)
 - [X] Update Software Versions
-    - Added in [1.3.7](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.7)
+    - Changed in [1.3.7](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.7)
 - [X] Revert Shards update/install
-    - Added in [1.3.8](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.8)
+    - Changed in [1.3.8](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.8)
 - [X] Fix add external_port: to config.yml
-    - Added in [1.3.9](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.9)
+    - Changed in [1.3.9](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.9)
 
 
 ### Possible options
