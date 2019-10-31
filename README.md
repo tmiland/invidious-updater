@@ -52,6 +52,14 @@ $ chmod +x invidious_update.sh
 $ ./invidious_update.sh
 ```
 
+#### Check for script update (Default "no")
+
+ ```bash
+ 
+ $ ./invidious_update.sh -u
+ 
+ ```
+
 #### Optionally
 
  ```bash
