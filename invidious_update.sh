@@ -11,7 +11,7 @@
 ####                   Maintained by @tmiland                     ####
 ######################################################################
 
-version='1.3.9' # Must stay on line 14 for updater to fetch the numbers
+version='1.4.0' # Must stay on line 14 for updater to fetch the numbers
 
 #------------------------------------------------------------------------------#
 #
@@ -108,12 +108,8 @@ psqlpass=kemal
 https_only=false
 # Default external port
 external_port=
-# ImageMagick 6 version
-IMAGICK_VER=6.9.10-49
-# ImageMagick 7 version
-IMAGICK_SEVEN_VER=7.0.8-49
 # Docker Compose version
-Docker_Compose_Ver=1.24.0
+Docker_Compose_Ver=1.24.1
 # Distro support
 if ! lsb_release -si >/dev/null 2>&1; then
   if [[ -f /etc/debian_version ]]; then
@@ -180,8 +176,6 @@ PKGCHK=""
 PGSQL_SERVICE=""
 if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
   export DEBIAN_FRONTEND=noninteractive
-  # ImageMagick package name
-  IMAGICKPKG=imagemagick
   SUDO="sudo"
   UPDATE="apt-get -o Dpkg::Progress-Fancy="1" update -qq"
   INSTALL="apt-get -o Dpkg::Progress-Fancy="1" install -qq"
@@ -192,16 +186,12 @@ if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
   # Pre-install packages
   PRE_INSTALL_PKGS="apt-transport-https git curl sudo"
   # Install packages
-  INSTALL_PKGS="crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev postgresql libsqlite3-dev"
+  INSTALL_PKGS="crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-bin postgresql libsqlite3-dev"
   #Uninstall packages
-  UNINSTALL_PKGS="crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-dev libsqlite3-dev"
-  # Build-dep packages
-  BUILD_DEP_PKGS="build-essential ca-certificates wget libpcre3 libpcre3-dev autoconf unzip automake libtool tar zlib1g-dev uuid-dev lsb-release make"
+  UNINSTALL_PKGS="crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-bin libsqlite3-dev"
   # PostgreSQL Service
   PGSQL_SERVICE="postgresql.service"
 elif [[ $(lsb_release -si) == "CentOS" ]]; then
-  # ImageMagick package name
-  IMAGICKPKG=ImageMagick
   SUDO="sudo"
   UPDATE="yum update -q"
   INSTALL="yum install -y -q"
@@ -212,12 +202,10 @@ elif [[ $(lsb_release -si) == "CentOS" ]]; then
   # Pre-install packages
   PRE_INSTALL_PKGS="epel-release git curl sudo"
   # Install packages
-  INSTALL_PKGS="crystal openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-devel sqlite-devel"
+  INSTALL_PKGS="crystal openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-tools sqlite-devel"
   #Uninstall packages
-  UNINSTALL_PKGS="crystal openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-devel sqlite-devel"
-  # Build-dep packages
-  BUILD_DEP_PKGS="ImageMagick-devel"
-  # PostgreSQL Service
+  UNINSTALL_PKGS="crystal openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-tools sqlite-devel"
+# PostgreSQL Service
   PGSQL_SERVICE="postgresql-11.service"
 elif [[ $(lsb_release -si) == "Fedora" ]]; then
   SUDO="sudo"
@@ -230,11 +218,9 @@ elif [[ $(lsb_release -si) == "Fedora" ]]; then
   # Pre-install packages
   PRE_INSTALL_PKGS="git curl sudo"
   # Install packages
-  INSTALL_PKGS="crystal openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-devel sqlite-devel"
+  INSTALL_PKGS="crystal openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-tools sqlite-devel"
   #Uninstall packages
-  UNINSTALL_PKGS="crystal openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-devel sqlite-devel"
-  # Build-dep packages
-  BUILD_DEP_PKGS="ImageMagick-devel"
+  UNINSTALL_PKGS="crystal openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-tools sqlite-devel"
   # PostgreSQL Service
   PGSQL_SERVICE="postgresql-11.service"
 else
@@ -332,11 +318,17 @@ get_updater_version() {
 
 # Show service status - @FalconStats
 show_status() {
-
+if [[ $(lsb_release -si) == "CentOS" || $(lsb_release -si) == "Fedora" ]]; then
   declare -a services=(
     "invidious"
-    "postgresql"
+    "postgresql-11"
   )
+  else
+    declare -a services=(
+      "invidious"
+      "postgresql"
+      )
+  fi
   declare -a serviceName=(
     "Invidious"
     "PostgreSQL"
@@ -660,23 +652,6 @@ fi
 update_updater $@
 cd "$CURRDIR"
 
-# Check which ImageMagick version is installed
-chk_imagickpkg() {
-
-  if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
-    apt -qq list $IMAGICKPKG 2>/dev/null
-  elif [[ $(lsb_release -si) == "CentOS" || $(lsb_release -si) == "Fedora" ]]; then
-    if [[ $(identify -version 2>/dev/null) ]]; then
-      identify -version
-    else
-      echo -e "${ORANGE}${ERROR} ImageMagick is not installed.${NC}"
-    fi
-  else
-    echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
-    exit 1;
-  fi
-}
-
 # Check Git repo
 chk_git_repo() {
   # Check if the folder is a git repo
@@ -732,6 +707,7 @@ update_config() {
       echo -e "${GREEN}${ARROW} Updating config.yml with new info...${NC}"
       # Add external_port: to config on line 13
       sed -i "11i\external_port:" "$f" > $TFILE
+      sed -i "12i\check_tables: true" "$f" > $TFILE
       sed "s/$OLDPASS/$NEWPASS/g; s/$OLDDBNAME/$NEWDBNAME/g; s/$OLDDOMAIN/$NEWDOMAIN/g; s/$OLDHTTPS/$NEWHTTPS/g; s/$OLDEXTERNAL/$NEWEXTERNAL/g;" "$f" > $TFILE &&
       mv $TFILE "$f"
     else
@@ -775,12 +751,12 @@ get_crystal() {
   if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
     if [[ ! -e /etc/apt/sources.list.d/crystal.list ]]; then
       #apt-key adv --keyserver keys.gnupg.net --recv-keys 09617FD37CC06B54
-      curl -sL "https://keybase.io/crystal/pgp_keys.asc" | ${SUDO} apt-key add -
+      curl -sLk "https://keybase.io/crystal/pgp_keys.asc" | ${SUDO} apt-key add -
       echo "deb https://dist.crystal-lang.org/apt crystal main" | ${SUDO} tee /etc/apt/sources.list.d/crystal.list
     fi
   elif [[ $(lsb_release -si) == "CentOS" || $(lsb_release -si) == "Fedora" ]]; then
     if [[ ! -e /etc/yum.repos.d/crystal.repo ]]; then
-      curl https://dist.crystal-lang.org/rpm/setup.sh | ${SUDO} bash
+      curl -k https://dist.crystal-lang.org/rpm/setup.sh | ${SUDO} bash
     fi
   elif [[ $(lsb_release -si) == "Darwin" ]]; then
     exit 1;
@@ -973,25 +949,6 @@ case $OPTION in
     echo -e " ${DONE} https only    : $https_only"
     echo -e " ${NC}"
     echo ""
-    echo "Choose your Imagemagick version :"
-    echo -e "   1) System's Imagemagick\n "
-    echo -e "   ($(chk_imagickpkg)) \n"
-    echo    "   2) Imagemagick $IMAGICK_VER from source"
-    echo    "   3) Imagemagick $IMAGICK_SEVEN_VER from source"
-    echo ""
-    while [[ $IMAGICK != "1" && $IMAGICK != "2" && $IMAGICK != "3" ]]; do
-      read -p "Select an option [1-3]: " IMAGICK
-    done
-
-    case $IMAGICK in
-      2)
-        IMAGEMAGICK=y
-        ;;
-      3)
-        IMAGEMAGICK_SEVEN=y
-        ;;
-    esac
-
     echo ""
     read -n1 -r -p "Invidious is ready to be installed, press any key to continue..."
     echo ""
@@ -1011,98 +968,6 @@ case $OPTION in
       for i in $INSTALL_PKGS; do
         ${SUDO} ${INSTALL} $i 2> /dev/null # || exit 1 #--allow-unauthenticated
       done
-    fi
-
-    # ImageMagick 6
-    if [[ "$IMAGEMAGICK" = 'y' ]]; then
-
-      if ! ${PKGCHK} $BUILD_DEP_PKGS >/dev/null 2>&1; then
-        for i in $BUILD_DEP_PKGS; do
-          ${INSTALL} $i 2> /dev/null # || exit 1
-        done
-      fi
-
-      if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
-        ${SUDO} ${PURGE} imagemagick
-        ${SUDO} ${CLEAN}
-      elif [[ $(lsb_release -si) == "CentOS" || $(lsb_release -si) == "Fedora" ]]; then
-        ${SUDO} yum groupinstall "Development Tools"
-      else
-        echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
-        exit 1;
-      fi
-
-      cd /tmp || exit 1
-      wget https://github.com/ImageMagick/ImageMagick6/archive/${IMAGICK_VER}.tar.gz
-      tar -xvf ${IMAGICK_VER}.tar.gz
-      cd ImageMagick6-${IMAGICK_VER}
-
-      ./configure \
-        --with-rsvg
-
-      make
-      ${SUDO} make install
-
-      ${SUDO} ldconfig /usr/local/lib
-
-      identify -version
-      sleep 5
-
-      rm -r /tmp/ImageMagick6-${IMAGICK_VER}
-      rm -r /tmp/${IMAGICK_VER}.tar.gz
-
-    fi
-
-    # ImageMagick 7
-    if [[ "$IMAGEMAGICK_SEVEN" = 'y' ]]; then
-      if ! ${PKGCHK} $BUILD_DEP_PKGS >/dev/null 2>&1; then
-        for i in $BUILD_DEP_PKGS; do
-          ${INSTALL} $i
-        done
-      fi
-
-      if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
-        ${SUDO} ${PURGE} imagemagick
-        ${SUDO} ${CLEAN}
-      elif [[ $(lsb_release -si) == "CentOS" || $(lsb_release -si) == "Fedora" ]]; then
-        ${SUDO} yum groupinstall "Development Tools"
-      else
-        echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
-        exit 1;
-      fi
-
-      cd /tmp || exit 1
-      wget https://www.imagemagick.org/download/ImageMagick-${IMAGICK_SEVEN_VER}.tar.gz
-      tar -xvf ImageMagick-${IMAGICK_SEVEN_VER}.tar.gz
-      cd ImageMagick-${IMAGICK_SEVEN_VER}
-
-      ./configure \
-        --with-rsvg \
-
-        make
-      ${SUDO} make install
-
-      ${SUDO} ldconfig /usr/local/lib
-
-      identify -version
-      sleep 5
-
-      rm -r /tmp/ImageMagick-${IMAGICK_SEVEN_VER}
-      rm -r /tmp/ImageMagick-${IMAGICK_SEVEN_VER}.tar.gz
-
-    fi
-
-    if [[ $IMAGEMAGICK_SEVEN != "y" && $IMAGEMAGICK != "y" ]]; then
-      if ! ${PKGCHK} $BUILD_DEP_PKGS >/dev/null 2>&1; then
-        if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
-          ${SUDO} ${INSTALL} imagemagick
-        elif [[ $(lsb_release -si) == "CentOS" || $(lsb_release -si) == "Fedora" ]]; then
-          ${SUDO} ${INSTALL} ImageMagick
-        else
-          echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
-          exit 1;
-        fi
-      fi
     fi
     
     # Setup Repository
@@ -1143,11 +1008,12 @@ case $OPTION in
     if [[ $(lsb_release -si) == "CentOS" || $(lsb_release -si) == "Fedora" ]]; then
 
       if [[ $(lsb_release -si) == "CentOS" ]]; then
-        ${SUDO} ${INSTALL} https://download.postgresql.org/pub/repos/yum/11/redhat/rhel-7-x86_64/pgdg-centos11-11-2.noarch.rpm
+        ${SUDO} ${INSTALL} "https://download.postgresql.org/pub/repos/yum/11/redhat/rhel-$(lsb_release -sr)-x86_64/pgdg-redhat-repo-latest.noarch.rpm"
+        
       fi
 
       if [[ $(lsb_release -si) == "Fedora" ]]; then
-        ${SUDO} rpm -Uvh "https://download.postgresql.org/pub/repos/yum/11/fedora/fedora-$(lsb_release -sr)-x86_64/pgdg-fedora11-11-2.noarch.rpm"
+        ${SUDO} ${INSTALL} "https://download.postgresql.org/pub/repos/yum/11/fedora/fedora-$(lsb_release -sr)-x86_64/pgdg-fedora-repo-latest.noarch.rpm"
       fi
 
       ${SUDO} ${INSTALL} postgresql11-server postgresql11
@@ -1189,14 +1055,22 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
     echo -e "${ORANGE}${ARROW} Grant all on database $psqldb to user kemal${NC}"
     ${SUDO} -u postgres psql -c "GRANT ALL ON DATABASE $psqldb TO kemal;"
     # Import db files
-    echo -e "${ORANGE}${ARROW} Running channels.sql${NC}"
-    ${SUDO} -i -u postgres psql -d $psqldb -f ${REPO_DIR}/config/sql/channels.sql
-    echo -e "${ORANGE}${ARROW} Running videos.sql${NC}"
-    ${SUDO} -i -u postgres psql -d $psqldb -f ${REPO_DIR}/config/sql/videos.sql
-    echo -e "${ORANGE}${ARROW} Running channel_videos.sql${NC}"
-    ${SUDO} -i -u postgres psql -d $psqldb -f ${REPO_DIR}/config/sql/channel_videos.sql
-    echo -e "${ORANGE}${ARROW} Running users.sql${NC}"
-    ${SUDO} -i -u postgres psql -d $psqldb -f ${REPO_DIR}/config/sql/users.sql
+    if [[ -e ${REPO_DIR}/config/sql/channels.sql ]]; then
+      echo -e "${ORANGE}${ARROW} Running channels.sql${NC}"
+      ${SUDO} -i -u postgres psql -d $psqldb -f ${REPO_DIR}/config/sql/channels.sql
+    fi
+    if [[ -e ${REPO_DIR}/config/sql/videos.sql ]]; then
+      echo -e "${ORANGE}${ARROW} Running videos.sql${NC}"
+      ${SUDO} -i -u postgres psql -d $psqldb -f ${REPO_DIR}/config/sql/videos.sql
+    fi
+    if [[ -e ${REPO_DIR}/config/sql/channel_videos.sql ]]; then
+      echo -e "${ORANGE}${ARROW} Running channel_videos.sql${NC}"
+      ${SUDO} -i -u postgres psql -d $psqldb -f ${REPO_DIR}/config/sql/channel_videos.sql
+    fi
+    if [[ -e ${REPO_DIR}/config/sql/users.sql ]]; then
+      echo -e "${ORANGE}${ARROW} Running users.sql${NC}"
+      ${SUDO} -i -u postgres psql -d $psqldb -f ${REPO_DIR}/config/sql/users.sql
+    fi
     if [[ -e ${REPO_DIR}/config/sql/session_ids.sql ]]; then
       echo -e "${ORANGE}${ARROW} Running session_ids.sql${NC}"
       ${SUDO} -i -u postgres psql -d $psqldb -f ${REPO_DIR}/config/sql/session_ids.sql
@@ -1205,8 +1079,22 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
       echo -e "${ORANGE}${ARROW} Running annotations.sql${NC}"
       ${SUDO} -i -u postgres psql -d $psqldb -f ${REPO_DIR}/config/sql/annotations.sql
     fi
-    echo -e "${ORANGE}${ARROW} Running nonces.sql${NC}"
-    ${SUDO} -i -u postgres psql -d $psqldb -f ${REPO_DIR}/config/sql/nonces.sql
+    if [[ -e ${REPO_DIR}/config/sql/nonces.sql ]]; then
+      echo -e "${ORANGE}${ARROW} Running nonces.sql${NC}"
+      ${SUDO} -i -u postgres psql -d $psqldb -f ${REPO_DIR}/config/sql/nonces.sql
+    fi
+    # if [[ -e ${REPO_DIR}/config/sql/playlists.sql ]]; then
+    #   echo -e "${ORANGE}${ARROW} Running playlists.sql${NC}"
+    #   ${SUDO} -i -u postgres psql -d $psqldb -f ${REPO_DIR}/config/sql/playlists.sql
+    # fi
+    # if [[ -e ${REPO_DIR}/config/sql/playlist_videos.sql ]]; then
+    #   echo -e "${ORANGE}${ARROW} Running playlist_videos.sql${NC}"
+    #   ${SUDO} -i -u postgres psql -d $psqldb -f ${REPO_DIR}/config/sql/playlist_videos.sql
+    # fi
+    # if [[ -e ${REPO_DIR}/config/sql/privacy.sql ]]; then
+    #   echo -e "${ORANGE}${ARROW} Running privacy.sql${NC}"
+    #   ${SUDO} -i -u postgres psql -d $psqldb -f ${REPO_DIR}/config/sql/privacy.sql
+    # fi
     echo -e "${GREEN}${DONE} Finished Database section${NC}"
 
     update_config
@@ -1536,7 +1424,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
             gnupg2 \
             software-properties-common
           # Add Docker’s official GPG key:
-          curl -fsSL https://download.docker.com/linux/${DISTRO}/gpg | ${SUDO} apt-key add -
+          curl -fsSLk https://download.docker.com/linux/${DISTRO}/gpg | ${SUDO} apt-key add -
           # Verify that you now have the key with the fingerprint 9DC8 5822 9FC7 DD38 854A E2D8 8D81 803C 0EBF CD88, by searching for the last 8 characters of the fingerprint.
           ${SUDO} apt-key fingerprint 0EBFCD88
 
@@ -1600,7 +1488,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
 
         if [[ "$Docker_Compose" = 'y' ]]; then
           # download the latest version of Docker Compose:
-          ${SUDO} curl -L "https://github.com/docker/compose/releases/download/${Docker_Compose_Ver}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          ${SUDO} curl -Lk "https://github.com/docker/compose/releases/download/${Docker_Compose_Ver}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
           sleep 5
           # Apply executable permissions to the binary:
           ${SUDO} chmod +x /usr/local/bin/docker-compose
