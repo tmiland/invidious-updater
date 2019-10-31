@@ -217,7 +217,13 @@ What's done:
     - Changed in [1.3.8](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.8)
 - [X] Fix add external_port: to config.yml
     - Changed in [1.3.9](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.9)
-
+- [X] Removed ImageMagic dep.
+    - Added librsvg2 dep.
+    - Updated PostgreSQL repo url
+    - Bumped Docker Compose version
+    - Fixed PgSQL service status on CentOS/Fedora
+    - Added "check_tables: true" to config.yml
+    - Changed in [1.4.0](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.4.0)
 
 ### Possible options
 
