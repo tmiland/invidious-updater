@@ -79,7 +79,7 @@ SCRIPT_NAME="Invidious Update.sh"
 # Repo name
 REPO_NAME="tmiland/Invidious-Updater"
 # Set update check
-UPDATE_SCRIPT='check'
+UPDATE_SCRIPT='no'
 # Set username
 USER_NAME=invidious
 # Set userdir
@@ -573,7 +573,7 @@ exit_script() {
   echo -e '     /_/                                         ' "${NC}"
   #echo -e "${NC}"
   echo -e "
-   If you like this script, buy me a coffee ☕
+   This script runs on coffee ☕
 
    ${GREEN}${DONE}${NC} ${BBLUE}Paypal${NC} ${ARROW} ${ORANGE}https://paypal.me/milanddata${NC}
    ${GREEN}${DONE}${NC} ${BBLUE}BTC${NC}    ${ARROW} ${ORANGE}3MV69DmhzCqwUnbryeHrKDQxBaM724iJC2${NC}
@@ -582,7 +582,6 @@ exit_script() {
   echo -e "Documentation for this script is available here: ${ORANGE}\n${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
   echo -e "${ORANGE}${ARROW} Goodbye.${NC} ☺"
   echo ""
-  exit
 }
 
 # Update invidious_update.sh
@@ -1337,7 +1336,8 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
         if ${PKGCHK} docker-ce docker-ce-cli >/dev/null 2>&1; then
           if [[ $REBUILD_DOCKER = "y" ]]; then
             cd ${REPO_DIR}
-            docker-compose build
+            #docker-compose build
+            docker-compose up -d --build
             echo -e "${GREEN}${DONE} Rebuild done.${NC}"
             sleep 5
             cd ${CURRDIR}
@@ -1862,5 +1862,6 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
     ;;
   9) # Exit
     exit_script
+    exit
     ;;
 esac
