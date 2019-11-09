@@ -232,6 +232,8 @@ What's done:
     - Fixed PgSQL service status on CentOS/Fedora
     - Added "check_tables: true" to config.yml
     - Changed in [1.4.0](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.4.0)
+- [X] Added log to logrotation.
+    - Added in [1.4.1](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.4.1)
 
 ### Possible options
 
