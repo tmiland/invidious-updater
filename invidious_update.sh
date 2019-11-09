@@ -11,7 +11,7 @@
 ####                   Maintained by @tmiland                     ####
 ######################################################################
 
-version='1.4.0' # Must stay on line 14 for updater to fetch the numbers
+version='1.4.1' # Must stay on line 14 for updater to fetch the numbers
 
 #------------------------------------------------------------------------------#
 #
@@ -745,6 +745,22 @@ systemd_install() {
   fi
 }
 
+logrotate_install() {
+  if [ -d /etc/logrotate.d ]; then
+    echo "Adding logrotate configuration..."
+    echo "/home/invidious/invidious/invidious.log {
+    rotate 4
+    weekly
+    notifempty
+    missingok
+    compress
+    minsize 1048576
+}" | ${SUDO} tee /etc/logrotate.d/invidious.logrotate
+    chmod 0644 /etc/logrotate.d/invidious.logrotate
+    echo " (done)"
+  fi
+}
+
 # Get Crystal
 get_crystal() {
   if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
@@ -1109,6 +1125,8 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
     set_permissions
 
     systemd_install
+
+    logrotate_install
 
     show_install_banner
 
