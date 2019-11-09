@@ -161,7 +161,7 @@ Tested and working on:
 
 On the todo list:
 
-- [ ] Add Imagemagick (source) to Uninstall options
+- [X] Nothing to do.
 
 ## Done
 
