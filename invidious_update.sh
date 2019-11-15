@@ -1023,8 +1023,8 @@ case $OPTION in
     if [[ $(lsb_release -si) == "CentOS" || $(lsb_release -si) == "Fedora" ]]; then
 
       if [[ $(lsb_release -si) == "CentOS" ]]; then
-        ${SUDO} ${INSTALL} "https://download.postgresql.org/pub/repos/yum/11/redhat/rhel-$(lsb_release -sr)-x86_64/pgdg-redhat-repo-latest.noarch.rpm"
-        
+        ${SUDO} ${INSTALL} "https://download.postgresql.org/pub/repos/yum/11/redhat/rhel-7.7-x86_64/pgdg-redhat-repo-latest.noarch.rpm"
+
       fi
 
       if [[ $(lsb_release -si) == "Fedora" ]]; then
