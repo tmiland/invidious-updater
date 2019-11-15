@@ -11,7 +11,7 @@
 ####                   Maintained by @tmiland                     ####
 ######################################################################
 
-version='1.4.2' # Must stay on line 14 for updater to fetch the numbers
+version='1.4.3' # Must stay on line 14 for updater to fetch the numbers
 
 #------------------------------------------------------------------------------#
 #
@@ -600,7 +600,7 @@ update_updater() {
   if [[ $(get_updater_version "${SCRIPT_DIR}/$SCRIPT_FILENAME") < "${RELEASE_TAG}" ]]; then
     #if [[ $(get_updater_version "${SCRIPT_DIR}/${SCRIPT_FILENAME}") < $(get_updater_version "${tmpfile}") ]]; then
     #LV=$(get_updater_version "${tmpfile}")
-    if [ $UPDATE_SCRIPT = 'check' ]; then
+    if [ $UPDATE_SCRIPT = 'yes' ]; then
       show_update_banner
       echo -e "${RED}${ARROW} Do you want to update [Y/N?]${NC}"
       read -p "" -n 1 -r
