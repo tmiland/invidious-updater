@@ -5,7 +5,7 @@
                   ║                        Invidious Update.sh                        ║
                   ║               Automatic update script for Invidio.us              ║
                   ║                      Maintained by @tmiland                       ║
-                  ║                          version: 1.4.3                           ║
+                  ║                          version: 1.4.4                           ║
                   ╚═══════════════════════════════════════════════════════════════════╝
 ```
 [![GitHub release](https://img.shields.io/github/release/tmiland/Invidious-Updater.svg?style=for-the-badge)](https://github.com/tmiland/Invidious-Updater/releases)
@@ -234,6 +234,16 @@ What's done:
     - Changed in [1.4.0](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.4.0)
 - [X] Added log to logrotation.
     - Added in [1.4.1](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.4.1)
+- [X] Fixed CentOS postgresql repo url.
+    - Fixed in [1.4.2](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.4.2)
+- [X] Fixed Fixed script update function.
+    - Fixed in [1.4.3](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.4.3)
+- [X] Major rearragement of code into functions
+    - Added check if PostgreSQL is installed on CentOS/Fedora
+    - Added check for latest docker compose release tag from GitHub
+    - Changed permission check to when script is launched instead of each function
+    - Changed database import function
+    - Added/Changed in [1.4.4](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.4.4)
 
 ### Possible options
 
