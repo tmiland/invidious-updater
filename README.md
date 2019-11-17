@@ -163,87 +163,9 @@ On the todo list:
 
 - [X] Nothing to do.
 
-## Done
+## Changelog
 
-What's done:
-
-- [X] Add Uninstallation option 
-  - Added in version 1.1.4
-- [X] Rework the install prompts
-    - Done in version 1.1.5
-- [X] Add database migration option [migrate-scripts](https://github.com/omarroth/invidious/tree/master/config/migrate-scripts)
-- [X] Add database maintenance option [Database Information and Maintenance](https://github.com/omarroth/invidious/wiki/Database-Information-and-Maintenance)
-- [X] Add option to compile imagemagick from source [Issues with Captcha on Debian and Ubuntu](https://github.com/omarroth/invidious/wiki/Issues-with-Captcha-on-Debian-and-Ubuntu)
-   - Added in version 1.1.6
-   - Added support for Imagemagick 6 and 7, or keep current version.
-   - The captcha clock is working with 6 and 7, not with default pkg.
-- [X] Add Deb Packages
-- Support for auto-update check
-  - [X] For Script 
-    - Added in 1.1.7
-- [X] Rewrite the update procedure 
-  - Done in 1.2.2
-- [X] Add support to deploy in Docker 
-  - Added in [1.2.3](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.2.3)
-- [X] Added support for CentOS 7 
-  - Added in [1.2.4](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.2.4) (Docker option not supported yet)
-- [X] Add option for custom IP and Port 
-  - Added in [1.2.5](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.2.5)
-- [X] Add Docker support for CentOS 
-  - Added in [1.2.5](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.2.5)
-- [X] Add support for Fedora 
-  - Added in [1.2.6](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.2.6)
-- [X] Added prompt to install redhat-lsb/lsb-release if not installed.
-- [X] Added support for Ubuntu 18.10
-  - Added in [1.2.7](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.2.7)
-- [X] Changed script update function
-  - Changed in [1.2.8](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.2.8)
-- [X] Added service and docker status indicators
-  - Added in [1.2.9](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.2.9)
-- [X] Changed update procedure to avoid "Detached HEAD state"
-  - Changed in [1.3.0](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.0)
-- [X] Added external_port to config.yml [Configuration](https://github.com/omarroth/invidious/wiki/Configuration)
-    - Changed update check on first run to exclude notes (since curl might not be installed)
-    - external_port will be set to 443 if https_only = true, else < blank > (assuming use of reverse proxy with https.)
-    - Set default domain to invidio.us since option now is blank in config. (blank domain doesn't work on local instance)
-    - Created IRC Channel on Freenode.net/#InvidiousUpdater
-    - Changed in [1.3.1](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.1)
-- [X] Ignore config.yml on install and update.
-    - Changed in [1.3.2](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.2)
-- [X] Fix to move config out of the way on Ubuntu 16.04 (git ignored changes in 1.3.2)
-- [X] Added config backup
-    - Changed in [1.3.3](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.3)
-- [X] Replaced migration with Start, Stop or Restart
-    - Changed in [1.3.4](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.4)
-- [X] Support for database backup
-  - Added in [1.3.5](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.5)
-- [X] Fixed shards update cmd
-    - Changed in [1.3.6](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.6)
-- [X] Update Software Versions
-    - Changed in [1.3.7](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.7)
-- [X] Revert Shards update/install
-    - Changed in [1.3.8](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.8)
-- [X] Fix add external_port: to config.yml
-    - Changed in [1.3.9](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.3.9)
-- [X] Removed ImageMagic dep.
-    - Added librsvg2 dep.
-    - Updated PostgreSQL repo url
-    - Bumped Docker Compose version
-    - Fixed PgSQL service status on CentOS/Fedora
-    - Added "check_tables: true" to config.yml
-    - Changed in [1.4.0](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.4.0)
-- [X] Added log to logrotation.
-    - Added in [1.4.1](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.4.1)
-- [X] Fixed CentOS postgresql repo url.
-    - Fixed in [1.4.2](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.4.2)
-- [X] Fixed Fixed script update function.
-    - Fixed in [1.4.3](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.4.3)
-- [X] Major rearragement of code into functions
-    - Added check if PostgreSQL is installed on CentOS/Fedora
-    - Added check for latest docker compose release tag from GitHub
-    - Changed permission check to when script is launched instead of each function
-    - Changed database import function
-    - Added/Changed in [1.4.4](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.4.4)
+See Changelog: [Changelog](https://github.com/tmiland/Invidious-Updater/blob/master/CHANGELOG.md)
 
 ### Possible options
 
