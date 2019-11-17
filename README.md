@@ -148,7 +148,7 @@ Tested and working on:
   If you get permission issues, set selinux to permissive. 
   See how to here: [Disable SELinux or Set it to Permissive mode in Fedora 28 / 29, RHEL or CentOS](https://www.kaizenuslife.com/disable-or-set-selinux-permissive-in-fedora-rhel-or-cent-os/)
 
-  #### ***Postgresql 11 will be installed by default in both Fedora and CentOS.***
+  #### ***Postgresql 11 will be installed by default in both Fedora and CentOS. (If not already installed)***
   
 #### Latest install log - version: 1.4.4
 
