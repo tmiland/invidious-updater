@@ -37,17 +37,16 @@
 
 #### Download and execute the script:
 
+For latest release
 ```bash
-$ wget https://github.com/tmiland/Invidious-Updater/raw/master/invidious_update.sh
+$ wget https://github.com/tmiland/Invidious-Updater/releases/download/v1.4.4/invidious_update.sh
 $ chmod +x invidious_update.sh
 $ ./invidious_update.sh
 ```
-#### Or :
 
- ```bash
-$ cd /home/invidious
-$ git clone https://github.com/tmiland/Invidious-Updater.git
-$ cd Invidious-Updater
+For master branch
+```bash
+$ wget https://github.com/tmiland/Invidious-Updater/raw/master/invidious_update.sh
 $ chmod +x invidious_update.sh
 $ ./invidious_update.sh
 ```
@@ -59,13 +58,6 @@ $ ./invidious_update.sh
  $ ./invidious_update.sh -u
  
  ```
-
-#### Optionally
-
- ```bash
-$ ln -s /home/invidious/Invidious-Updater/invidious_update.sh /usr/bin/invidious-updater
-$ invidious-updater
-```
 
 ***Note: you will be prompted to enter root password***
 
