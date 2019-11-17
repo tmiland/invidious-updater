@@ -165,7 +165,7 @@ On the todo list:
 
 ## Changelog
 
-See Changelog: [Changelog](https://github.com/tmiland/Invidious-Updater/blob/master/CHANGELOG.md)
+See [Changelog](https://github.com/tmiland/Invidious-Updater/blob/master/CHANGELOG.md)
 
 ### Possible options
 
