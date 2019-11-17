@@ -44,7 +44,7 @@ version='1.4.4' # Must stay on line 14 for updater to fetch the numbers
 #set -o nounset
 #set -o xtrace
 #timestamp
-time_stamp=`date`
+time_stamp=$(date)
 # Detect absolute and full path as well as filename of this script
 cd "$(dirname $0)"
 CURRDIR=$(pwd)
