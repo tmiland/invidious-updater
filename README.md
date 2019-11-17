@@ -33,6 +33,11 @@
 | ------ | ------ |
 | [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/CentOS.png" height="140" width="280">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/CentOS.png) | [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Fedora.png" height="140" width="280">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Fedora.png)
 
+## Recommendation
+
+***It is recommended to use this script on a fresh installation to avoid unwanted complications.***
+  * I recommend a Debian 10 Droplet on [DigitalOcean](https://m.do.co/c/f1f2b475fca0)
+
 ## Installation
 
 #### Download and execute the script:
