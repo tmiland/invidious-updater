@@ -1,34 +1,10 @@
 
- ╔═══════════════════════════════════════════════════════════════════╗
- ║                        Invidious Update.sh                        ║
- ║               Automatic update script for Invidio.us              ║
- ║                      Maintained by @tmiland                       ║
- ║                          version: 1.3.9                           ║
- ╚═══════════════════════════════════════════════════════════════════╝
-
-Welcome to the Invidious Update.sh script.
-
-What do you want to do?
-
-  1) Install Invidious          5) Run Database Maintenance 
-  2) Update Invidious           6) Start, Stop or Restart   
-  3) Deploy with Docker         7) Uninstall Invidious      
-  4) Install Invidious service  8) Set up PostgreSQL Backup 
-  9) Exit                                                   
- 
-
-Documentation for this script is available here: 
- ➜ https://github.com/tmiland/Invidious-Updater
-
-Select an option [1-9]: 1
-
-
 
  ╔═══════════════════════════════════════════════════════════════════╗
  ║                        Invidious Update.sh                        ║
  ║               Automatic update script for Invidio.us              ║
  ║                      Maintained by @tmiland                       ║
- ║                          version: 1.3.9                           ║
+ ║                          version: 1.4.4                           ║
  ╚═══════════════════════════════════════════════════════════════════╝
 
 Thank you for using the Invidious Update.sh script.
@@ -61,73 +37,14 @@ You entered:
  ✔ https only    : false
  
 
-Choose your Imagemagick version :
-   1) System's Imagemagick
- 
-   (imagemagick/stable,now 8:6.9.7.4+dfsg-11+deb9u6 amd64 [installed]) 
-
-   2) Imagemagick 6.9.10-49 from source
-   3) Imagemagick 7.0.8-49 from source
-
-Select an option [1-3]: 1
 
 Invidious is ready to be installed, press any key to continue...
 
-OK
-deb https://dist.crystal-lang.org/apt crystal main
-Selecting previously unselected package libssl-dev:amd64.
-(Reading database ... 141773 files and directories currently installed.)
-Preparing to unpack .../libssl-dev_1.1.0j-1~deb9u1_amd64.deb ...
-Unpacking libssl-dev:amd64 (1.1.0j-1~deb9u1) ...
-Selecting previously unselected package crystal.
-Preparing to unpack .../crystal_0.29.0-1_amd64.deb ...
-Unpacking crystal (0.29.0-1) ...
-Setting up libssl-dev:amd64 (1.1.0j-1~deb9u1) ...
-Setting up crystal (0.29.0-1) ...
-Processing triggers for man-db (2.7.6.1-2) ...
-Selecting previously unselected package libxml2-dev:amd64.
-(Reading database ... 143050 files and directories currently installed.)
-Preparing to unpack .../libxml2-dev_2.9.4+dfsg1-2.2+deb9u2_amd64.deb ...
-Unpacking libxml2-dev:amd64 (2.9.4+dfsg1-2.2+deb9u2) ...
-Setting up libxml2-dev:amd64 (2.9.4+dfsg1-2.2+deb9u2) ...
-Processing triggers for man-db (2.7.6.1-2) ...
-Selecting previously unselected package libyaml-dev:amd64.
-(Reading database ... 143114 files and directories currently installed.)
-Preparing to unpack .../libyaml-dev_0.1.7-2_amd64.deb ...
-Unpacking libyaml-dev:amd64 (0.1.7-2) ...
-Setting up libyaml-dev:amd64 (0.1.7-2) ...
-Selecting previously unselected package libgmp-dev:amd64.
-(Reading database ... 143121 files and directories currently installed.)
-Preparing to unpack .../libgmp-dev_2%3a6.1.2+dfsg-1_amd64.deb ...
-Unpacking libgmp-dev:amd64 (2:6.1.2+dfsg-1) ...
-Setting up libgmp-dev:amd64 (2:6.1.2+dfsg-1) ...
-Selecting previously unselected package libreadline-dev:amd64.
-(Reading database ... 143134 files and directories currently installed.)
-Preparing to unpack .../libreadline-dev_7.0-3_amd64.deb ...
-Unpacking libreadline-dev:amd64 (7.0-3) ...
-Setting up libreadline-dev:amd64 (7.0-3) ...
-Selecting previously unselected package librsvg2-dev:amd64.
-(Reading database ... 143148 files and directories currently installed.)
-Preparing to unpack .../librsvg2-dev_2.40.16-1+b1_amd64.deb ...
-Unpacking librsvg2-dev:amd64 (2.40.16-1+b1) ...
-Setting up librsvg2-dev:amd64 (2.40.16-1+b1) ...
-Selecting previously unselected package libsqlite3-dev:amd64.
-(Reading database ... 143166 files and directories currently installed.)
-Preparing to unpack .../libsqlite3-dev_3.16.2-5+deb9u1_amd64.deb ...
-Unpacking libsqlite3-dev:amd64 (3.16.2-5+deb9u1) ...
-Setting up libsqlite3-dev:amd64 (3.16.2-5+deb9u1) ...
-➜ User invidious Not Found, adding user
 ➜ Downloading Invidious from GitHub
 Cloning into 'invidious'...
-remote: Enumerating objects: 12, done.
-remote: Counting objects: 100% (12/12), done.
-remote: Compressing objects: 100% (12/12), done.
-remote: Total 10168 (delta 0), reused 2 (delta 0), pack-reused 10156
-Receiving objects: 100% (10168/10168), 14.43 MiB | 5.70 MiB/s, done.
-Resolving deltas: 100% (6441/6441), done.
-Branch master set up to track remote branch master from origin.
 Reset branch 'master'
-Your branch is up-to-date with 'origin/master'.
+Branch 'master' set up to track remote branch 'master' from 'origin'.
+Your branch is up to date with 'origin/master'.
 ➜ Done
 /home/invidious
 Synchronizing state of postgresql.service with SysV service script with /lib/systemd/systemd-sysv-install.
@@ -138,30 +55,40 @@ CREATE ROLE
 CREATE DATABASE
 ➜ Grant all on database invidious to user kemal
 GRANT
-➜ Running channels.sql
+➜ Running /home/invidious/invidious/config/sql/annotations.sql 
+CREATE TABLE
+GRANT
+➜ Running /home/invidious/invidious/config/sql/channels.sql 
 CREATE TABLE
 GRANT
 CREATE INDEX
-➜ Running videos.sql
+➜ Running /home/invidious/invidious/config/sql/channel_videos.sql 
 CREATE TABLE
 GRANT
 CREATE INDEX
-➜ Running channel_videos.sql
+➜ Running /home/invidious/invidious/config/sql/nonces.sql 
 CREATE TABLE
 GRANT
 CREATE INDEX
-➜ Running users.sql
+➜ Running /home/invidious/invidious/config/sql/playlists.sql 
+psql:/home/invidious/invidious/config/sql/playlists.sql:16: ERROR:  type "privacy" does not exist
+LINE 10:     privacy privacy,
+                     ^
+psql:/home/invidious/invidious/config/sql/playlists.sql:18: ERROR:  relation "public.playlists" does not exist
+➜ Running /home/invidious/invidious/config/sql/playlist_videos.sql 
+psql:/home/invidious/invidious/config/sql/playlist_videos.sql:17: ERROR:  relation "playlists" does not exist
+psql:/home/invidious/invidious/config/sql/playlist_videos.sql:19: ERROR:  relation "public.playlist_videos" does not exist
+➜ Running /home/invidious/invidious/config/sql/privacy.sql 
+CREATE TYPE
+➜ Running /home/invidious/invidious/config/sql/session_ids.sql 
 CREATE TABLE
 GRANT
 CREATE INDEX
-➜ Running session_ids.sql
+➜ Running /home/invidious/invidious/config/sql/users.sql 
 CREATE TABLE
 GRANT
 CREATE INDEX
-➜ Running annotations.sql
-CREATE TABLE
-GRANT
-➜ Running nonces.sql
+➜ Running /home/invidious/invidious/config/sql/videos.sql 
 CREATE TABLE
 GRANT
 CREATE INDEX
@@ -175,13 +102,17 @@ Fetching https://github.com/kemalcr/kemal.git
 Fetching https://github.com/luislavena/radix.git
 Fetching https://github.com/jeromegn/kilt.git
 Fetching https://github.com/crystal-loot/exception_page.git
-Installing pg (0.16.1)
-Installing db (0.5.1)
-Installing sqlite3 (0.12.0)
-Installing kemal (0.25.2)
+Fetching https://github.com/ysbaddaden/pool.git
+Fetching https://github.com/omarroth/protodec.git
+Installing pg (0.19.0)
+Installing db (0.7.0)
+Installing sqlite3 (0.14.0)
+Installing kemal (0.26.0)
 Installing radix (0.3.9)
 Installing kilt (0.4.0)
 Installing exception_page (0.1.2)
+Installing pool (0.2.3)
+Installing protodec (0.1.2)
 Fetching https://github.com/will/crystal-pg.git
 Fetching https://github.com/crystal-lang/crystal-db.git
 Fetching https://github.com/crystal-lang/crystal-sqlite3.git
@@ -189,31 +120,45 @@ Fetching https://github.com/kemalcr/kemal.git
 Fetching https://github.com/luislavena/radix.git
 Fetching https://github.com/jeromegn/kilt.git
 Fetching https://github.com/crystal-loot/exception_page.git
-Using pg (0.16.1)
-Using db (0.5.1)
-Using sqlite3 (0.12.0)
-Using kemal (0.25.2)
+Fetching https://github.com/ysbaddaden/pool.git
+Fetching https://github.com/omarroth/protodec.git
+Using pg (0.19.0)
+Using db (0.7.0)
+Using sqlite3 (0.14.0)
+Using kemal (0.26.0)
 Using radix (0.3.9)
 Using kilt (0.4.0)
 Using exception_page (0.1.2)
+Using pool (0.2.3)
+Using protodec (0.1.2)
 ✔ Invidious service has been successfully installed!
 ● invidious.service - Invidious (An alternative YouTube front-end)
    Loaded: loaded (/lib/systemd/system/invidious.service; enabled; vendor preset: enabled)
-   Active: active (running) since Sat 2019-06-29 13:00:13 CEST; 74ms ago
- Main PID: 16167 (invidious)
-    Tasks: 1 (limit: 4915)
+   Active: active (running) since Sun 2019-11-17 09:41:01 CET; 149ms ago
+ Main PID: 14089 ((nvidious))
+    Tasks: 0 (limit: 2339)
+   Memory: 0B
    CGroup: /system.slice/invidious.service
-           └─16167 /home/invidious/invidious/invidious -b localhost -p 3000 -…og
+           └─14089 (nvidious)
 
-Jun 29 13:00:13 debian9-univ systemd[1]: Started Invidious (An alternative Y…d).
-Hint: Some lines were ellipsized, use -l to show in full.
+Nov 17 09:41:01 debian10-uni systemd[1]: Started Invidious (An alternative YouTube front-end).
+Adding logrotate configuration...
+/home/invidious/invidious/invidious.log {
+    rotate 4
+    weekly
+    notifempty
+    missingok
+    compress
+    minsize 1048576
+}
+ (done)
 
 
  ╔═══════════════════════════════════════════════════════════════════╗
  ║                        Invidious Update.sh                        ║
  ║               Automatic update script for Invidio.us              ║
  ║                      Maintained by @tmiland                       ║
- ║                          version: 1.3.9                           ║
+ ║                          version: 1.4.4                           ║
  ╚═══════════════════════════════════════════════════════════════════╝
 
 
@@ -231,15 +176,13 @@ Thank you for using the Invidious Update.sh script.
 Documentation for this script is available here: 
  ➜ https://github.com/tmiland/Invidious-Updater
 
-➜ Checking for updates...
-✔ No update available.
 
 
  ╔═══════════════════════════════════════════════════════════════════╗
  ║                        Invidious Update.sh                        ║
  ║               Automatic update script for Invidio.us              ║
  ║                      Maintained by @tmiland                       ║
- ║                          version: 1.3.9                           ║
+ ║                          version: 1.4.4                           ║
  ╚═══════════════════════════════════════════════════════════════════╝
 
 Welcome to the Invidious Update.sh script.
@@ -259,3 +202,4 @@ Documentation for this script is available here:
  ➜ https://github.com/tmiland/Invidious-Updater
 
 Select an option [1-9]: 
+
