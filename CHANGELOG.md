@@ -77,3 +77,5 @@
     - Changed permission check to when script is launched instead of each function
     - Changed database import function
     - Added/Changed in [1.4.4](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.4.4)
+- [X] Added support for Linux Mint.
+    - Added in [1.4.5](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.4.5)
