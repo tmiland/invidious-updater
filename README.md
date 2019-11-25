@@ -44,7 +44,7 @@
 
 For latest release
 ```bash
-$ wget https://github.com/tmiland/Invidious-Updater/releases/download/v1.4.4/invidious_update.sh
+$ wget https://github.com/tmiland/Invidious-Updater/releases/download/v1.4.5/invidious_update.sh
 $ chmod +x invidious_update.sh
 $ ./invidious_update.sh
 ```
