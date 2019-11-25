@@ -144,6 +144,8 @@ Tested and working on:
 - [X] On Bash on Debian on Windows (in Gnome-Boxes)
   - [X] Systemd not working
   - [X] Docker option not working
+- [X] Tested on Linux Mint.
+  - See [#15](https://github.com/tmiland/Invidious-Updater/issues/15)
   
   If you get permission issues, set selinux to permissive. 
   See how to here: [Disable SELinux or Set it to Permissive mode in Fedora 28 / 29, RHEL or CentOS](https://www.kaizenuslife.com/disable-or-set-selinux-permissive-in-fedora-rhel-or-cent-os/)
