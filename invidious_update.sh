@@ -175,7 +175,7 @@ PURGE=""
 CLEAN=""
 PKGCHK=""
 PGSQL_SERVICE=""
-if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
+if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" || $(lsb_release -si) == "LinuxMint" ]]; then
   export DEBIAN_FRONTEND=noninteractive
   SUDO="sudo"
   UPDATE="apt-get -o Dpkg::Progress-Fancy="1" update -qq"
@@ -417,7 +417,7 @@ pgbackup() {
   cd pgbackup
   if [[ $(lsb_release -si) == "CentOS" || $(lsb_release -si) == "Fedora" ]]; then
     pgsqlConfigPath=/var/lib/pgsql/11/data
-  elif [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
+  elif [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" || $(lsb_release -si) == "LinuxMint" ]]; then
     pgsqlConfigPath=/etc/postgresql/9.6/main
   else
     echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
@@ -840,7 +840,7 @@ logrotate_install() {
 
 # Get Crystal
 get_crystal() {
-  if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
+  if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" || $(lsb_release -si) == "LinuxMint" ]]; then
     if [[ ! -e /etc/apt/sources.list.d/crystal.list ]]; then
       #apt-key adv --keyserver keys.gnupg.net --recv-keys 09617FD37CC06B54
       curl -sLk "https://keybase.io/crystal/pgp_keys.asc" | ${SUDO} apt-key add -
@@ -1399,7 +1399,7 @@ deploy_with_docker() {
       echo ""
       # Update the apt package index:
       ${SUDO} ${UPDATE}
-      if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
+      if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" || $(lsb_release -si) == "LinuxMint" ]]; then
         DISTRO=$(printf '%s\n' $(lsb_release -si) | LC_ALL=C tr '[:upper:]' '[:lower:]')
         #Install packages to allow apt to use a repository over HTTPS:
         ${SUDO} ${INSTALL} \
@@ -1773,7 +1773,7 @@ uninstall_invidious() {
     echo -e "${ORANGE}${ARROW} Removing invidious files and modules files.${NC}"
     echo ""
 
-    if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
+    if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" || $(lsb_release -si) == "LinuxMint" ]]; then
       rm -r \
         /lib/systemd/system/${SERVICE_NAME} \
         /etc/apt/sources.list.d/crystal.list
@@ -1824,7 +1824,7 @@ uninstall_invidious() {
       echo ""
       echo -e "${ORANGE}${ARROW} User $USER_NAME Found, removing user and files${NC}"
       echo ""
-      if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" ]]; then
+      if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" || $(lsb_release -si) == "LinuxMint" ]]; then
         deluser --remove-home $USER_NAME
       fi
       if [[ $(lsb_release -si) == "CentOS" || $(lsb_release -si) == "Fedora" ]]; then
