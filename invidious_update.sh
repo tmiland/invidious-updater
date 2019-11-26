@@ -128,6 +128,10 @@ if ! lsb_release -si >/dev/null 2>&1; then
       PKGCMD="apt"
       LSB=lsb-release
       ;;
+    LinuxMint*)
+      PKGCMD="apt"
+      LSB=lsb-release
+      ;;
     CentOS*)
       PKGCMD="yum"
       LSB=redhat-lsb
