@@ -43,8 +43,16 @@
 #### Download and execute the script:
 
 For latest release
+
 ```bash
-$ wget https://github.com/tmiland/Invidious-Updater/releases/download/v1.4.5/invidious_update.sh
+curl -s https://api.github.com/repos/tmiland/Invidious-Updater/releases/latest \
+| grep "browser_download_url.*sh" \
+| cut -d : -f 2,3 \
+| tr -d \" \
+| wget -qi -
+```
+
+```bash
 $ chmod +x invidious_update.sh
 $ ./invidious_update.sh
 ```
