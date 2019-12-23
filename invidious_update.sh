@@ -189,7 +189,7 @@ if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" || $(lsb_
   CLEAN="apt-get clean && apt-get autoremove -qq"
   PKGCHK="dpkg -s"
   # Pre-install packages
-  PRE_INSTALL_PKGS="apt-transport-https git curl sudo"
+  PRE_INSTALL_PKGS="apt-transport-https git curl sudo gnupg"
   # Install packages
   INSTALL_PKGS="crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-bin postgresql libsqlite3-dev"
   #Uninstall packages
