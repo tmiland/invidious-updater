@@ -11,7 +11,7 @@
 ####                   Maintained by @tmiland                     ####
 ######################################################################
 
-version='1.4.5' # Must stay on line 14 for updater to fetch the numbers
+version='1.4.6' # Must stay on line 14 for updater to fetch the numbers
 
 #------------------------------------------------------------------------------#
 #
@@ -117,28 +117,34 @@ if ! lsb_release -si >/dev/null 2>&1; then
     DISTRO=$(cat /etc/issue.net)
   elif [[ -f /etc/redhat-release ]]; then
     DISTRO=$(cat /etc/redhat-release)
+  elif [[ -f /etc/os-release ]]; then
+    DISTRO=$(cat /etc/os-release | grep "PRETTY_NAME" | sed 's/PRETTY_NAME=//g' | sed 's/["]//g' | awk '{print $1}')
   fi
 
   case "$DISTRO" in
     Debian*)
-      PKGCMD="apt-get"
+      PKGCMD="apt-get -o Dpkg::Progress-Fancy="1" install -qq"
       LSB=lsb-release
       ;;
     Ubuntu*)
-      PKGCMD="apt"
+      PKGCMD="apt-get -o Dpkg::Progress-Fancy="1" install -qq"
       LSB=lsb-release
       ;;
     LinuxMint*)
-      PKGCMD="apt"
+      PKGCMD="apt-get -o Dpkg::Progress-Fancy="1" install -qq"
       LSB=lsb-release
       ;;
     CentOS*)
-      PKGCMD="yum"
+      PKGCMD="yum install -y"
       LSB=redhat-lsb
       ;;
     Fedora*)
-      PKGCMD="dnf"
+      PKGCMD="dnf install -y"
       LSB=redhat-lsb
+      ;;
+    Arch*)
+      PKGCMD="yes | LC_ALL=en_US.UTF-8 pacman -S"
+      LSB=lsb-release
       ;;
     *) echo -e "${RED}${ERROR} unknown distro: '$DISTRO'${NC}" ; exit 1 ;;
   esac
@@ -152,13 +158,7 @@ if ! lsb_release -si >/dev/null 2>&1; then
   case $answer in
     [Yy]* )
       echo -e "${GREEN}${ARROW} Installing ${LSB} on ${DISTRO}...${NC}"
-      # Make sure that the script runs with root permissions
-      if [[ "$EUID" != 0 ]]; then
-        echo -e "${RED}${ERROR} This action needs root permissions.${NC} Please enter your root password...";
-        su -s "$(which bash)" -c "${PKGCMD} install -y ${LSB}"
-      else
-        echo -e "${RED}${ERROR} Error: could not install ${LSB}!${NC}"
-      fi
+      su -s "$(which bash)" -c "${PKGCMD} ${LSB}" || echo -e "${RED}${ERROR} Error: could not install ${LSB}!${NC}"
       echo -e "${GREEN}${DONE} Done${NC}"
       sleep 3
       cd ${CURRDIR}
@@ -228,6 +228,22 @@ elif [[ $(lsb_release -si) == "Fedora" ]]; then
   UNINSTALL_PKGS="crystal openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-tools sqlite-devel"
   # PostgreSQL Service
   PGSQL_SERVICE="postgresql-11.service"
+elif [[ $(lsb_release -si) == "Arch" ]]; then
+  SUDO="sudo"
+  UPDATE="pacman -Syu"
+  INSTALL="pacman -S --noconfirm --needed"
+  UNINSTALL="pacman -R"
+  PURGE="pacman -Rs"
+  CLEAN="pacman -Sc"
+  PKGCHK="pacman -Qs"
+  # Pre-install packages
+  PRE_INSTALL_PKGS="git curl sudo"
+  # Install packages
+  INSTALL_PKGS="base-devel shards crystal librsvg postgresql"
+  #Uninstall packages
+  UNINSTALL_PKGS="base-devel shards crystal librsvg"
+  # PostgreSQL Service
+  PGSQL_SERVICE="postgresql.service"
 else
   echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
   exit 1;
@@ -857,7 +873,7 @@ get_crystal() {
   elif [[ $(lsb_release -si) == "Darwin" ]]; then
     exit 1;
   elif [[ $(lsb_release -si) == "Arch" ]]; then
-    exit 1;
+    echo "Arch Linux... Skipping manual crystal install"
   else
     echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
     exit 1;
@@ -1129,6 +1145,9 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
       ${SUDO} chmod 600 /var/lib/pgsql/11/data/postgresql.conf
       ${SUDO} chmod 600 /var/lib/pgsql/11/data/pg_hba.conf
     fi
+  fi
+  if [[ $(lsb_release -si) == "Arch" ]]; then
+    su - postgres -c "initdb --locale en_US.UTF-8 -D '/var/lib/postgres/data'"
   fi
   ${SUDO} systemctl enable ${PGSQL_SERVICE}
   sleep 1
