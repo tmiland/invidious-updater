@@ -159,6 +159,7 @@ Tested and working on:
 - [X] Tested on Linux Mint.
   - See [#15](https://github.com/tmiland/Invidious-Updater/issues/15)
 - [X] Tested on Arch Linux
+  - Docker option not tested yet.
   
   If you get permission issues, set selinux to permissive. 
   See how to here: [Disable SELinux or Set it to Permissive mode in Fedora 28 / 29, RHEL or CentOS](https://www.kaizenuslife.com/disable-or-set-selinux-permissive-in-fedora-rhel-or-cent-os/)
@@ -195,7 +196,6 @@ Ideas:
   * Docker support
     - [OS requirements](https://docs.docker.com/install/linux/docker-ce/fedora/)
 * Arch Linux
-  - Docker option not tested yet.
 
 ## Credits
 - Code is mixed and and customized from these sources:
