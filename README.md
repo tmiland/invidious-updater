@@ -5,7 +5,7 @@
                   ║                        Invidious Update.sh                        ║
                   ║               Automatic update script for Invidio.us              ║
                   ║                      Maintained by @tmiland                       ║
-                  ║                          version: 1.4.5                           ║
+                  ║                          version: 1.4.7                           ║
                   ╚═══════════════════════════════════════════════════════════════════╝
 ```
 [![GitHub release](https://img.shields.io/github/release/tmiland/Invidious-Updater.svg?style=for-the-badge)](https://github.com/tmiland/Invidious-Updater/releases)
@@ -159,7 +159,7 @@ Tested and working on:
 - [X] Tested on Linux Mint.
   - See [#15](https://github.com/tmiland/Invidious-Updater/issues/15)
 - [X] Tested on Arch Linux
-  - Docker option not tested yet.
+  - [X] Docker option tested and working
   
   If you get permission issues, set selinux to permissive. 
   See how to here: [Disable SELinux or Set it to Permissive mode in Fedora 28 / 29, RHEL or CentOS](https://www.kaizenuslife.com/disable-or-set-selinux-permissive-in-fedora-rhel-or-cent-os/)
