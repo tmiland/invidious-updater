@@ -11,7 +11,7 @@
 ####                   Maintained by @tmiland                     ####
 ######################################################################
 
-version='1.4.6' # Must stay on line 14 for updater to fetch the numbers
+version='1.4.7' # Must stay on line 14 for updater to fetch the numbers
 
 #------------------------------------------------------------------------------#
 #
@@ -1278,8 +1278,21 @@ deploy_with_docker() {
       done
 
       docker_repo_chk
+      if [[ $(lsb_release -si) == "Debian"    ||
+            $(lsb_release -si) == "Ubuntu"    ||
+            $(lsb_release -si) == "LinuxMint" ||
+            $(lsb_release -si) == "CentOS"    ||
+            $(lsb_release -si) == "Fedora"
+          ]]; then
+          DOCKERCHK=$PKGCHK docker-ce docker-ce-cli
+        elif [[ $(lsb_release -si) == "Arch" ]]; then
+          DOCKERCHK=$PKGCHK docker
+        else
+          echo -e "${RED}${ERROR} Docker is not installed... ${NC}"
+      fi
 
-      if ${PKGCHK} docker-ce docker-ce-cli >/dev/null 2>&1; then
+      if ${DOCKERCHK} >/dev/null 2>&1; then
+        
         if [[ $BUILD_DOCKER = "y" ]]; then
           cd ${REPO_DIR}
           docker-compose up -d
@@ -1341,7 +1354,7 @@ deploy_with_docker() {
 
       docker_repo_chk
 
-      if ${PKGCHK} docker-ce docker-ce-cli >/dev/null 2>&1; then
+      if ${DOCKERCHK} >/dev/null 2>&1; then
         if [[ $REBUILD_DOCKER = "y" ]]; then
           cd ${REPO_DIR}
           #docker-compose build
@@ -1369,7 +1382,7 @@ deploy_with_docker() {
 
       docker_repo_chk
 
-      if ${PKGCHK} docker-ce docker-ce-cli >/dev/null 2>&1; then
+      if ${DOCKERCHK} >/dev/null 2>&1; then
         if [[ $DEL_REBUILD_DOCKER = "y" ]]; then
           cd ${REPO_DIR}
           docker-compose down
@@ -1391,31 +1404,31 @@ deploy_with_docker() {
       exit
       ;;
     5) # Install Docker CE
-      # chk_permissions
+      DOCKER_VER=stable
       echo ""
       echo "This will install Docker CE."
       echo ""
-      echo "Do you want to install Docker stable or nightly?"
-      echo "   1) Stable $DOCKER_STABLE_VER"
-      echo "   2) Nightly $DOCKER_NIGHTLY_VER"
-      echo "   2) Test $DOCKER_NIGHTLY_VER"
-      echo ""
-
-      while [[ $DOCKER_VER != "1" && $DOCKER_VER != "2" && $DOCKER_VER != "3" ]]; do
-        read -p "Select an option [1-3]: " DOCKER_VER
-      done
-
-      case $DOCKER_VER in
-        1)
-          DOCKER_VER=stable
-          ;;
-        2)
-          DOCKER_VER=nightly
-          ;;
-        3)
-          DOCKER_VER=test
-          ;;
-      esac
+      # echo "Do you want to install Docker stable or nightly?"
+      # echo "   1) Stable $DOCKER_STABLE_VER"
+      # echo "   2) Nightly $DOCKER_NIGHTLY_VER"
+      # echo "   3) Test $DOCKER_TEST_VER"
+      # echo ""
+      # 
+      # while [[ $DOCKER_VER != "1" && $DOCKER_VER != "2" && $DOCKER_VER != "3" ]]; do
+      #   read -p "Select an option [1-3]: " DOCKER_VER
+      # done
+      # 
+      # case $DOCKER_VER in
+      #   1)
+      #     DOCKER_VER=stable
+      #     ;;
+      #   2)
+      #     DOCKER_VER=nightly
+      #     ;;
+      #   3)
+      #     DOCKER_VER=test
+      #     ;;
+      # esac
 
       echo ""
       read -n1 -r -p "Docker is ready to be installed, press any key to continue..."
@@ -1482,6 +1495,12 @@ deploy_with_docker() {
         ${SUDO} systemctl start docker
         # Verify that Docker CE is installed correctly by running the hello-world image.
         ${SUDO} docker run hello-world
+      elif [[ $(lsb_release -si) == "Arch" ]]; then
+        ${SUDO} ${INSTALL} docker
+        # Enable Docker.
+        ${SUDO} systemctl enable docker
+        # Start Docker.
+        ${SUDO} systemctl start docker
       else
         echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
         exit 1;
