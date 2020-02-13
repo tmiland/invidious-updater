@@ -162,7 +162,7 @@ Tested and working on:
   - [X] Docker option tested and working
   
   If you get permission issues, set selinux to permissive. 
-  See how to here: [Disable SELinux or Set it to Permissive mode in Fedora 28 / 29, RHEL or CentOS](https://www.kaizenuslife.com/disable-or-set-selinux-permissive-in-fedora-rhel-or-cent-os/)
+  See how to here: [How do I enable or disable SELinux ?](https://fedoraproject.org/wiki/SELinux_FAQ#How_do_I_enable_or_disable_SELinux_.3F)
 
   #### ***Postgresql 11 will be installed by default in both Fedora and CentOS. (If not already installed)***
   
