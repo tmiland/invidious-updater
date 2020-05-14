@@ -112,6 +112,12 @@ external_port=
 COMPOSE_REPO_NAME="docker/compose"
 
 # Distro support
+ARCH_CHK=$(uname -m)
+if [ ! ${ARCH_CHK} == 'x86_64' ]; then
+  echo -e "${RED}${ERROR} Error: Sorry, your OS ($ARCH_CHK) is not supported.${NC}"
+  exit 1;
+fi
+
 if ! lsb_release -si >/dev/null 2>&1; then
   if [[ -f /etc/debian_version ]]; then
     DISTRO=$(cat /etc/issue.net)
