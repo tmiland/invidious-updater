@@ -83,3 +83,5 @@
     - Added in [1.4.6](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.4.6)
 - [X] Added support for Docker in Arch Linux
     - Added in [1.4.7](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.4.7)
+- [X] Added option to add swap space
+    - Added in [1.4.8](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.4.8)
