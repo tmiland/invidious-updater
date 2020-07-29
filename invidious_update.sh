@@ -11,7 +11,7 @@
 ####                   Maintained by @tmiland                     ####
 ######################################################################
 
-version='1.4.7' # Must stay on line 14 for updater to fetch the numbers
+version='1.4.8' # Must stay on line 14 for updater to fetch the numbers
 
 #------------------------------------------------------------------------------#
 #
@@ -267,34 +267,14 @@ chk_permissions() {
 }
 
 add_swap() {
-  # size of swapfile in megabytes
-  swapsize=2048
-
-  echo ""
-  read -n1 -r -p "This will add ${swapsize}M /swapfile, press any key to continue..."
-  echo ""
-
-  # Check if swap file already exist
-  grep -q "swapfile" /etc/fstab
-
-  # if not, then create it
-  if [ $? -ne 0 ]; then
-  	echo -e "${RED}${ERROR} Swapfile not found. Adding swapfile.${NC}"
-  	fallocate -l ${swapsize}M /swapfile
-  	chmod 600 /swapfile
-  	mkswap /swapfile
-  	swapon /swapfile
-    cp -rp /etc/fstab /etc/fstab.bak
-  	echo "/swapfile none swap defaults 0 0" >> /etc/fstab
-    cp -rp /etc/fstab /etc/sysctl.conf.bak
-    sudo echo 'vm.swappiness=10' >> /etc/sysctl.conf
-    sudo echo 'vm.vfs_cache_pressure=50' >> /etc/sysctl.conf
-    echo -e "${GREEN}${DONE} Successfully added ${swapsize}M swapspace ${NC}"
-    swapon --show
+  if [[ $(command -v 'curl') ]]; then
+    source <(curl -sSLf https://raw.githubusercontent.com/tmiland/swap-add/master/swap-add.sh)
+  elif [[ $(command -v 'wget') ]]; then
+    . <(wget -qO - https://raw.githubusercontent.com/tmiland/swap-add/master/swap-add.sh)
   else
-  	echo -e "${ORANGE}${WARNING} Swapfile found. No changes made.${NC}"
+    echo -e "${RED}${ERROR} This script requires curl or wget.\nProcess aborted${NC}"
+    exit 0
   fi
-
   sleep 3
   cd ${CURRDIR}
   ./${SCRIPT_FILENAME}
