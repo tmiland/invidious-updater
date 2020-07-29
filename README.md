@@ -23,7 +23,7 @@
 * Uninstall Invidious
 
 ## Screenshots
-![screenshot](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/version_1.2.9.png)
+![screenshot](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/version_1.4.8.png)
 
 | Debian | Ubuntu |
 | ------ | ------ |
