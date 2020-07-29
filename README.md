@@ -5,7 +5,7 @@
                   ║                        Invidious Update.sh                        ║
                   ║               Automatic update script for Invidio.us              ║
                   ║                      Maintained by @tmiland                       ║
-                  ║                          version: 1.4.7                           ║
+                  ║                          version: 1.4.8                           ║
                   ╚═══════════════════════════════════════════════════════════════════╝
 ```
 [![GitHub release](https://img.shields.io/github/release/tmiland/Invidious-Updater.svg?style=for-the-badge)](https://github.com/tmiland/Invidious-Updater/releases)
@@ -17,7 +17,7 @@
 * Install Invidious
 * Update Invidious
 * Deploy Invidious with Docker
-* Install Invidious service
+* Add Swap Space
 * Run database maintenance
 * Start, Stop or Restart Invidious
 * Uninstall Invidious
@@ -114,9 +114,10 @@ sudo passwd root
    * 4) Delete data and rebuild
    * 5) Install Docker CE
 
-4. Install Invidious service
+4. Add Swap Space
 
-   * Setup Systemd Service
+   * Easy option to add Swap Space from [external script](https://github.com/tmiland/swap-add/blob/master/swap-add.sh)
+    Credit: [swap-add](https://github.com/nanqinlang-script/swap-add)
 
 5. Run database maintenance
 
@@ -129,7 +130,11 @@ sudo passwd root
 
 [![asciicast](https://asciinema.org/a/NexOg7FcaGVMLZ2iZwwiT4luo.svg)](https://asciinema.org/a/NexOg7FcaGVMLZ2iZwwiT4luo?t=5)
 
-8. Exit
+8. Set up PostgreSQL Backup
+  
+   * Set up [pgbackup - Automated PostgreSQL Backup on Linux](https://github.com/tmiland/pgbackup)
+
+9. Exit
 
    * Exits the script
 
