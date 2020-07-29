@@ -266,6 +266,40 @@ chk_permissions() {
   fi
 }
 
+add_swap() {
+  # size of swapfile in megabytes
+  swapsize=2048
+
+  echo ""
+  read -n1 -r -p "This will add ${swapsize}M /swapfile, press any key to continue..."
+  echo ""
+
+  # Check if swap file already exist
+  grep -q "swapfile" /etc/fstab
+
+  # if not, then create it
+  if [ $? -ne 0 ]; then
+  	echo -e "${RED}${ERROR} Swapfile not found. Adding swapfile.${NC}"
+  	fallocate -l ${swapsize}M /swapfile
+  	chmod 600 /swapfile
+  	mkswap /swapfile
+  	swapon /swapfile
+    cp -rp /etc/fstab /etc/fstab.bak
+  	echo "/swapfile none swap defaults 0 0" >> /etc/fstab
+    cp -rp /etc/fstab /etc/sysctl.conf.bak
+    sudo echo 'vm.swappiness=10' >> /etc/sysctl.conf
+    sudo echo 'vm.vfs_cache_pressure=50' >> /etc/sysctl.conf
+    echo -e "${GREEN}${DONE} Successfully added ${swapsize}M swapspace ${NC}"
+    swapon --show
+  else
+  	echo -e "${ORANGE}${WARNING} Swapfile found. No changes made.${NC}"
+  fi
+
+  sleep 3
+  cd ${CURRDIR}
+  ./${SCRIPT_FILENAME}
+}
+
 ## Update invidious_update.sh
 ## Source: ghacks-user.js updater for macOS and Linux
 # Download method priority: curl -> wget
@@ -542,17 +576,6 @@ show_install_banner() {
   echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
 }
 
-# Systemd install banner
-show_systemd_install_banner() {
-  #clear
-  header
-  echo "Thank you for using the ${SCRIPT_NAME} script."
-  echo ""
-  echo "Invidious systemd install done."
-  echo ""
-  echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
-}
-
 # Maintenance banner
 show_maintenance_banner() {
   #clear
@@ -583,7 +606,7 @@ show_banner() {
   echo "  1) Install Invidious          5) Run Database Maintenance "
   echo "  2) Update Invidious           6) Start, Stop or Restart   "
   echo "  3) Deploy with Docker         7) Uninstall Invidious      "
-  echo "  4) Install Invidious service  8) Set up PostgreSQL Backup "
+  echo "  4) Add Swap Space             8) Set up PostgreSQL Backup "
   echo "  9) Exit                                                   "
   echo "${SHOW_STATUS} ${SHOW_DOCKER_STATUS}"
   echo ""
@@ -1605,38 +1628,6 @@ database_maintenance() {
   #exit 1
 }
 
-install_invidious_service() {
-  # chk_permissions
-  # Setup Systemd Service
-  if ( ! systemctl -q is-active ${SERVICE_NAME})
-  then
-    cp ${REPO_DIR}/${SERVICE_NAME} /lib/systemd/system/${SERVICE_NAME}
-    # Enable invidious start at boot
-    ${SUDO} systemctl enable ${SERVICE_NAME}
-    # Reload Systemd
-    ${SUDO} systemctl daemon-reload
-    # Restart Invidious
-    ${SUDO} systemctl start ${SERVICE_NAME}
-  fi
-
-  if ( systemctl -q is-active ${SERVICE_NAME})
-  then
-    echo -e "${GREEN}${DONE} Invidious service has been successfully installed!${NC}"
-    ${SUDO} systemctl status ${SERVICE_NAME} --no-pager
-    sleep 5
-  else
-    echo -e "${RED}${ERROR} Invidious service installation failed...${NC}"
-    sleep 5
-  fi
-
-  show_systemd_install_banner
-
-  sleep 3
-  cd ${CURRDIR}
-  ./${SCRIPT_FILENAME}
-  #exit 1
-}
-
 start_stop_restart_invidious() {
   # chk_permissions
   echo ""
@@ -1911,8 +1902,8 @@ case $OPTION in
   3) # Deploy with Docker
       deploy_with_docker
     ;;
-  4) # Install Invidious service
-      install_invidious_service
+  4) # Add Swap Space
+      add_swap
     ;;
   5) # Database maintenance
       database_maintenance
