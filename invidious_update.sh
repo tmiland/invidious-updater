@@ -1002,6 +1002,9 @@ install_invidious() {
   echo "   1) $IN_RELEASE"
   echo "   2) $IN_MASTER"
   echo ""
+  echo -e "${ORANGE}Advice: Choose Master, if there hasn't been a release for a while${NC}"
+  echo -e "Check this link: https://github.com/iv-org/invidious/releases"
+  echo ""
   while [[ $IN_BRANCH != "1" && $IN_BRANCH != "2" ]]; do
     read -p "Select an option [1-2]: " IN_BRANCH
   done
@@ -1023,10 +1026,15 @@ install_invidious() {
   do
     case $advanced_options in
       [Yy]* )
+      echo -e "${ORANGE}Advice: Add domain name, or blank if not using one${NC}"
         read -p "       Enter the desired domain name:" domain
+      echo -e "${ORANGE}Advice: Add local or public ip you want to bind to (Default: localhost)${NC}"
         read -p "       Enter the desired ip adress:" ip
+      echo -e "${ORANGE}Advice: Add port number (Default: 3000)${NC}"
         read -p "       Enter the desired port number:" port
+      echo -e "${ORANGE}Advice: Add database name (Default: Invidious)${NC}"
         read -p "       Select database name:" psqldb
+      echo -e "${ORANGE}Advice: Add database password (Default: kemal)${NC}"
         read -p "       Select database password:" psqlpass
         ;;
       [Nn]* ) break ;;
@@ -1034,7 +1042,9 @@ install_invidious() {
     shift
 
     while [[ $https_only != "y" && $https_only != "n" ]]; do
-      read -p "Are you going to use https only? [y/n]: " https_only
+      echo -e "${ORANGE}Advice: If you're going to serve Invidious via port 80, choose no, otherwise yes for 443 (HTTPS)"
+      echo -e "                 HTTPS is typically used with a reverse proxy like Nginx${NC}"
+        read -p "Are you going to use https only? [y/n]: " https_only
     done
 
     case $https_only in
