@@ -14,13 +14,13 @@
 
 ## Script to install and update [Invidious](https://github.com/iv-org/invidious)
 
-* Install Invidious
-* Update Invidious
-* Deploy Invidious with Docker
-* Add Swap Space
-* Run database maintenance
-* Start, Stop or Restart Invidious
-* Uninstall Invidious
+```
+1) Install Invidious          6) Start, Stop or Restart   
+2) Update Invidious           7) Uninstall Invidious      
+3) Deploy with Docker         8) Set up PostgreSQL Backup 
+4) Add Swap Space             9) Install Nginx            
+5) Run Database Maintenance  10) Exit                     
+```
 
 ## Screenshots
 ![screenshot](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/version_1.4.8.png)
