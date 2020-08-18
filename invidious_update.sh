@@ -6,7 +6,7 @@
 
 ######################################################################
 ####                    Invidious Update.sh                       ####
-####            Automatic update script for Invidio.us            ####
+####            Automatic update script for Invidious             ####
 ####            Script to update or install Invidious             ####
 ####                   Maintained by @tmiland                     ####
 ######################################################################
@@ -280,6 +280,20 @@ add_swap() {
   ./${SCRIPT_FILENAME}
 }
 
+nginx-autoinstall() {
+  if [[ $(command -v 'curl') ]]; then
+    source <(curl -sSLf https://github.com/angristan/nginx-autoinstall/raw/master/nginx-autoinstall.sh)
+  elif [[ $(command -v 'wget') ]]; then
+    . <(wget -qO - https://github.com/angristan/nginx-autoinstall/raw/master/nginx-autoinstall.sh)
+  else
+    echo -e "${RED}${ERROR} This script requires curl or wget.\nProcess aborted${NC}"
+    exit 0
+  fi
+  # sleep 3
+  # cd ${CURRDIR}
+  # ./${SCRIPT_FILENAME}
+}
+
 ## Update invidious_update.sh
 ## Source: ghacks-user.js updater for macOS and Linux
 # Download method priority: curl -> wget
@@ -503,7 +517,7 @@ header() {
   echo -e "${GREEN}\n"
   echo ' ╔═══════════════════════════════════════════════════════════════════╗'
   echo ' ║                        '${SCRIPT_NAME}'                        ║'
-  echo ' ║               Automatic update script for Invidio.us              ║'
+  echo ' ║               Automatic update script for Invidious               ║'
   echo ' ║                      Maintained by @tmiland                       ║'
   echo ' ║                          version: '${version}'                           ║'
   echo ' ╚═══════════════════════════════════════════════════════════════════╝'
@@ -583,11 +597,11 @@ show_banner() {
   echo ""
   echo "What do you want to do?"
   echo ""
-  echo "  1) Install Invidious          5) Run Database Maintenance "
-  echo "  2) Update Invidious           6) Start, Stop or Restart   "
-  echo "  3) Deploy with Docker         7) Uninstall Invidious      "
-  echo "  4) Add Swap Space             8) Set up PostgreSQL Backup "
-  echo "  9) Exit                                                   "
+  echo "  1) Install Invidious          6) Start, Stop or Restart   "
+  echo "  2) Update Invidious           7) Uninstall Invidious      "
+  echo "  3) Deploy with Docker         8) Set up PostgreSQL Backup "
+  echo "  4) Add Swap Space             9) Install Nginx            "
+  echo "  5) Run Database Maintenance  10) Exit                     "
   echo "${SHOW_STATUS} ${SHOW_DOCKER_STATUS}"
   echo ""
   echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
@@ -1878,8 +1892,8 @@ uninstall_invidious() {
 chk_permissions
 show_banner
 
-while [[ $OPTION !=  "1" && $OPTION != "2" && $OPTION != "3" && $OPTION != "4" && $OPTION != "5" && $OPTION != "6" && $OPTION != "7" && $OPTION != "8" && $OPTION != "9" ]]; do
-  read -p "Select an option [1-9]: " OPTION
+while [[ $OPTION !=  "1" && $OPTION != "2" && $OPTION != "3" && $OPTION != "4" && $OPTION != "5" && $OPTION != "6" && $OPTION != "7" && $OPTION != "8" && $OPTION != "9" && $OPTION != "10" ]]; do
+  read -p "Select an option [1-10]: " OPTION
 done
 
 case $OPTION in
@@ -1907,7 +1921,10 @@ case $OPTION in
   8) # Set up PostgreSQL Backup
       pgbackup
     ;;
-  9) # Exit
+  9) # Install Nginx
+      nginx-autoinstall
+    ;;
+  10) # Exit
       exit_script
       exit
     ;;
