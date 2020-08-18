@@ -281,17 +281,19 @@ add_swap() {
 }
 
 nginx-autoinstall() {
-  if [[ $(command -v 'curl') ]]; then
-    source <(curl -sSLf https://github.com/angristan/nginx-autoinstall/raw/master/nginx-autoinstall.sh)
-  elif [[ $(command -v 'wget') ]]; then
-    . <(wget -qO - https://github.com/angristan/nginx-autoinstall/raw/master/nginx-autoinstall.sh)
+  if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" || $(lsb_release -si) == "LinuxMint" ]]; then
+    if [[ $(command -v 'curl') ]]; then
+      source <(curl -sSLf https://github.com/angristan/nginx-autoinstall/raw/master/nginx-autoinstall.sh)
+    elif [[ $(command -v 'wget') ]]; then
+      . <(wget -qO - https://github.com/angristan/nginx-autoinstall/raw/master/nginx-autoinstall.sh)
+    else
+      echo -e "${RED}${ERROR} This script requires curl or wget.\nProcess aborted${NC}"
+      exit 0
+    fi
   else
-    echo -e "${RED}${ERROR} This script requires curl or wget.\nProcess aborted${NC}"
-    exit 0
+    echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
+    exit 1;
   fi
-  # sleep 3
-  # cd ${CURRDIR}
-  # ./${SCRIPT_FILENAME}
 }
 
 ## Update invidious_update.sh
