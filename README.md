@@ -3,7 +3,7 @@
 ```
                   ╔═══════════════════════════════════════════════════════════════════╗
                   ║                        Invidious Update.sh                        ║
-                  ║               Automatic update script for Invidio.us              ║
+                  ║               Automatic update script for Invidious               ║
                   ║                      Maintained by @tmiland                       ║
                   ║                          version: 1.4.8                           ║
                   ╚═══════════════════════════════════════════════════════════════════╝
@@ -12,7 +12,7 @@
 [![licence](https://img.shields.io/github/license/tmiland/Invidious-Updater.svg?style=for-the-badge)](https://github.com/tmiland/Invidious-Updater/blob/master/LICENSE)
 ![Bash](https://img.shields.io/badge/Language-SH-4EAA25.svg?style=for-the-badge)
 
-## Script to install and update [Invidious](https://github.com/omarroth/invidious)
+## Script to install and update [Invidious](https://github.com/iv-org/invidious)
 
 * Install Invidious
 * Update Invidious
