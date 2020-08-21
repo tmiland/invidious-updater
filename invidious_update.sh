@@ -284,10 +284,8 @@ nginx-autoinstall() {
   if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" || $(lsb_release -si) == "LinuxMint" ]]; then
     if [[ $(command -v 'curl') ]]; then
       source <(curl -sSLf https://github.com/angristan/nginx-autoinstall/raw/master/nginx-autoinstall.sh)
-      install_nginx_vhost
     elif [[ $(command -v 'wget') ]]; then
       . <(wget -qO - https://github.com/angristan/nginx-autoinstall/raw/master/nginx-autoinstall.sh)
-      install_nginx_vhost
     else
       echo -e "${RED}${ERROR} This script requires curl or wget.\nProcess aborted${NC}"
       exit 0
@@ -316,7 +314,7 @@ NGINX_PORT=$(get_port "$INVIDIOUS_CONFIG")
 NGINX_VHOST=$NGINX_DOMAIN_NAME.conf
 
 install_nginx_vhost() {
-if [[ ! -d "${NGINX_VHOST_DIR}" ]]; then
+if [[ -d "${NGINX_VHOST_DIR}" ]]; then
   echo ""
   read -p "Do you want to install a nginx vhost file for Invidious? [y/n/q]?" answer
   echo ""
@@ -1993,6 +1991,7 @@ case $OPTION in
     ;;
   9) # Install Nginx
       nginx-autoinstall
+      install_nginx_vhost
     ;;
   10) # Exit
       exit_script
