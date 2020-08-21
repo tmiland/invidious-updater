@@ -280,6 +280,24 @@ add_swap() {
   ./${SCRIPT_FILENAME}
 }
 
+install_nginx(){
+  echo ""
+  echo "   1) Install Nginx"
+  echo "   2) Install Nginx Vhost for Invidious"
+  echo ""
+  while [[ $NGINX != "1" && $NGINX != "2" ]]; do
+    read -p "Select an option [1-2]: " NGINX
+  done
+  case $NGINX in
+    1)
+      nginx-autoinstall
+      ;;
+    2)
+      install_nginx_vhost
+      ;;
+  esac
+}
+
 nginx-autoinstall() {
   if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" || $(lsb_release -si) == "LinuxMint" ]]; then
     if [[ $(command -v 'curl') ]]; then
@@ -304,12 +322,12 @@ get_domain() {
 get_host() {
   echo $(sed -n 's/.*host *: *\([^ ]*.*\)/\1/p' "$1")
 }
-get_port() {
-  echo $(sed -n 's/.*port *: *\([^ ]*.*\)/\1/p' "$1")
-}
+# get_port() {
+#   echo $(sed -n 's/.*port *: *\([^ ]*.*\)/\2/p' "$1")
+# }
 NGINX_DOMAIN_NAME=$(get_domain "$INVIDIOUS_CONFIG")
 NGINX_HOST=$(get_host "$INVIDIOUS_CONFIG")
-NGINX_PORT=$(get_port "$INVIDIOUS_CONFIG")
+#NGINX_PORT=$(get_port "$INVIDIOUS_CONFIG")
 
 NGINX_VHOST=$NGINX_DOMAIN_NAME.conf
 
@@ -338,7 +356,7 @@ echo "server {
   	ssl_certificate_key /etc/letsencrypt/live/$NGINX_DOMAIN_NAME/privkey.pem;
 
   	location / {
-  		proxy_pass http://$NGINX_HOST:$NGINX_PORT/;
+  		proxy_pass http://$NGINX_HOST:3000/;
   		proxy_set_header X-Forwarded-For $remote_addr;
   		proxy_set_header Host $host;	# so Invidious knows domain
   		proxy_http_version 1.1;		# to keep alive
@@ -348,7 +366,7 @@ echo "server {
   	if ($https = '') { return 301 https://$host$request_uri; }	# if not connected to HTTPS, perma-redirect to HTTPS
   }" | ${SUDO} tee $NGINX_VHOST_DIR/$NGINX_VHOST
   
-  nginx -t && sc-reload nginx || echo "Successfully installed nginx vhost $NGINX_VHOST_DIR/$NGINX_VHOST"
+  nginx -t && systemctl reload nginx || echo "Successfully installed nginx vhost $NGINX_VHOST_DIR/$NGINX_VHOST"
   
   ;;
   [Nn]* )
@@ -1990,8 +2008,7 @@ case $OPTION in
       pgbackup
     ;;
   9) # Install Nginx
-      nginx-autoinstall
-      install_nginx_vhost
+      install_nginx
     ;;
   10) # Exit
       exit_script
