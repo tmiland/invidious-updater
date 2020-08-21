@@ -296,6 +296,72 @@ nginx-autoinstall() {
   fi
 }
 
+INVIDIOUS_CONFIG=${REPO_DIR}/config/config.yml
+NGINX_VHOST_DIR=/etc/nginx/sites-available
+get_domain() {
+  echo $(sed -n 's/.*domain *: *\([^ ]*.*\)/\1/p' "$1")
+}
+get_host() {
+  echo $(sed -n 's/.*host *: *\([^ ]*.*\)/\1/p' "$1")
+}
+get_port() {
+  echo $(sed -n 's/.*port *: *\([^ ]*.*\)/\1/p' "$1")
+}
+NGINX_DOMAIN_NAME=$(get_domain "$INVIDIOUS_CONFIG")
+NGINX_HOST=$(get_host "$INVIDIOUS_CONFIG")
+NGINX_PORT=$(get_port "$INVIDIOUS_CONFIG")
+
+NGINX_VHOST=$NGINX_DOMAIN_NAME.conf
+
+install_nginx_vhost() {
+if [[ ! -d "${NGINX_VHOST_DIR}" ]]; then
+  echo ""
+  read -p "Do you want to install a nginx vhost file for Invidious? [y/n/q]?" answer
+  echo ""
+  echo "Your Invidious domain name: $NGINX_DOMAIN_NAME"
+  echo ""
+
+  case $answer in
+    [Yy]* )
+echo "server {
+  	listen 80;
+  	listen [::]:80;
+  	listen 443 ssl http2;
+  	listen [::]:443 ssl http2;
+
+  	server_name $NGINX_DOMAIN_NAME;
+
+  	access_log off;
+  	error_log /var/log/nginx/error.log crit;
+
+  	ssl_certificate /etc/letsencrypt/live/$NGINX_DOMAIN_NAME/fullchain.pem;
+  	ssl_certificate_key /etc/letsencrypt/live/$NGINX_DOMAIN_NAME/privkey.pem;
+
+  	location / {
+  		proxy_pass http://$NGINX_HOST:$NGINX_PORT/;
+  		proxy_set_header X-Forwarded-For $remote_addr;
+  		proxy_set_header Host $host;	# so Invidious knows domain
+  		proxy_http_version 1.1;		# to keep alive
+  		proxy_set_header Connection "";	# to keep alive
+  	}
+
+  	if ($https = '') { return 301 https://$host$request_uri; }	# if not connected to HTTPS, perma-redirect to HTTPS
+  }" | ${SUDO} tee $NGINX_VHOST_DIR/$NGINX_VHOST
+  
+  nginx -t && sc-reload nginx || echo "Successfully installed nginx vhost $NGINX_VHOST_DIR/$NGINX_VHOST"
+  
+  ;;
+  [Nn]* )
+    sleep 3
+    cd ${CURRDIR}
+    ./${SCRIPT_FILENAME}
+    ;;
+  * ) echo "Enter Y, N or Q, please." ;;
+  esac
+  fi
+  
+}
+
 ## Update invidious_update.sh
 ## Source: ghacks-user.js updater for macOS and Linux
 # Download method priority: curl -> wget
@@ -1925,6 +1991,7 @@ case $OPTION in
     ;;
   9) # Install Nginx
       nginx-autoinstall
+      install_nginx_vhost
     ;;
   10) # Exit
       exit_script
