@@ -341,31 +341,48 @@ if [[ -d "${NGINX_VHOST_DIR}" ]]; then
 
   case $answer in
     [Yy]* )
-echo "server {
+tee $NGINX_VHOST_DIR/default.conf <<'EOF' >/dev/null
+server {
+  listen 80 default_server;
+  listen [::]:80 default_server;
+  server_name _; # This is just an invalid value which will never trigger on a real hostname.
+  #access_log logs/default.access.log main;
+
+  server_name_in_redirect off;
+
+  root  /etc/nginx/html;
+}
+EOF
+
+tee $NGINX_VHOST_DIR/$NGINX_VHOST <<'EOF' >/dev/null
+server {
   	listen 80;
   	listen [::]:80;
   	listen 443 ssl http2;
   	listen [::]:443 ssl http2;
 
-  	server_name $NGINX_DOMAIN_NAME;
+    server_name invidious.domain.tld;
 
   	access_log off;
   	error_log /var/log/nginx/error.log crit;
 
-  	ssl_certificate /etc/letsencrypt/live/$NGINX_DOMAIN_NAME/fullchain.pem;
-  	ssl_certificate_key /etc/letsencrypt/live/$NGINX_DOMAIN_NAME/privkey.pem;
+  	ssl_certificate /etc/letsencrypt/live/invidious.domain.tld/fullchain.pem;
+  	ssl_certificate_key /etc/letsencrypt/live/invidious.domain.tld/privkey.pem;
 
   	location / {
-  		proxy_pass http://$NGINX_HOST:3000/;
+  		proxy_pass http://127.0.0.1:3000/;
   		proxy_set_header X-Forwarded-For $remote_addr;
   		proxy_set_header Host $host;	# so Invidious knows domain
   		proxy_http_version 1.1;		# to keep alive
   		proxy_set_header Connection "";	# to keep alive
   	}
 
-  	if ($https = '') { return 301 https://$host$request_uri; }	# if not connected to HTTPS, perma-redirect to HTTPS
-  }" | ${SUDO} tee $NGINX_VHOST_DIR/$NGINX_VHOST
-  
+  	if ($https = '') { return 301 https://"$host$request_uri"; }	# if not connected to HTTPS, perma-redirect to HTTPS
+  }
+EOF
+  ${SUDO} sed -i "s/127.0.0.1/${NGINX_HOST}/g" $NGINX_VHOST_DIR/$NGINX_VHOST
+  ${SUDO} sed -i "s/invidious.domain.tld/${NGINX_DOMAIN_NAME}/g" $NGINX_VHOST_DIR/$NGINX_VHOST
+  ${SUDO} ln -s $NGINX_VHOST_DIR/$NGINX_VHOST /etc/nginx/sites-enabled/$NGINX_VHOST
   nginx -t && systemctl reload nginx || echo "Successfully installed nginx vhost $NGINX_VHOST_DIR/$NGINX_VHOST"
   
   ;;
