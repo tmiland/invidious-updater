@@ -841,25 +841,25 @@ docker_repo_chk() {
           done
         fi
 
-        echo ""
-        echo "Do you want to install Invidious release or master?"
-        echo ""
-        echo "   1) $IN_RELEASE"
-        echo "   2) $IN_MASTER"
-        echo ""
-
-        while [[ $IN_BRANCH != "1" && $IN_BRANCH != "2" ]]; do
-          read -p "Select an option [1-2]: " IN_BRANCH
-        done
-
-        case $IN_BRANCH in
-          1)
-            IN_BRANCH=$IN_RELEASE
-            ;;
-          2)
-            IN_BRANCH=$IN_MASTER
-            ;;
-        esac
+        # echo ""
+        # echo "Do you want to install Invidious release or master?"
+        # echo ""
+        # echo "   1) $IN_RELEASE"
+        # echo "   2) $IN_MASTER"
+        # echo ""
+        # 
+        # while [[ $IN_BRANCH != "1" && $IN_BRANCH != "2" ]]; do
+        #   read -p "Select an option [1-2]: " IN_BRANCH
+        # done
+        # 
+        # case $IN_BRANCH in
+        #   1)
+        #     IN_BRANCH=$IN_RELEASE
+        #     ;;
+        #   2)
+        #     IN_BRANCH=$IN_MASTER
+        #     ;;
+        # esac
 
         mkdir -p $USER_DIR
 
@@ -871,12 +871,12 @@ docker_repo_chk() {
 
         cd ${REPO_DIR} || exit 1
         # Checkout
-        if [[ ! "$IN_BRANCH" = 'master' ]]; then
-          GetRelease
-        fi
-        if [[ ! "$IN_BRANCH" = 'release' ]]; then
+        # if [[ ! "$IN_BRANCH" = 'master' ]]; then
+        #   GetRelease
+        # fi
+        #if [[ ! "$IN_BRANCH" = 'release' ]]; then
           GetMaster
-        fi
+        #fi
         #cd -
         #./${SCRIPT_FILENAME}
         ;;
@@ -1115,24 +1115,24 @@ install_invidious() {
   echo ""
   echo "Let's go through some configuration options."
   echo ""
-  echo "Do you want to install Invidious release or master?"
-  echo "   1) $IN_RELEASE"
-  echo "   2) $IN_MASTER"
-  echo ""
-  echo -e "${ORANGE}Advice: Choose Master, if there hasn't been a release for a while${NC}"
-  echo -e "Check this link: https://github.com/iv-org/invidious/releases"
-  echo ""
-  while [[ $IN_BRANCH != "1" && $IN_BRANCH != "2" ]]; do
-    read -p "Select an option [1-2]: " IN_BRANCH
-  done
-  case $IN_BRANCH in
-    1)
-      IN_BRANCH=$IN_RELEASE
-      ;;
-    2)
-      IN_BRANCH=$IN_MASTER
-      ;;
-  esac
+  # echo "Do you want to install Invidious release or master?"
+  # echo "   1) $IN_RELEASE"
+  # echo "   2) $IN_MASTER"
+  # echo ""
+  # echo -e "${ORANGE}Advice: Choose Master, if there hasn't been a release for a while${NC}"
+  # echo -e "Check this link: https://github.com/iv-org/invidious/releases"
+  # echo ""
+  # while [[ $IN_BRANCH != "1" && $IN_BRANCH != "2" ]]; do
+  #   read -p "Select an option [1-2]: " IN_BRANCH
+  # done
+  # case $IN_BRANCH in
+  #   1)
+  #     IN_BRANCH=$IN_RELEASE
+  #     ;;
+  #   2)
+  #     IN_BRANCH=$IN_MASTER
+  #     ;;
+  # esac
 
   # Let the user enter advanced options:
   while [[ $advanced_options != "y" && $advanced_options != "n" ]]; do
@@ -1232,13 +1232,13 @@ install_invidious() {
     git clone https://github.com/iv-org/invidious
   cd ${REPO_DIR} || exit 1
   # Checkout
-  if [[ ! "$IN_BRANCH" = 'master' ]]; then
-    GetRelease
-  fi
+  # if [[ ! "$IN_BRANCH" = 'master' ]]; then
+  #   GetRelease
+  # fi
 
-  if [[ ! "$IN_BRANCH" = 'release' ]]; then
+  #if [[ ! "$IN_BRANCH" = 'release' ]]; then
     GetMaster
-  fi
+  #fi
   echo -e "${GREEN}${ARROW} Done${NC}"
   set_permissions
 
@@ -1332,30 +1332,30 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
 update_invidious() {
   # chk_permissions
 
-  echo ""
-  echo "Let's go through some configuration options."
-  echo ""
-  echo "Do you want to checkout Invidious release or master?"
-  echo ""
-  echo "   1) $IN_RELEASE"
-  echo "   2) $IN_MASTER"
-  echo ""
-  while [[ $IN_BRANCH != "1" && $IN_BRANCH != "2" ]]; do
-    read -p "Select an option [1-2]: " IN_BRANCH
-  done
-  case $IN_BRANCH in
-    1)
-      IN_BRANCH=$IN_RELEASE
-      ;;
-    2)
-      IN_BRANCH=$IN_MASTER
-      ;;
-  esac
+  # echo ""
+  # echo "Let's go through some configuration options."
+  # echo ""
+  # echo "Do you want to checkout Invidious release or master?"
+  # echo ""
+  # echo "   1) $IN_RELEASE"
+  # echo "   2) $IN_MASTER"
+  # echo ""
+  # while [[ $IN_BRANCH != "1" && $IN_BRANCH != "2" ]]; do
+  #   read -p "Select an option [1-2]: " IN_BRANCH
+  # done
+  # case $IN_BRANCH in
+  #   1)
+  #     IN_BRANCH=$IN_RELEASE
+  #     ;;
+  #   2)
+  #     IN_BRANCH=$IN_MASTER
+  #     ;;
+  # esac
   # Let's allow the user to confirm that what they've typed in is correct:
-  echo -e "${GREEN}\n"
-  echo -e "You entered: \n"
-  echo -e "${DONE} branch: $IN_BRANCH"
-  echo -e "${NC}"
+  # echo -e "${GREEN}\n"
+  # echo -e "You entered: \n"
+  # echo -e "${DONE} branch: $IN_BRANCH"
+  # echo -e "${NC}"
   echo ""
   read -n1 -r -p "Invidious is ready to be updated, press any key to continue..."
   echo ""
@@ -1364,13 +1364,13 @@ update_invidious() {
   #cd $USER_DIR || exit 1
   cd ${REPO_DIR} || exit 1
   # Checkout
-  if [[ ! "$IN_BRANCH" = 'master' ]]; then
-    UpdateRelease
-  fi
+  # if [[ ! "$IN_BRANCH" = 'master' ]]; then
+  #   UpdateRelease
+  # fi
 
-  if [[ ! "$IN_BRANCH" = 'release' ]]; then
+  #if [[ ! "$IN_BRANCH" = 'release' ]]; then
     UpdateMaster
-  fi
+  #fi
 
   rebuild
 
