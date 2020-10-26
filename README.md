@@ -5,7 +5,6 @@
                   ║                        Invidious Update.sh                        ║
                   ║               Automatic update script for Invidious               ║
                   ║                      Maintained by @tmiland                       ║
-                  ║                          version: 1.4.8                           ║
                   ╚═══════════════════════════════════════════════════════════════════╝
 ```
 [![GitHub release](https://img.shields.io/github/release/tmiland/Invidious-Updater.svg?style=for-the-badge)](https://github.com/tmiland/Invidious-Updater/releases)
