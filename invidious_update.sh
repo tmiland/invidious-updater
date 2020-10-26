@@ -11,7 +11,7 @@
 ####                   Maintained by @tmiland                     ####
 ######################################################################
 
-version='1.4.8' # Must stay on line 14 for updater to fetch the numbers
+version='1.4.9' # Must stay on line 14 for updater to fetch the numbers
 
 #------------------------------------------------------------------------------#
 #
@@ -86,16 +86,14 @@ USER_NAME=invidious
 USER_DIR="/home/invidious"
 # Set repo Dir
 REPO_DIR=$USER_DIR/invidious
-# Master branch
-IN_MASTER=master
-# Release tag
-IN_RELEASE=release
+# Set config file path
+IN_CONFIG=${REPO_DIR}/config/config.yml
 # Service name
 SERVICE_NAME=invidious.service
 # Default branch
 IN_BRANCH=master
 # Default domain
-domain=invidio.us
+domain=invidious.tube
 # Default ip
 ip=localhost
 # Default port
@@ -266,11 +264,13 @@ chk_permissions() {
   fi
 }
 
+add_swap_url=https://raw.githubusercontent.com/tmiland/swap-add/master/swap-add.sh
+
 add_swap() {
   if [[ $(command -v 'curl') ]]; then
-    source <(curl -sSLf https://raw.githubusercontent.com/tmiland/swap-add/master/swap-add.sh)
+    source <(curl -sSLf $add_swap_url)
   elif [[ $(command -v 'wget') ]]; then
-    . <(wget -qO - https://raw.githubusercontent.com/tmiland/swap-add/master/swap-add.sh)
+    . <(wget -qO - $add_swap_url)
   else
     echo -e "${RED}${ERROR} This script requires curl or wget.\nProcess aborted${NC}"
     exit 0
@@ -298,12 +298,14 @@ install_nginx(){
   esac
 }
 
+nginx_autoinstall_url=https://github.com/angristan/nginx-autoinstall/raw/master/nginx-autoinstall.sh
+
 nginx-autoinstall() {
   if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" || $(lsb_release -si) == "LinuxMint" ]]; then
     if [[ $(command -v 'curl') ]]; then
-      source <(curl -sSLf https://github.com/angristan/nginx-autoinstall/raw/master/nginx-autoinstall.sh)
+      source <(curl -sSLf $nginx_autoinstall_url)
     elif [[ $(command -v 'wget') ]]; then
-      . <(wget -qO - https://github.com/angristan/nginx-autoinstall/raw/master/nginx-autoinstall.sh)
+      . <(wget -qO - $nginx_autoinstall_url)
     else
       echo -e "${RED}${ERROR} This script requires curl or wget.\nProcess aborted${NC}"
       exit 0
@@ -314,24 +316,23 @@ nginx-autoinstall() {
   fi
 }
 
-INVIDIOUS_CONFIG=${REPO_DIR}/config/config.yml
-NGINX_VHOST_DIR=/etc/nginx/sites-available
-get_domain() {
-  echo $(sed -n 's/.*domain *: *\([^ ]*.*\)/\1/p' "$1")
-}
-get_host() {
-  echo $(sed -n 's/.*host *: *\([^ ]*.*\)/\1/p' "$1")
-}
-# get_port() {
-#   echo $(sed -n 's/.*port *: *\([^ ]*.*\)/\2/p' "$1")
-# }
-NGINX_DOMAIN_NAME=$(get_domain "$INVIDIOUS_CONFIG")
-NGINX_HOST=$(get_host "$INVIDIOUS_CONFIG")
-#NGINX_PORT=$(get_port "$INVIDIOUS_CONFIG")
-
-NGINX_VHOST=$NGINX_DOMAIN_NAME.conf
-
 install_nginx_vhost() {
+  NGINX_VHOST_DIR=/etc/nginx/sites-available
+  get_domain() {
+    echo $(sed -n 's/.*domain *: *\([^ ]*.*\)/\1/p' "$1")
+  }
+  get_host() {
+    echo $(sed -n 's/.*host *: *\([^ ]*.*\)/\1/p' "$1")
+  }
+  # get_port() {
+  #   echo $(sed -n 's/.*port *: *\([^ ]*.*\)/\2/p' "$1")
+  # }
+  NGINX_DOMAIN_NAME=$(get_domain "$IN_CONFIG")
+  NGINX_HOST=$(get_host "$IN_CONFIG")
+  #NGINX_PORT=$(get_port "$IN_CONFIG")
+
+  NGINX_VHOST=$NGINX_DOMAIN_NAME.conf
+
 if [[ -d "${NGINX_VHOST_DIR}" ]]; then
   echo ""
   read -p "Do you want to install a nginx vhost file for Invidious? [y/n/q]?" answer
@@ -841,26 +842,6 @@ docker_repo_chk() {
           done
         fi
 
-        # echo ""
-        # echo "Do you want to install Invidious release or master?"
-        # echo ""
-        # echo "   1) $IN_RELEASE"
-        # echo "   2) $IN_MASTER"
-        # echo ""
-        # 
-        # while [[ $IN_BRANCH != "1" && $IN_BRANCH != "2" ]]; do
-        #   read -p "Select an option [1-2]: " IN_BRANCH
-        # done
-        # 
-        # case $IN_BRANCH in
-        #   1)
-        #     IN_BRANCH=$IN_RELEASE
-        #     ;;
-        #   2)
-        #     IN_BRANCH=$IN_MASTER
-        #     ;;
-        # esac
-
         mkdir -p $USER_DIR
 
         echo -e "${GREEN}${ARROW} Downloading Invidious from GitHub${NC}"
@@ -871,14 +852,7 @@ docker_repo_chk() {
 
         cd ${REPO_DIR} || exit 1
         # Checkout
-        # if [[ ! "$IN_BRANCH" = 'master' ]]; then
-        #   GetRelease
-        # fi
-        #if [[ ! "$IN_BRANCH" = 'release' ]]; then
-          GetMaster
-        #fi
-        #cd -
-        #./${SCRIPT_FILENAME}
+        GetMaster
         ;;
       [Nn]* )
         sleep 3
@@ -894,8 +868,6 @@ docker_repo_chk() {
 set_permissions() {
   ${SUDO} chown -R $USER_NAME:$USER_NAME $USER_DIR
   ${SUDO} chmod -R 755 $USER_DIR
-  #${SUDO} chmod 664 ${REPO_DIR}/config/config.yml
-  #${SUDO} chmod 755 ${REPO_DIR}/invidious
 }
 
 # Update config
@@ -918,7 +890,7 @@ update_config() {
   # Lets change external_port
   OLDEXTERNAL="external_port:"
   NEWEXTERNAL="external_port: $external_port"
-  DPATH="${REPO_DIR}/config/config.yml"
+  DPATH="${IN_CONFIG}"
   BPATH="$BAKPATH"
   TFILE="/tmp/config.yml"
   [ ! -d $BPATH ] && mkdir -p $BPATH || :
@@ -1006,13 +978,30 @@ get_crystal() {
   fi
 }
 
+# Create new config.yml
+create_config() {
+if [ ! -f "$IN_CONFIG" ]; then
+  echo "channel_threads: 1
+  feed_threads: 1
+  db:
+    user: kemal
+    password: kemal
+    host: localhost
+    port: 5432
+    dbname: invidious
+  full_refresh: false
+  https_only: false
+  domain:" | ${SUDO} tee ${IN_CONFIG}
+fi
+}
+
 # Backup config file
 backupConfig() {
   # Set config backup path
   ConfigBakPath="/home/backup/$USER_NAME/config"
   # If directory is not created
   [ ! -d $ConfigBakPath ] && mkdir -p $ConfigBakPath || :
-  configBackup=${REPO_DIR}/config/config.yml
+  configBackup=${IN_CONFIG}
   backupConfigFile=`date +%F`.config.yml
   /bin/cp -f $configBackup $ConfigBakPath/$backupConfigFile
 }
@@ -1020,8 +1009,8 @@ backupConfig() {
 # Ignore config file
 ignore_config() {
   #sed -i '$ a config/config.yml' ${REPO_DIR}/.git/info/exclude
-  #git rm --cached ${REPO_DIR}/config/config.yml
-  git update-index --skip-worktree ${REPO_DIR}/config/config.yml
+  #git rm --cached ${IN_CONFIG}
+  git update-index --skip-worktree ${IN_CONFIG}
 }
 
 # Checkout Master branch to branch master (to avoid detached HEAD state)
@@ -1036,41 +1025,13 @@ UpdateMaster() {
   backupConfig
   ignore_config
   if [[ $(lsb_release -rs) == "16.04" ]]; then
-    mv ${REPO_DIR}/config/config.yml /tmp
+    mv ${IN_CONFIG} /tmp
   fi
   currentVersion=$(git rev-list --max-count=1 --abbrev-commit HEAD)
   git pull
   for i in `git rev-list --abbrev-commit $currentVersion..HEAD` ; do file=${REPO_DIR}/config/migrate-scripts/migrate-db-$i.sh ; [ -f $file ] && $file ; done
   git stash
   git checkout origin/${IN_BRANCH} -B ${IN_BRANCH}
-  if [[ $(lsb_release -rs) == "16.04" ]]; then
-    mv /tmp/config.yml ${REPO_DIR}/config
-  fi
-}
-
-# Checkout Release tag to branch release (to avoid detached HEAD state)
-GetRelease() {
-  backupConfig
-  ignore_config
-  git fetch --tags
-  latestVersion=$(git describe --tags `git rev-list --tags --max-count=1`)
-  git checkout tags/$latestVersion -B ${IN_RELEASE}
-}
-
-# Update Release
-UpdateRelease() {
-  backupConfig
-  ignore_config
-  if [[ $(lsb_release -rs) == "16.04" ]]; then
-    mv ${REPO_DIR}/config/config.yml /tmp
-  fi
-  currentVersion=$(git rev-list --max-count=1 --abbrev-commit HEAD)
-  git pull
-  latestVersion=$(git describe --tags --abbrev=0)
-  #git checkout $latestVersion
-  for i in `git rev-list --abbrev-commit $currentVersion..HEAD` ; do file=${REPO_DIR}/config/migrate-scripts/migrate-db-$i.sh ; [ -f $file ] && $file ; done
-  git stash
-  git checkout tags/$latestVersion -B ${IN_RELEASE}
   if [[ $(lsb_release -rs) == "16.04" ]]; then
     mv /tmp/config.yml ${REPO_DIR}/config
   fi
@@ -1115,24 +1076,6 @@ install_invidious() {
   echo ""
   echo "Let's go through some configuration options."
   echo ""
-  # echo "Do you want to install Invidious release or master?"
-  # echo "   1) $IN_RELEASE"
-  # echo "   2) $IN_MASTER"
-  # echo ""
-  # echo -e "${ORANGE}Advice: Choose Master, if there hasn't been a release for a while${NC}"
-  # echo -e "Check this link: https://github.com/iv-org/invidious/releases"
-  # echo ""
-  # while [[ $IN_BRANCH != "1" && $IN_BRANCH != "2" ]]; do
-  #   read -p "Select an option [1-2]: " IN_BRANCH
-  # done
-  # case $IN_BRANCH in
-  #   1)
-  #     IN_BRANCH=$IN_RELEASE
-  #     ;;
-  #   2)
-  #     IN_BRANCH=$IN_MASTER
-  #     ;;
-  # esac
 
   # Let the user enter advanced options:
   while [[ $advanced_options != "y" && $advanced_options != "n" ]]; do
@@ -1232,13 +1175,8 @@ install_invidious() {
     git clone https://github.com/iv-org/invidious
   cd ${REPO_DIR} || exit 1
   # Checkout
-  # if [[ ! "$IN_BRANCH" = 'master' ]]; then
-  #   GetRelease
-  # fi
+  GetMaster
 
-  #if [[ ! "$IN_BRANCH" = 'release' ]]; then
-    GetMaster
-  #fi
   echo -e "${GREEN}${ARROW} Done${NC}"
   set_permissions
 
@@ -1305,11 +1243,13 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
   fi
   echo -e "${GREEN}${DONE} Finished Database section${NC}"
 
+  create_config
+
   update_config
   # Crystal complaining about permissions on CentOS and somewhat Debian
   # So before we build, make sure permissions are set.
   set_permissions
-  
+
   cd ${REPO_DIR} || exit 1
   #sudo -i -u invidious \
     shards update && shards install
@@ -1330,32 +1270,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
 }
 
 update_invidious() {
-  # chk_permissions
 
-  # echo ""
-  # echo "Let's go through some configuration options."
-  # echo ""
-  # echo "Do you want to checkout Invidious release or master?"
-  # echo ""
-  # echo "   1) $IN_RELEASE"
-  # echo "   2) $IN_MASTER"
-  # echo ""
-  # while [[ $IN_BRANCH != "1" && $IN_BRANCH != "2" ]]; do
-  #   read -p "Select an option [1-2]: " IN_BRANCH
-  # done
-  # case $IN_BRANCH in
-  #   1)
-  #     IN_BRANCH=$IN_RELEASE
-  #     ;;
-  #   2)
-  #     IN_BRANCH=$IN_MASTER
-  #     ;;
-  # esac
-  # Let's allow the user to confirm that what they've typed in is correct:
-  # echo -e "${GREEN}\n"
-  # echo -e "You entered: \n"
-  # echo -e "${DONE} branch: $IN_BRANCH"
-  # echo -e "${NC}"
   echo ""
   read -n1 -r -p "Invidious is ready to be updated, press any key to continue..."
   echo ""
@@ -1363,14 +1278,8 @@ update_invidious() {
   #sudo -i -u $USER_NAME
   #cd $USER_DIR || exit 1
   cd ${REPO_DIR} || exit 1
-  # Checkout
-  # if [[ ! "$IN_BRANCH" = 'master' ]]; then
-  #   UpdateRelease
-  # fi
 
-  #if [[ ! "$IN_BRANCH" = 'release' ]]; then
-    UpdateMaster
-  #fi
+  UpdateMaster
 
   rebuild
 
@@ -1544,27 +1453,6 @@ deploy_with_docker() {
       echo ""
       echo "This will install Docker CE."
       echo ""
-      # echo "Do you want to install Docker stable or nightly?"
-      # echo "   1) Stable $DOCKER_STABLE_VER"
-      # echo "   2) Nightly $DOCKER_NIGHTLY_VER"
-      # echo "   3) Test $DOCKER_TEST_VER"
-      # echo ""
-      # 
-      # while [[ $DOCKER_VER != "1" && $DOCKER_VER != "2" && $DOCKER_VER != "3" ]]; do
-      #   read -p "Select an option [1-3]: " DOCKER_VER
-      # done
-      # 
-      # case $DOCKER_VER in
-      #   1)
-      #     DOCKER_VER=stable
-      #     ;;
-      #   2)
-      #     DOCKER_VER=nightly
-      #     ;;
-      #   3)
-      #     DOCKER_VER=test
-      #     ;;
-      # esac
 
       echo ""
       read -n1 -r -p "Docker is ready to be installed, press any key to continue..."
@@ -1673,7 +1561,7 @@ database_maintenance() {
   read -p "Are you sure you want to run Database Maintenance? Enter [y/n]: " answer
 
   if [[ ! "$answer" = 'n' ]]; then
-    psqldb=$(get_dbname "${REPO_DIR}/config/config.yml")
+    psqldb=$(get_dbname "${IN_CONFIG}")
     # Let's allow the user to confirm that what they've typed in is correct:
     echo ""
     echo "Your Invidious database name: $psqldb"
@@ -1800,7 +1688,7 @@ uninstall_invidious() {
   # Set db backup path
   PgDbBakPath="/home/backup/$USER_NAME"
   # Get dbname
-  RM_PSQLDB=$(get_dbname "${REPO_DIR}/config/config.yml")
+  RM_PSQLDB=$(get_dbname "${IN_CONFIG}")
   # Let's go
   while [[ $RM_PostgreSQLDB !=  "y" && $RM_PostgreSQLDB != "n" ]]; do
     read -p "       Remove database for Invidious ? [y/n]: " -e RM_PostgreSQLDB
