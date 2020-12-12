@@ -11,7 +11,7 @@
 ####                   Maintained by @tmiland                     ####
 ######################################################################
 
-version='1.4.9' # Must stay on line 14 for updater to fetch the numbers
+version='1.5.0' # Must stay on line 14 for updater to fetch the numbers
 
 #------------------------------------------------------------------------------#
 #
@@ -982,16 +982,16 @@ get_crystal() {
 create_config() {
 if [ ! -f "$IN_CONFIG" ]; then
   echo "channel_threads: 1
-  feed_threads: 1
-  db:
-    user: kemal
-    password: kemal
-    host: localhost
-    port: 5432
-    dbname: invidious
-  full_refresh: false
-  https_only: false
-  domain:" | ${SUDO} tee ${IN_CONFIG}
+feed_threads: 1
+db:
+  user: kemal
+  password: kemal
+  host: localhost
+  port: 5432
+  dbname: invidious
+full_refresh: false
+https_only: false
+domain:" | ${SUDO} tee ${IN_CONFIG}
 fi
 }
 
