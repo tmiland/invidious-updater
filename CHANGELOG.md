@@ -85,3 +85,7 @@
     - Added in [1.4.7](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.4.7)
 - [X] Added option to add swap space
     - Added in [1.4.8](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.4.8)
+- [X] Clean Up
+    - Fixed bug with corrupt config [1.4.9](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.4.9)
+- [X] Bug Fix
+    - Fixed bug with corrupt config [1.5.0](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.5.0)
