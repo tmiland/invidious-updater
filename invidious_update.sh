@@ -1008,6 +1008,7 @@ backupConfig() {
 
 # Checkout Master branch to branch master (to avoid detached HEAD state)
 GetMaster() {
+  create_config
   backupConfig
   git checkout origin/${IN_BRANCH} -B ${IN_BRANCH}
 }
@@ -1233,8 +1234,6 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
     done
   fi
   echo -e "${GREEN}${DONE} Finished Database section${NC}"
-
-  create_config
 
   update_config
   # Crystal complaining about permissions on CentOS and somewhat Debian
@@ -1850,7 +1849,7 @@ uninstall_invidious() {
       echo -e "${ORANGE}${ARROW} User $USER_NAME Found, removing user and files${NC}"
       echo ""
       if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" || $(lsb_release -si) == "LinuxMint" ]]; then
-        deluser --remove-home $USER_NAME
+        ${SUDO} deluser --remove-home $USER_NAME
       fi
       if [[ $(lsb_release -si) == "CentOS" || $(lsb_release -si) == "Fedora" ]]; then
         /usr/sbin/userdel -r $USER_NAME
