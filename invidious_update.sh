@@ -1006,24 +1006,15 @@ backupConfig() {
   /bin/cp -f $configBackup $ConfigBakPath/$backupConfigFile
 }
 
-# Ignore config file
-ignore_config() {
-  #sed -i '$ a config/config.yml' ${REPO_DIR}/.git/info/exclude
-  #git rm --cached ${IN_CONFIG}
-  git update-index --skip-worktree ${IN_CONFIG}
-}
-
 # Checkout Master branch to branch master (to avoid detached HEAD state)
 GetMaster() {
   backupConfig
-  ignore_config
   git checkout origin/${IN_BRANCH} -B ${IN_BRANCH}
 }
 
 # Update Master branch
 UpdateMaster() {
   backupConfig
-  ignore_config
   if [[ $(lsb_release -rs) == "16.04" ]]; then
     mv ${IN_CONFIG} /tmp
   fi
