@@ -739,73 +739,6 @@ exit_script() {
   echo ""
 }
 
-# Update invidious_update.sh
-
-# Default: Check for update, if available, ask user if they want to execute it
-update_updater() {
-  if [ $UPDATE_SCRIPT = 'no' ]; then
-    return 0 # User signified not to check for updates
-  fi
-  echo -e "${GREEN}${ARROW} Checking for updates...${NC}"
-  get_release_info
-  # Get tmpfile from github
-  declare -r tmpfile=$(download_file "$LATEST_RELEASE")
-  # Do the work
-  # New function, fetch latest release from GitHub
-  if [[ $(get_updater_version "${SCRIPT_DIR}/$SCRIPT_FILENAME") < "${RELEASE_TAG}" ]]; then
-    #if [[ $(get_updater_version "${SCRIPT_DIR}/${SCRIPT_FILENAME}") < $(get_updater_version "${tmpfile}") ]]; then
-    #LV=$(get_updater_version "${tmpfile}")
-    if [ $UPDATE_SCRIPT = 'yes' ]; then
-      show_update_banner
-      echo -e "${RED}${ARROW} Do you want to update [Y/N?]${NC}"
-      read -p "" -n 1 -r
-      echo -e "\n\n"
-      if [[ $REPLY =~ ^[Yy]$ ]]; then
-        mv "${tmpfile}" "${SCRIPT_DIR}/${SCRIPT_FILENAME}"
-        chmod u+x "${SCRIPT_DIR}/${SCRIPT_FILENAME}"
-        "${SCRIPT_DIR}/${SCRIPT_FILENAME}" "$@" -d
-        exit 1 # Update available, user chooses to update
-      fi
-      if [[ $REPLY =~ ^[Nn]$ ]]; then
-        show_banner
-        rm "${tmpfile}"
-        return 1 # Update available, but user chooses not to update
-      fi
-    fi
-  else
-    echo -e "${GREEN}${DONE} No update available.${NC}"
-    if [[ "${tmpfile}" ]]; then
-      rm "${tmpfile}"
-    fi
-    return 0 # No update available
-  fi
-}
-
-# Ask user to update yes/no
-if [ $# != 0 ]; then
-  while getopts ":ud" opt; do
-    case $opt in
-      u)
-        UPDATE_SCRIPT='yes'
-        ;;
-      d)
-        UPDATE_SCRIPT='no'
-        ;;
-      \?)
-        echo -e "${RED}\n ${ERROR} Error! Invalid option: -$OPTARG${NC}" >&2
-        usage
-        ;;
-      :)
-        echo -e "${RED}${ERROR} Error! Option -$OPTARG requires an argument.${NC}" >&2
-        exit 1
-        ;;
-    esac
-  done
-fi
-
-update_updater $@
-cd "$CURRDIR"
-
 # Check Git repo
 chk_git_repo() {
   # Check if the folder is a git repo
@@ -1015,18 +948,28 @@ GetMaster() {
 
 # Update Master branch
 UpdateMaster() {
-  backupConfig
-  if [[ $(lsb_release -rs) == "16.04" ]]; then
-    mv ${IN_CONFIG} /tmp
+  
+  if [ "`git log --pretty=%H ...refs/heads/master^ | head -n 1`" = "`git ls-remote origin -h refs/heads/master | cut -f1`" ] ; then
+      status=0
+      statustxt="Invidious is already up to date..."
+    else
+      status=2
+      statustxt="not up to date, Pulling Invidious from GitHub"
+      backupConfig
+    if [[ $(lsb_release -rs) == "16.04" ]]; then
+      mv ${IN_CONFIG} /tmp
+    fi
+      # currentVersion=$(git rev-list --max-count=1 --abbrev-commit HEAD)
+      git pull
+      # for i in `git rev-list --abbrev-commit $currentVersion..HEAD` ; do file=${REPO_DIR}/config/migrate-scripts/migrate-db-$i.sh ; [ -f $file ] && $file ; done
+      git stash
+      git checkout origin/${IN_BRANCH} -B ${IN_BRANCH}
+    if [[ $(lsb_release -rs) == "16.04" ]]; then
+      mv /tmp/config.yml ${REPO_DIR}/config
+    fi
   fi
-  currentVersion=$(git rev-list --max-count=1 --abbrev-commit HEAD)
-  git pull
-  for i in `git rev-list --abbrev-commit $currentVersion..HEAD` ; do file=${REPO_DIR}/config/migrate-scripts/migrate-db-$i.sh ; [ -f $file ] && $file ; done
-  git stash
-  git checkout origin/${IN_BRANCH} -B ${IN_BRANCH}
-  if [[ $(lsb_release -rs) == "16.04" ]]; then
-    mv /tmp/config.yml ${REPO_DIR}/config
-  fi
+  
+  echo "$statustxt"
 }
 
 # Rebuild Invidious
@@ -1052,6 +995,85 @@ restart() {
   echo -e "${GREEN}${DONE} Invidious has been restarted ${NC}"
   sleep 3
 }
+
+# Update invidious_update.sh
+
+# Default: Check for update, if available, ask user if they want to execute it
+update_updater() {
+  if [ $UPDATE_SCRIPT = 'no' ]; then
+    return 0 # User signified not to check for updates
+  fi
+  echo -e "${GREEN}${ARROW} Checking for updates...${NC}"
+  get_release_info
+  # Get tmpfile from github
+  declare -r tmpfile=$(download_file "$LATEST_RELEASE")
+  # Do the work
+  # New function, fetch latest release from GitHub
+  if [[ $(get_updater_version "${SCRIPT_DIR}/$SCRIPT_FILENAME") < "${RELEASE_TAG}" ]]; then
+    #if [[ $(get_updater_version "${SCRIPT_DIR}/${SCRIPT_FILENAME}") < $(get_updater_version "${tmpfile}") ]]; then
+    #LV=$(get_updater_version "${tmpfile}")
+    if [ $UPDATE_SCRIPT = 'yes' ]; then
+      show_update_banner
+      echo -e "${RED}${ARROW} Do you want to update [Y/N?]${NC}"
+      read -p "" -n 1 -r
+      echo -e "\n\n"
+      if [[ $REPLY =~ ^[Yy]$ ]]; then
+        mv "${tmpfile}" "${SCRIPT_DIR}/${SCRIPT_FILENAME}"
+        chmod u+x "${SCRIPT_DIR}/${SCRIPT_FILENAME}"
+        "${SCRIPT_DIR}/${SCRIPT_FILENAME}" "$@" -d
+        exit 1 # Update available, user chooses to update
+      fi
+      if [[ $REPLY =~ ^[Nn]$ ]]; then
+        show_banner
+        rm "${tmpfile}"
+        return 1 # Update available, but user chooses not to update
+      fi
+    fi
+  else
+    echo -e "${GREEN}${DONE} No update available.${NC}"
+    if [[ "${tmpfile}" ]]; then
+      rm "${tmpfile}"
+    fi
+    return 0 # No update available
+  fi
+}
+# Add option to update the Invidious Repo from Cron
+update_invidious_cron() {
+  cd ${REPO_DIR} || exit 1
+  UpdateMaster ||
+  rebuild ||
+  ${SUDO} chown -R $USER_NAME:$USER_NAME ${REPO_DIR} ||
+  restart
+  exit
+}
+
+# Ask user to update yes/no
+if [ $# != 0 ]; then
+  while getopts ":ud:c" opt; do
+    case $opt in
+      u)
+        UPDATE_SCRIPT='yes'
+        ;;
+      d)
+        UPDATE_SCRIPT='no'
+        ;;
+      c)
+        update_invidious_cron
+        ;;
+      \?)
+        echo -e "${RED}\n ${ERROR} Error! Invalid option: -$OPTARG${NC}" >&2
+        usage
+        ;;
+      :)
+        echo -e "${RED}${ERROR} Error! Option -$OPTARG requires an argument.${NC}" >&2
+        exit 1
+        ;;
+    esac
+  done
+fi
+
+update_updater $@
+cd "$CURRDIR"
 
 # Get dbname from config file (used in db maintenance and uninstallation)
 get_dbname() {
@@ -1262,26 +1284,14 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
 update_invidious() {
 
   echo ""
-  read -n1 -r -p "Invidious is ready to be updated, press any key to continue..."
-  echo ""
-  echo -e "${GREEN}${ARROW} Pulling Invidious from GitHub${NC}"
-  #sudo -i -u $USER_NAME
-  #cd $USER_DIR || exit 1
   cd ${REPO_DIR} || exit 1
-
-  UpdateMaster
-
-  rebuild
-
-  ${SUDO} chown -R $USER_NAME:$USER_NAME ${REPO_DIR}
-  #cd -
-
+  UpdateMaster ||
+  rebuild ||
+  ${SUDO} chown -R $USER_NAME:$USER_NAME ${REPO_DIR} ||
   restart
-
   sleep 3
   cd ${CURRDIR}
   ./${SCRIPT_FILENAME}
-  #exit
 }
 
 deploy_with_docker() {
