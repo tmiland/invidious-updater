@@ -928,6 +928,30 @@ domain:" | ${SUDO} tee ${IN_CONFIG}
 fi
 }
 
+# Rebuild Invidious
+rebuild() {
+  printf "\n-- Rebuilding ${REPO_DIR}\n"
+  cd ${REPO_DIR} || exit 1
+  shards update && shards install
+  crystal build src/invidious.cr --release
+  #sudo chown -R 1000:$USER_NAME $USER_DIR
+  cd -
+  printf "\n"
+  echo -e "${GREEN}${DONE} Done Rebuilding ${REPO_DIR} ${NC}"
+  sleep 3
+}
+
+# Restart Invidious
+restart() {
+  printf "\n-- restarting Invidious\n"
+  ${SUDO} systemctl restart $SERVICE_NAME
+  sleep 2
+  ${SUDO} systemctl status $SERVICE_NAME --no-pager
+  printf "\n"
+  echo -e "${GREEN}${DONE} Invidious has been restarted ${NC}"
+  sleep 3
+}
+
 # Backup config file
 backupConfig() {
   # Set config backup path
@@ -951,10 +975,14 @@ UpdateMaster() {
   
   if [ "`git log --pretty=%H ...refs/heads/master^ | head -n 1`" = "`git ls-remote origin -h refs/heads/master | cut -f1`" ] ; then
       status=0
-      statustxt="Invidious is already up to date..."
+      echo ""
+      echo -e "${GREEN}${ARROW} Invidious is already up to date...${NC}"
+      echo ""
     else
       status=2
-      statustxt="not up to date, Pulling Invidious from GitHub"
+      echo ""
+      echo -e "${ORANGE}${ARROW} Not up to date, Pulling Invidious from GitHub${NC}"
+      echo ""
       backupConfig
     if [[ $(lsb_release -rs) == "16.04" ]]; then
       mv ${IN_CONFIG} /tmp
@@ -967,33 +995,10 @@ UpdateMaster() {
     if [[ $(lsb_release -rs) == "16.04" ]]; then
       mv /tmp/config.yml ${REPO_DIR}/config
     fi
+    rebuild
+    ${SUDO} chown -R $USER_NAME:$USER_NAME ${REPO_DIR}
+    restart
   fi
-  
-  echo "$statustxt"
-}
-
-# Rebuild Invidious
-rebuild() {
-  printf "\n-- Rebuilding ${REPO_DIR}\n"
-  cd ${REPO_DIR} || exit 1
-  shards update && shards install
-  crystal build src/invidious.cr --release
-  #sudo chown -R 1000:$USER_NAME $USER_DIR
-  cd -
-  printf "\n"
-  echo -e "${GREEN}${DONE} Done Rebuilding ${REPO_DIR} ${NC}"
-  sleep 3
-}
-
-# Restart Invidious
-restart() {
-  printf "\n-- restarting Invidious\n"
-  ${SUDO} systemctl restart $SERVICE_NAME
-  sleep 2
-  ${SUDO} systemctl status $SERVICE_NAME --no-pager
-  printf "\n"
-  echo -e "${GREEN}${DONE} Invidious has been restarted ${NC}"
-  sleep 3
 }
 
 # Update invidious_update.sh
@@ -1040,10 +1045,7 @@ update_updater() {
 # Add option to update the Invidious Repo from Cron
 update_invidious_cron() {
   cd ${REPO_DIR} || exit 1
-  UpdateMaster ||
-  rebuild ||
-  ${SUDO} chown -R $USER_NAME:$USER_NAME ${REPO_DIR} ||
-  restart
+  UpdateMaster
   exit
 }
 
@@ -1285,10 +1287,7 @@ update_invidious() {
 
   echo ""
   cd ${REPO_DIR} || exit 1
-  UpdateMaster ||
-  rebuild ||
-  ${SUDO} chown -R $USER_NAME:$USER_NAME ${REPO_DIR} ||
-  restart
+  UpdateMaster
   sleep 3
   cd ${CURRDIR}
   ./${SCRIPT_FILENAME}
