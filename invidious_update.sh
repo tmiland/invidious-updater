@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 
-## Author: Tommy Miland (@tmiland) - Copyright (c) 2019
+## Author: Tommy Miland (@tmiland) - Copyright (c) 2020
 
 
 ######################################################################
@@ -17,7 +17,7 @@ version='1.5.1' # Must stay on line 14 for updater to fetch the numbers
 #
 # MIT License
 #
-# Copyright (c) 2019 Tommy Miland
+# Copyright (c) 2020 Tommy Miland
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -1338,13 +1338,27 @@ deploy_with_docker() {
       if ${DOCKERCHK} >/dev/null 2>&1; then
         
         if [[ $BUILD_DOCKER = "y" ]]; then
-          cd ${REPO_DIR}
-          docker-compose up -d
-          echo -e "${GREEN}${DONE} Deployment done.${NC}"
-          sleep 5
-          cd ${CURRDIR}
-          ./${SCRIPT_FILENAME}
-          #exit 0
+            # Let the user enter custom port:
+            while [[ $custom_docker_port != "y" && $custom_docker_port != "n" ]]; do
+              read -p "Do you want to use a custom port? [y/n]: " custom_docker_port
+            done
+            if [[ $custom_docker_port = "y" ]]; then
+              read -p "       Enter the desired port number:" docker_port
+              ${SUDO} sed -i "s/127.0.0.1:3000:3000/127.0.0.1:$docker_port:3000/g" ${REPO_DIR}/docker-compose.yml
+              cd ${REPO_DIR}
+              docker-compose up -d
+              echo -e "${GREEN}${DONE} Deployment done with custom port $docker_port.${NC}"
+              sleep 5
+              cd ${CURRDIR}
+              ./${SCRIPT_FILENAME}
+            else
+              cd ${REPO_DIR}
+              docker-compose up -d
+              echo -e "${GREEN}${DONE} Deployment done.${NC}"
+              sleep 5
+              cd ${CURRDIR}
+              ./${SCRIPT_FILENAME}
+          fi
         fi
 
         if [[ $BUILD_DOCKER = "n" ]]; then
