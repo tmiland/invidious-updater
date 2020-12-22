@@ -86,6 +86,10 @@
 - [X] Added option to add swap space
     - Added in [1.4.8](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.4.8)
 - [X] Clean Up
-    - Fixed bug with corrupt config [1.4.9](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.4.9)
+    - Done in [1.4.9](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.4.9)
 - [X] Bug Fix
     - Fixed bug with corrupt config [1.5.0](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.5.0)
+- [X] Added option to update Invidious from cron with /path/to/script/invidious_update.sh -c
+    - Added in [1.5.1](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.5.1)
+- [X] Add custom port option for Docker
+    - Added in [1.5.2](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.5.2)
