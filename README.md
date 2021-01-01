@@ -174,27 +174,15 @@ Tested and working on:
 
 [install log Debian 10](https://github.com/tmiland/Invidious-Updater/blob/master/log/install_log_debian.log)
 
-## Todo
-
-On the todo list:
-
-- [X] Nothing to do.
-
 ## Changelog
 
 See [Changelog](https://github.com/tmiland/Invidious-Updater/blob/master/CHANGELOG.md)
-
-### Possible options
-
-Ideas:
-
-- Support for auto-update check
-  - [ ] For Invidious
 
 ## Compatibility and Requirements
 
 * Debian 8 and later
 * Ubuntu 16.04 and later
+* PureOS (Not tested)
 * CentOS 7
 * Fedora 29
   * Docker support
@@ -207,6 +195,7 @@ Ideas:
   * [nginx-autoinstall](https://github.com/angristan/nginx-autoinstall)
   * [Git-Repo-Update](https://github.com/KillianKemps/Git-Repo-Update)
   * [ghacks user.js updater.sh](https://github.com/ghacksuserjs/ghacks-user.js/blob/master/updater.sh)
+  * Plus many more.
 
 ## Feature request and bug reports
 - [Bug report](https://github.com/tmiland/Invidious-Updater/issues/new?assignees=tmiland&labels=bug&template=bug_report.md&title=Bug-report:)
