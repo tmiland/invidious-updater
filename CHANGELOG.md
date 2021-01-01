@@ -93,3 +93,5 @@
     - Added in [1.5.1](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.5.1)
 - [X] Add custom port option for Docker
     - Added in [1.5.2](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.5.2)
+- [X] Add support for PureOS
+    - Added in [1.5.3](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.5.3)
