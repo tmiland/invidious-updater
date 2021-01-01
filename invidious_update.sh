@@ -138,6 +138,10 @@ if ! lsb_release -si >/dev/null 2>&1; then
       PKGCMD="apt-get -o Dpkg::Progress-Fancy="1" install -qq"
       LSB=lsb-release
       ;;
+    PureOS*)
+      PKGCMD="apt-get -o Dpkg::Progress-Fancy="1" install -qq"
+      LSB=lsb-release
+      ;;      
     CentOS*)
       PKGCMD="yum install -y"
       LSB=redhat-lsb
@@ -183,7 +187,7 @@ PURGE=""
 CLEAN=""
 PKGCHK=""
 PGSQL_SERVICE=""
-if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" || $(lsb_release -si) == "LinuxMint" ]]; then
+if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" || $(lsb_release -si) == "LinuxMint" || $(lsb_release -si) == "PureOS" ]]; then
   export DEBIAN_FRONTEND=noninteractive
   SUDO="sudo"
   UPDATE="apt-get -o Dpkg::Progress-Fancy="1" update -qq"
@@ -301,7 +305,7 @@ install_nginx(){
 nginx_autoinstall_url=https://github.com/angristan/nginx-autoinstall/raw/master/nginx-autoinstall.sh
 
 nginx-autoinstall() {
-  if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" || $(lsb_release -si) == "LinuxMint" ]]; then
+  if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" || $(lsb_release -si) == "LinuxMint" || $(lsb_release -si) == "PureOS" ]]; then
     if [[ $(command -v 'curl') ]]; then
       source <(curl -sSLf $nginx_autoinstall_url)
     elif [[ $(command -v 'wget') ]]; then
@@ -575,7 +579,7 @@ pgbackup() {
   cd pgbackup
   if [[ $(lsb_release -si) == "CentOS" || $(lsb_release -si) == "Fedora" ]]; then
     pgsqlConfigPath=/var/lib/pgsql/11/data
-  elif [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" || $(lsb_release -si) == "LinuxMint" ]]; then
+  elif [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" || $(lsb_release -si) == "LinuxMint" || $(lsb_release -si) == "PureOS" ]]; then
     pgsqlConfigPath=/etc/postgresql/9.6/main
   else
     echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
@@ -891,7 +895,7 @@ logrotate_install() {
 
 # Get Crystal
 get_crystal() {
-  if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" || $(lsb_release -si) == "LinuxMint" ]]; then
+  if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" || $(lsb_release -si) == "LinuxMint" || $(lsb_release -si) == "PureOS" ]]; then
     if [[ ! -e /etc/apt/sources.list.d/crystal.list ]]; then
       #apt-key adv --keyserver keys.gnupg.net --recv-keys 09617FD37CC06B54
       curl -sLk "https://keybase.io/crystal/pgp_keys.asc" | ${SUDO} apt-key add -
@@ -1325,6 +1329,7 @@ deploy_with_docker() {
       if [[ $(lsb_release -si) == "Debian"    ||
             $(lsb_release -si) == "Ubuntu"    ||
             $(lsb_release -si) == "LinuxMint" ||
+            $(lsb_release -si) == "PureOS"    ||
             $(lsb_release -si) == "CentOS"    ||
             $(lsb_release -si) == "Fedora"
           ]]; then
@@ -1472,7 +1477,7 @@ deploy_with_docker() {
       echo ""
       # Update the apt package index:
       ${SUDO} ${UPDATE}
-      if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" || $(lsb_release -si) == "LinuxMint" ]]; then
+      if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" || $(lsb_release -si) == "LinuxMint" || $(lsb_release -si) == "PureOS" ]]; then
         DISTRO=$(printf '%s\n' $(lsb_release -si) | LC_ALL=C tr '[:upper:]' '[:lower:]')
         #Install packages to allow apt to use a repository over HTTPS:
         ${SUDO} ${INSTALL} \
@@ -1820,7 +1825,7 @@ uninstall_invidious() {
     echo -e "${ORANGE}${ARROW} Removing invidious files and modules files.${NC}"
     echo ""
 
-    if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" || $(lsb_release -si) == "LinuxMint" ]]; then
+    if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" || $(lsb_release -si) == "LinuxMint" || $(lsb_release -si) == "PureOS" ]]; then
       rm -r \
         /lib/systemd/system/${SERVICE_NAME} \
         /etc/apt/sources.list.d/crystal.list
@@ -1871,7 +1876,7 @@ uninstall_invidious() {
       echo ""
       echo -e "${ORANGE}${ARROW} User $USER_NAME Found, removing user and files${NC}"
       echo ""
-      if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" || $(lsb_release -si) == "LinuxMint" ]]; then
+      if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" || $(lsb_release -si) == "LinuxMint" || $(lsb_release -si) == "PureOS" ]]; then
         ${SUDO} deluser --remove-home $USER_NAME
       fi
       if [[ $(lsb_release -si) == "CentOS" || $(lsb_release -si) == "Fedora" ]]; then
