@@ -183,7 +183,7 @@ PURGE=""
 CLEAN=""
 PKGCHK=""
 PGSQL_SERVICE=""
-if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" || $(lsb_release -si) == "LinuxMint" ]]; then
+if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" || $(lsb_release -si) == "LinuxMint" || $(lsb_release -si) == "PureOS" ]]; then
   export DEBIAN_FRONTEND=noninteractive
   SUDO="sudo"
   UPDATE="apt-get -o Dpkg::Progress-Fancy="1" update -qq"
