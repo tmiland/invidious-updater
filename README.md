@@ -32,13 +32,9 @@
 | ------ | ------ |
 | [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/CentOS.png" height="140" width="280">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/CentOS.png) | [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Fedora.png" height="140" width="280">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Fedora.png)
 
-| Arch |
-| ------ |
-| [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Arch.png" height="140" width="280">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Arch.png)
-
-| PureOS |
-| ------ |
-| [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/PureOS.png" height="140" width="280">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/PureOS.png)
+| Arch | PureOS |
+| ------ | ------ |
+| [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Arch.png" height="140" width="280">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Arch.png) | [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/PureOS.png" height="140" width="280">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/PureOS.png)
 
 ## Recommendation
 
