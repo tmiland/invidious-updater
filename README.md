@@ -74,6 +74,21 @@ $ ./invidious_update.sh
  $ ./invidious_update.sh -u
  
  ```
+ 
+ #### Update Invidious via Cron
+
+```bash
+
+$ /path/to/script/invidious_update.sh -c
+
+```
+Add job to cron:
+```bash
+$ crontab -e
+```
+```bash
+@daily bash /path/to/script/invidious_update.sh -c > /dev/null 2>&1 # Automated Invidious Update
+```
 
 ***Note: you will be prompted to enter root password***
 
