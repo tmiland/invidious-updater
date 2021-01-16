@@ -154,6 +154,10 @@ if ! lsb_release -si >/dev/null 2>&1; then
       PKGCMD="yes | LC_ALL=en_US.UTF-8 pacman -S"
       LSB=lsb-release
       ;;
+   Manjaro*)
+      PKGCMD="yes | LC_ALL=en_US.UTF-8 pacman -S"
+      LSB=lsb-release
+      ;;
     *) echo -e "${RED}${ERROR} unknown distro: '$DISTRO'${NC}" ; exit 1 ;;
   esac
 
@@ -236,7 +240,7 @@ elif [[ $(lsb_release -si) == "Fedora" ]]; then
   UNINSTALL_PKGS="crystal openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-tools sqlite-devel"
   # PostgreSQL Service
   PGSQL_SERVICE="postgresql-11.service"
-elif [[ $(lsb_release -si) == "Arch" ]]; then
+elif [[ $(lsb_release -si) == "Arch" || $(lsb_release -si) == "ManjaroLinux"  ]]; then
   SUDO="sudo"
   UPDATE="pacman -Syu"
   INSTALL="pacman -S --noconfirm --needed"
@@ -907,8 +911,8 @@ get_crystal() {
     fi
   elif [[ $(lsb_release -si) == "Darwin" ]]; then
     exit 1;
-  elif [[ $(lsb_release -si) == "Arch" ]]; then
-    echo "Arch Linux... Skipping manual crystal install"
+  elif [[ $(lsb_release -si) == "Arch" || $(lsb_release -si) == "ManjaroLinux"  ]]; then
+    echo "Arch/Manjaro Linux... Skipping manual crystal install"
   else
     echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
     exit 1;
@@ -1240,7 +1244,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
       ${SUDO} chmod 600 /var/lib/pgsql/11/data/pg_hba.conf
     fi
   fi
-  if [[ $(lsb_release -si) == "Arch" ]]; then
+  if [[ $(lsb_release -si) == "Arch" || $(lsb_release -si) == "ManjaroLinux"  ]]; then
     su - postgres -c "initdb --locale en_US.UTF-8 -D '/var/lib/postgres/data'"
   fi
   ${SUDO} systemctl enable ${PGSQL_SERVICE}
@@ -1334,7 +1338,7 @@ deploy_with_docker() {
             $(lsb_release -si) == "Fedora"
           ]]; then
           DOCKERCHK=$PKGCHK docker-ce docker-ce-cli
-        elif [[ $(lsb_release -si) == "Arch" ]]; then
+        elif [[ $(lsb_release -si) == "Arch" || $(lsb_release -si) == "ManjaroLinux"  ]]; then
           DOCKERCHK=$PKGCHK docker
         else
           echo -e "${RED}${ERROR} Docker is not installed... ${NC}"
@@ -1537,7 +1541,7 @@ deploy_with_docker() {
         ${SUDO} systemctl start docker
         # Verify that Docker CE is installed correctly by running the hello-world image.
         ${SUDO} docker run hello-world
-      elif [[ $(lsb_release -si) == "Arch" ]]; then
+      elif [[ $(lsb_release -si) == "Arch"  || $(lsb_release -si) == "ManjaroLinux" ]]; then
         ${SUDO} ${INSTALL} docker
         # Enable Docker.
         ${SUDO} systemctl enable docker
