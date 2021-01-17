@@ -115,7 +115,7 @@ if [ ! ${ARCH_CHK} == 'x86_64' ]; then
   echo -e "${RED}${ERROR} Error: Sorry, your OS ($ARCH_CHK) is not supported.${NC}"
   exit 1;
 fi
-
+shopt -s nocasematch
 if ! lsb_release -si >/dev/null 2>&1; then
   if [[ -f /etc/debian_version ]]; then
     DISTRO=$(cat /etc/issue.net)
@@ -191,7 +191,12 @@ PURGE=""
 CLEAN=""
 PKGCHK=""
 PGSQL_SERVICE=""
-if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" || $(lsb_release -si) == "LinuxMint" || $(lsb_release -si) == "PureOS" ]]; then
+shopt -s nocasematch
+if [[ $(lsb_release -si) == "Debian"    ||
+      $(lsb_release -si) == "Ubuntu"    ||
+      $(lsb_release -si) == "LinuxMint" ||
+      $(lsb_release -si) == "PureOS"
+    ]]; then
   export DEBIAN_FRONTEND=noninteractive
   SUDO="sudo"
   UPDATE="apt-get -o Dpkg::Progress-Fancy="1" update -qq"
@@ -240,7 +245,9 @@ elif [[ $(lsb_release -si) == "Fedora" ]]; then
   UNINSTALL_PKGS="crystal openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-tools sqlite-devel"
   # PostgreSQL Service
   PGSQL_SERVICE="postgresql-11.service"
-elif [[ $(lsb_release -si) == "Arch" || $(lsb_release -si) == "ManjaroLinux"  ]]; then
+elif [[ $(lsb_release -si) == "Arch" ||
+        $(lsb_release -si) == "ManjaroLinux" 
+      ]]; then
   SUDO="sudo"
   UPDATE="pacman -Syu"
   INSTALL="pacman -S --noconfirm --needed"
@@ -309,7 +316,12 @@ install_nginx(){
 nginx_autoinstall_url=https://github.com/angristan/nginx-autoinstall/raw/master/nginx-autoinstall.sh
 
 nginx-autoinstall() {
-  if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" || $(lsb_release -si) == "LinuxMint" || $(lsb_release -si) == "PureOS" ]]; then
+  shopt -s nocasematch
+  if [[ $(lsb_release -si) == "Debian"    ||
+        $(lsb_release -si) == "Ubuntu"    ||
+        $(lsb_release -si) == "LinuxMint" ||
+        $(lsb_release -si) == "PureOS"
+      ]]; then
     if [[ $(command -v 'curl') ]]; then
       source <(curl -sSLf $nginx_autoinstall_url)
     elif [[ $(command -v 'wget') ]]; then
@@ -581,9 +593,16 @@ pgbackup() {
   printf "\n-- Setting up pgbackup\n"
   git clone https://github.com/tmiland/pgbackup.git
   cd pgbackup
-  if [[ $(lsb_release -si) == "CentOS" || $(lsb_release -si) == "Fedora" ]]; then
+  shopt -s nocasematch
+  if [[ $(lsb_release -si) == "CentOS" ||
+        $(lsb_release -si) == "Fedora" 
+      ]]; then
     pgsqlConfigPath=/var/lib/pgsql/11/data
-  elif [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" || $(lsb_release -si) == "LinuxMint" || $(lsb_release -si) == "PureOS" ]]; then
+  elif [[ $(lsb_release -si) == "Debian"    ||
+          $(lsb_release -si) == "Ubuntu"    ||
+          $(lsb_release -si) == "LinuxMint" ||
+          $(lsb_release -si) == "PureOS"
+        ]]; then
     pgsqlConfigPath=/etc/postgresql/9.6/main
   else
     echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
@@ -899,19 +918,28 @@ logrotate_install() {
 
 # Get Crystal
 get_crystal() {
-  if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" || $(lsb_release -si) == "LinuxMint" || $(lsb_release -si) == "PureOS" ]]; then
+  shopt -s nocasematch
+  if [[ $(lsb_release -si) == "Debian"    ||
+        $(lsb_release -si) == "Ubuntu"    ||
+        $(lsb_release -si) == "LinuxMint" ||
+        $(lsb_release -si) == "PureOS"
+      ]]; then
     if [[ ! -e /etc/apt/sources.list.d/crystal.list ]]; then
       #apt-key adv --keyserver keys.gnupg.net --recv-keys 09617FD37CC06B54
       curl -sLk "https://keybase.io/crystal/pgp_keys.asc" | ${SUDO} apt-key add -
       echo "deb https://dist.crystal-lang.org/apt crystal main" | ${SUDO} tee /etc/apt/sources.list.d/crystal.list
     fi
-  elif [[ $(lsb_release -si) == "CentOS" || $(lsb_release -si) == "Fedora" ]]; then
+  elif [[ $(lsb_release -si) == "CentOS" ||
+          $(lsb_release -si) == "Fedora"
+        ]]; then
     if [[ ! -e /etc/yum.repos.d/crystal.repo ]]; then
       curl -k https://dist.crystal-lang.org/rpm/setup.sh | ${SUDO} bash
     fi
   elif [[ $(lsb_release -si) == "Darwin" ]]; then
     exit 1;
-  elif [[ $(lsb_release -si) == "Arch" || $(lsb_release -si) == "ManjaroLinux"  ]]; then
+  elif [[ $(lsb_release -si) == "Arch" ||
+          $(lsb_release -si) == "ManjaroLinux"
+        ]]; then
     echo "Arch/Manjaro Linux... Skipping manual crystal install"
   else
     echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
@@ -1244,7 +1272,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
       ${SUDO} chmod 600 /var/lib/pgsql/11/data/pg_hba.conf
     fi
   fi
-  if [[ $(lsb_release -si) == "Arch" || $(lsb_release -si) == "ManjaroLinux"  ]]; then
+  if [[ $(lsb_release -si) == "Arch" || $(lsb_release -si) == "ManjaroLinux" ]]; then
     su - postgres -c "initdb --locale en_US.UTF-8 -D '/var/lib/postgres/data'"
   fi
   ${SUDO} systemctl enable ${PGSQL_SERVICE}
@@ -1330,6 +1358,7 @@ deploy_with_docker() {
       done
 
       docker_repo_chk
+      shopt -s nocasematch
       if [[ $(lsb_release -si) == "Debian"    ||
             $(lsb_release -si) == "Ubuntu"    ||
             $(lsb_release -si) == "LinuxMint" ||
@@ -1338,7 +1367,7 @@ deploy_with_docker() {
             $(lsb_release -si) == "Fedora"
           ]]; then
           DOCKERCHK=$PKGCHK docker-ce docker-ce-cli
-        elif [[ $(lsb_release -si) == "Arch" || $(lsb_release -si) == "ManjaroLinux"  ]]; then
+        elif [[ $(lsb_release -si) == "Arch" || $(lsb_release -si) == "ManjaroLinux" ]]; then
           DOCKERCHK=$PKGCHK docker
         else
           echo -e "${RED}${ERROR} Docker is not installed... ${NC}"
@@ -1481,7 +1510,12 @@ deploy_with_docker() {
       echo ""
       # Update the apt package index:
       ${SUDO} ${UPDATE}
-      if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" || $(lsb_release -si) == "LinuxMint" || $(lsb_release -si) == "PureOS" ]]; then
+      shopt -s nocasematch
+      if [[ $(lsb_release -si) == "Debian"    ||
+            $(lsb_release -si) == "Ubuntu"    ||
+            $(lsb_release -si) == "LinuxMint" ||
+            $(lsb_release -si) == "PureOS"
+        ]]; then
         DISTRO=$(printf '%s\n' $(lsb_release -si) | LC_ALL=C tr '[:upper:]' '[:lower:]')
         #Install packages to allow apt to use a repository over HTTPS:
         ${SUDO} ${INSTALL} \
@@ -1541,7 +1575,7 @@ deploy_with_docker() {
         ${SUDO} systemctl start docker
         # Verify that Docker CE is installed correctly by running the hello-world image.
         ${SUDO} docker run hello-world
-      elif [[ $(lsb_release -si) == "Arch"  || $(lsb_release -si) == "ManjaroLinux" ]]; then
+      elif [[ $(lsb_release -si) == "Arch" || $(lsb_release -si) == "ManjaroLinux" ]]; then
         ${SUDO} ${INSTALL} docker
         # Enable Docker.
         ${SUDO} systemctl enable docker
@@ -1828,8 +1862,12 @@ uninstall_invidious() {
     echo ""
     echo -e "${ORANGE}${ARROW} Removing invidious files and modules files.${NC}"
     echo ""
-
-    if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" || $(lsb_release -si) == "LinuxMint" || $(lsb_release -si) == "PureOS" ]]; then
+    shopt -s nocasematch
+    if [[ $(lsb_release -si) == "Debian"    ||
+          $(lsb_release -si) == "Ubuntu"    ||
+          $(lsb_release -si) == "LinuxMint" ||
+          $(lsb_release -si) == "PureOS"
+        ]]; then
       rm -r \
         /lib/systemd/system/${SERVICE_NAME} \
         /etc/apt/sources.list.d/crystal.list
@@ -1880,10 +1918,17 @@ uninstall_invidious() {
       echo ""
       echo -e "${ORANGE}${ARROW} User $USER_NAME Found, removing user and files${NC}"
       echo ""
-      if [[ $(lsb_release -si) == "Debian" || $(lsb_release -si) == "Ubuntu" || $(lsb_release -si) == "LinuxMint" || $(lsb_release -si) == "PureOS" ]]; then
+      shopt -s nocasematch
+      if [[ $(lsb_release -si) == "Debian"    ||
+            $(lsb_release -si) == "Ubuntu"    ||
+            $(lsb_release -si) == "LinuxMint" ||
+            $(lsb_release -si) == "PureOS"
+          ]]; then
         ${SUDO} deluser --remove-home $USER_NAME
       fi
-      if [[ $(lsb_release -si) == "CentOS" || $(lsb_release -si) == "Fedora" ]]; then
+      if [[ $(lsb_release -si) == "CentOS" ||
+            $(lsb_release -si) == "Fedora" 
+          ]]; then
         /usr/sbin/userdel -r $USER_NAME
       fi
     fi
