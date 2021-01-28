@@ -861,6 +861,8 @@ update_config() {
       # Add external_port: to config on line 13
       sed -i "11i\external_port:" "$f" > $TFILE
       sed -i "12i\check_tables: true" "$f" > $TFILE
+      sed -i "13i\port: $port" "$f" > $TFILE
+      sed -i "14i\host_binding: $ip" "$f" > $TFILE
       sed "s/$OLDPASS/$NEWPASS/g; s/$OLDDBNAME/$NEWDBNAME/g; s/$OLDDOMAIN/$NEWDOMAIN/g; s/$OLDHTTPS/$NEWHTTPS/g; s/$OLDEXTERNAL/$NEWEXTERNAL/g;" "$f" > $TFILE &&
       mv $TFILE "$f"
     else
@@ -881,7 +883,7 @@ update_config() {
 systemd_install() {
   # Setup Systemd Service
   cp ${REPO_DIR}/${SERVICE_NAME} /lib/systemd/system/${SERVICE_NAME}
-  ${SUDO} sed -i "s/invidious -o invidious.log/invidious -b ${ip} -p ${port} -o invidious.log/g" /lib/systemd/system/${SERVICE_NAME}
+  #${SUDO} sed -i "s/invidious -o invidious.log/invidious -b ${ip} -p ${port} -o invidious.log/g" /lib/systemd/system/${SERVICE_NAME}
   # Enable invidious start at boot
   ${SUDO} systemctl enable ${SERVICE_NAME}
   # Reload Systemd
@@ -1140,7 +1142,7 @@ install_invidious() {
       echo -e "${ORANGE}Advice: Add domain name, or blank if not using one${NC}"
         read -p "       Enter the desired domain name:" domain
       echo -e "${ORANGE}Advice: Add local or public ip you want to bind to (Default: localhost)${NC}"
-        read -p "       Enter the desired ip adress:" ip
+        read -p "       Enter the desired ip address:" ip
       echo -e "${ORANGE}Advice: Add port number (Default: 3000)${NC}"
         read -p "       Enter the desired port number:" port
       echo -e "${ORANGE}Advice: Add database name (Default: Invidious)${NC}"
@@ -1174,7 +1176,7 @@ install_invidious() {
   echo -e "You entered: \n"
   echo -e " ${DONE} branch        : $IN_BRANCH"
   echo -e " ${DONE} domain        : $domain"
-  echo -e " ${DONE} ip adress     : $ip"
+  echo -e " ${DONE} ip address    : $ip"
   echo -e " ${DONE} port          : $port"
   echo -e " ${DONE} external port : $external_port"
   echo -e " ${DONE} dbname        : $psqldb"
