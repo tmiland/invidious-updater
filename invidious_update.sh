@@ -1172,6 +1172,8 @@ install_invidious() {
     esac
   done
 
+  psqldb=$(printf '%s\n' $psqldb | LC_ALL=C tr '[:upper:]' '[:lower:]')
+
   echo -e "${GREEN}\n"
   echo -e "You entered: \n"
   echo -e " ${DONE} branch        : $IN_BRANCH"
