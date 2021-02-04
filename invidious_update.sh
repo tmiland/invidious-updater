@@ -926,15 +926,15 @@ get_crystal() {
         $(lsb_release -si) == "PureOS"
       ]]; then
     if [[ ! -e /etc/apt/sources.list.d/crystal.list ]]; then
-      #apt-key adv --keyserver keys.gnupg.net --recv-keys 09617FD37CC06B54
-      curl -sLk "https://keybase.io/crystal/pgp_keys.asc" | ${SUDO} apt-key add -
-      echo "deb https://dist.crystal-lang.org/apt crystal main" | ${SUDO} tee /etc/apt/sources.list.d/crystal.list
+      # Add repo metadata signign key (shared bintray signing key)
+      apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 379CE192D401AB61
+      echo "deb https://dl.bintray.com/crystal/deb all stable" | tee /etc/apt/sources.list.d/crystal.list
     fi
   elif [[ $(lsb_release -si) == "CentOS" ||
           $(lsb_release -si) == "Fedora"
         ]]; then
     if [[ ! -e /etc/yum.repos.d/crystal.repo ]]; then
-      curl -k https://dist.crystal-lang.org/rpm/setup.sh | ${SUDO} bash
+      curl -fsSL https://crystal-lang.org/install.sh | ${SUDO} bash
     fi
   elif [[ $(lsb_release -si) == "Darwin" ]]; then
     exit 1;
