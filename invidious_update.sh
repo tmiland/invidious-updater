@@ -222,7 +222,7 @@ elif [[ $(lsb_release -si) == "CentOS" ]]; then
   CLEAN="yum clean all -y -q"
   PKGCHK="rpm --quiet --query"
   # Pre-install packages
-  PRE_INSTALL_PKGS="epel-release git curl sudo"
+  PRE_INSTALL_PKGS="epel-release git curl sudo dnf-plugins-core"
   # Install packages
   INSTALL_PKGS="crystal openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-tools sqlite-devel postgresql postgresql-server"
   #Uninstall packages
@@ -597,7 +597,7 @@ pgbackup() {
   if [[ $(lsb_release -si) == "CentOS" ||
         $(lsb_release -si) == "Fedora" 
       ]]; then
-    pgsqlConfigPath=/var/lib/pgsql/11/data
+    pgsqlConfigPath=/var/lib/pgsql/data
   elif [[ $(lsb_release -si) == "Debian"    ||
           $(lsb_release -si) == "Ubuntu"    ||
           $(lsb_release -si) == "LinuxMint" ||
@@ -882,7 +882,10 @@ update_config() {
 # Systemd install
 systemd_install() {
   # Setup Systemd Service
-  if [[ $(lsb_release -si) == "Fedora" ]]; then
+  shopt -s nocasematch
+  if [[ $(lsb_release -si) == "CentOS" ||
+        $(lsb_release -si) == "Fedora" 
+      ]]; then
     cp ${REPO_DIR}/${SERVICE_NAME} /etc/systemd/system/${SERVICE_NAME}
     # Set SELinux to permissive
     # sed -i 's/enforcing/permissive/g' /etc/selinux/config
@@ -1261,10 +1264,17 @@ install_invidious() {
   if [[ $(lsb_release -si) == "CentOS" || $(lsb_release -si) == "Fedora" ]]; then
     if ! ${PKGCHK} ${PGSQL_SERVICE} >/dev/null 2>&1; then
       if [[ $(lsb_release -si) == "CentOS" ]]; then
-        ${SUDO} ${INSTALL} "https://download.postgresql.org/pub/repos/yum/11/redhat/rhel-7.7-x86_64/pgdg-redhat-repo-latest.noarch.rpm"
+        ${SUDO} yum config-manager --set-enabled powertools
+        ${SUDO} dnf --enablerepo=powertools install libyaml-devel
       fi
 
-      if [[ ! -d /var/lib/pgsql/data ]]; then
+      if [[ -d /var/lib/pgsql/data ]]; then
+        if [[ -d /var/lib/pgsql/data.bak ]]; then
+          ${SUDO} rm -rf /var/lib/pgsql/data.bak
+        fi
+          ${SUDO} mv -f /var/lib/pgsql/data /var/lib/pgsql/data.bak
+          ${SUDO} /usr/bin/postgresql-setup --initdb
+      else
         ${SUDO} /usr/bin/postgresql-setup --initdb
       fi
       ${SUDO} chmod 775 /var/lib/pgsql/data/postgresql.conf
