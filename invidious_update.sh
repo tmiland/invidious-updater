@@ -897,6 +897,7 @@ systemd_install() {
     sleep 5
   else
     echo -e "${RED}${ERROR} Invidious service installation failed...${NC}"
+    ${SUDO} journalctl -u ${SERVICE_NAME}
     sleep 5
   fi
 }
@@ -1119,8 +1120,21 @@ get_dbname() {
   echo $(sed -n 's/.*dbname *: *\([^ ]*.*\)/\1/p' "$1")
 }
 
+check_exit_status() {
+  if [ $? -eq 0 ]
+  then
+    echo
+    echo -e "${GREEN}${DONE} Success${NC}"
+    echo
+  else
+    echo
+    echo -e "${RED}${ERROR}[ERROR] Process Failed!${NC}"
+    echo
+    exit 1
+  fi
+}
+
 install_invidious() {
-  # chk_permissions
 
   chk_git_repo
 
@@ -1241,13 +1255,10 @@ install_invidious() {
     if ! ${PKGCHK} ${PGSQL_SERVICE} >/dev/null 2>&1; then
       if [[ $(lsb_release -si) == "CentOS" ]]; then
         ${SUDO} ${INSTALL} "https://download.postgresql.org/pub/repos/yum/11/redhat/rhel-7.7-x86_64/pgdg-redhat-repo-latest.noarch.rpm"
-
       fi
-
       if [[ $(lsb_release -si) == "Fedora" ]]; then
         ${SUDO} ${INSTALL} "https://download.postgresql.org/pub/repos/yum/11/fedora/fedora-$(lsb_release -sr)-x86_64/pgdg-fedora-repo-latest.noarch.rpm"
       fi
-
       ${SUDO} ${INSTALL} postgresql11-server postgresql11
       ${SUDO} /usr/pgsql-11/bin/postgresql-11-setup initdb
       ${SUDO} chmod 775 /var/lib/pgsql/11/data/postgresql.conf
@@ -1307,6 +1318,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
   #sudo -i -u invidious \
     shards update && shards install
   crystal build src/invidious.cr --release
+  check_exit_status
   # Not figured out why yet, so let's set permissions after as well...
   set_permissions
 
