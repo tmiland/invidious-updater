@@ -414,6 +414,11 @@ EOF
     ;;
   * ) echo "Enter Y, N or Q, please." ;;
   esac
+  else
+    echo -e "${RED}${ERROR} Nginx is not installed${NC}"
+    sleep 3
+    cd ${CURRDIR}
+    ./${SCRIPT_FILENAME}
   fi
   
 }
