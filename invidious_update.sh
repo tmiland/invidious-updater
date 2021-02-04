@@ -224,11 +224,11 @@ elif [[ $(lsb_release -si) == "CentOS" ]]; then
   # Pre-install packages
   PRE_INSTALL_PKGS="epel-release git curl sudo"
   # Install packages
-  INSTALL_PKGS="crystal openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-tools sqlite-devel"
+  INSTALL_PKGS="crystal openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-tools sqlite-devel postgresql postgresql-server"
   #Uninstall packages
   UNINSTALL_PKGS="crystal openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-tools sqlite-devel"
 # PostgreSQL Service
-  PGSQL_SERVICE="postgresql-11.service"
+  PGSQL_SERVICE="postgresql.service"
 elif [[ $(lsb_release -si) == "Fedora" ]]; then
   SUDO="sudo"
   UPDATE="dnf update -q"
@@ -240,11 +240,11 @@ elif [[ $(lsb_release -si) == "Fedora" ]]; then
   # Pre-install packages
   PRE_INSTALL_PKGS="git curl sudo"
   # Install packages
-  INSTALL_PKGS="crystal openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-tools sqlite-devel"
+  INSTALL_PKGS="crystal openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-tools sqlite-devel postgresql postgresql-server"
   #Uninstall packages
   UNINSTALL_PKGS="crystal openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-tools sqlite-devel"
   # PostgreSQL Service
-  PGSQL_SERVICE="postgresql-11.service"
+  PGSQL_SERVICE="postgresql.service"
 elif [[ $(lsb_release -si) == "Arch" ||
         $(lsb_release -si) == "ManjaroLinux" 
       ]]; then
@@ -504,17 +504,17 @@ get_updater_version() {
 
 # Show service status - @FalconStats
 show_status() {
-if [[ $(lsb_release -si) == "CentOS" || $(lsb_release -si) == "Fedora" ]]; then
-  declare -a services=(
-    "invidious"
-    "postgresql-11"
-  )
-  else
+# if [[ $(lsb_release -si) == "CentOS" || $(lsb_release -si) == "Fedora" ]]; then
+#   declare -a services=(
+#     "invidious"
+#     "postgresql-11"
+#   )
+#   else
     declare -a services=(
       "invidious"
       "postgresql"
       )
-  fi
+  #fi
   declare -a serviceName=(
     "Invidious"
     "PostgreSQL"
@@ -882,7 +882,14 @@ update_config() {
 # Systemd install
 systemd_install() {
   # Setup Systemd Service
-  cp ${REPO_DIR}/${SERVICE_NAME} /lib/systemd/system/${SERVICE_NAME}
+  if [[ $(lsb_release -si) == "Fedora" ]]; then
+    cp ${REPO_DIR}/${SERVICE_NAME} /etc/systemd/system/${SERVICE_NAME}
+    # Set SELinux to permissive
+    # sed -i 's/enforcing/permissive/g' /etc/selinux/config
+    ${SUDO} setenforce 0
+  else
+    cp ${REPO_DIR}/${SERVICE_NAME} /lib/systemd/system/${SERVICE_NAME}
+  fi
   #${SUDO} sed -i "s/invidious -o invidious.log/invidious -b ${ip} -p ${port} -o invidious.log/g" /lib/systemd/system/${SERVICE_NAME}
   # Enable invidious start at boot
   ${SUDO} systemctl enable ${SERVICE_NAME}
@@ -1130,7 +1137,7 @@ check_exit_status() {
     echo
     echo -e "${RED}${ERROR}[ERROR] Process Failed!${NC}"
     echo
-    exit 1
+    exit
   fi
 }
 
@@ -1256,16 +1263,15 @@ install_invidious() {
       if [[ $(lsb_release -si) == "CentOS" ]]; then
         ${SUDO} ${INSTALL} "https://download.postgresql.org/pub/repos/yum/11/redhat/rhel-7.7-x86_64/pgdg-redhat-repo-latest.noarch.rpm"
       fi
-      if [[ $(lsb_release -si) == "Fedora" ]]; then
-        ${SUDO} ${INSTALL} "https://download.postgresql.org/pub/repos/yum/11/fedora/fedora-$(lsb_release -sr)-x86_64/pgdg-fedora-repo-latest.noarch.rpm"
+
+      if [[ ! -d /var/lib/pgsql/data ]]; then
+        ${SUDO} /usr/bin/postgresql-setup --initdb
       fi
-      ${SUDO} ${INSTALL} postgresql11-server postgresql11
-      ${SUDO} /usr/pgsql-11/bin/postgresql-11-setup initdb
-      ${SUDO} chmod 775 /var/lib/pgsql/11/data/postgresql.conf
-      ${SUDO} chmod 775 /var/lib/pgsql/11/data/pg_hba.conf
+      ${SUDO} chmod 775 /var/lib/pgsql/data/postgresql.conf
+      ${SUDO} chmod 775 /var/lib/pgsql/data/pg_hba.conf
       sleep 1
-      ${SUDO} sed -i "s/#port = 5432/port = 5432/g" /var/lib/pgsql/11/data/postgresql.conf
-      cp -rp /var/lib/pgsql/11/data/pg_hba.conf /var/lib/pgsql/11/data/pg_hba.conf.bak
+      ${SUDO} sed -i "s/#port = 5432/port = 5432/g" /var/lib/pgsql/data/postgresql.conf
+      cp -rp /var/lib/pgsql/data/pg_hba.conf /var/lib/pgsql/data/pg_hba.conf.bak
       echo "# Database administrative login by Unix domain socket
 local   all             postgres                                peer
 
@@ -1281,13 +1287,15 @@ host    all             all             ::1/128                 md5
 # replication privilege.
 local   replication     all                                     peer
 host    replication     all             127.0.0.1/32            md5
-host    replication     all             ::1/128                 md5" | ${SUDO} tee /var/lib/pgsql/11/data/pg_hba.conf
-      ${SUDO} chmod 600 /var/lib/pgsql/11/data/postgresql.conf
-      ${SUDO} chmod 600 /var/lib/pgsql/11/data/pg_hba.conf
+host    replication     all             ::1/128                 md5" | ${SUDO} tee /var/lib/pgsql/data/pg_hba.conf
+      ${SUDO} chmod 600 /var/lib/pgsql/data/postgresql.conf
+      ${SUDO} chmod 600 /var/lib/pgsql/data/pg_hba.conf
     fi
   fi
   if [[ $(lsb_release -si) == "Arch" || $(lsb_release -si) == "ManjaroLinux" ]]; then
-    su - postgres -c "initdb --locale en_US.UTF-8 -D '/var/lib/postgres/data'"
+    if [[ ! -d /var/lib/postgres/data ]]; then
+      su - postgres -c "initdb --locale en_US.UTF-8 -D '/var/lib/postgres/data'"
+    fi
   fi
   ${SUDO} systemctl enable ${PGSQL_SERVICE}
   sleep 1
