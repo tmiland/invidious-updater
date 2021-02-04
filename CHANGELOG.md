@@ -95,3 +95,5 @@
     - Added in [1.5.2](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.5.2)
 - [X] Add support for PureOS
     - Added in [1.5.3](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.5.3)
+- [X] Various Fixes
+    - Added in [1.5.4](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.5.4)
