@@ -168,10 +168,10 @@ Tested and working on:
   - [X] Docker option tested, not working
 - [X] Tested on Ubuntu 18.10
   - [X] Docker option tested and working
-- [X] Tested on CentOS 7
-  - [X] Docker option tested and working
-- [X] Tested on Fedora 29
-  - [X] Docker option tested and working
+- [X] Tested on CentOS 8
+  - [ ] Docker option tested and working
+- [X] Tested on Fedora 33
+  - [ ] Docker option tested and working
 - [X] On Bash on Debian on Windows (in Gnome-Boxes)
   - [X] Systemd not working
   - [X] Docker option not working
@@ -180,10 +180,12 @@ Tested and working on:
 - [X] Tested on Arch Linux
   - [X] Docker option tested and working
   
-  If you get permission issues, set selinux to permissive. 
-  See how to here: [How do I enable or disable SELinux ?](https://fedoraproject.org/wiki/SELinux_FAQ#How_do_I_enable_or_disable_SELinux_.3F)
+  ~~If you get permission issues, set selinux to permissive. 
+  See how to here: [How do I enable or disable SELinux ?](https://fedoraproject.org/wiki/SELinux_FAQ#How_do_I_enable_or_disable_SELinux_.3F)~~
+  #### SELinux will be set to permissive on Fedora 33 and CentOS 8
 
-  #### ***Postgresql 11 will be installed by default in both Fedora and CentOS. (If not already installed)***
+  ~~***Postgresql 11 will be installed by default in both Fedora and CentOS. (If not already installed)***~~
+  Postgresql will be default from repo on Fedora 33 and CentOS 8
   
 #### Latest install log - version: 1.4.4
 
@@ -198,8 +200,8 @@ See [Changelog](https://github.com/tmiland/Invidious-Updater/blob/master/CHANGEL
 * Debian 8 and later
 * Ubuntu 16.04 and later
 * PureOS (Not tested)
-* CentOS 7
-* Fedora 29
+* CentOS 8
+* Fedora 33
   * Docker support
     - [OS requirements](https://docs.docker.com/install/linux/docker-ce/fedora/)
 * Arch Linux
