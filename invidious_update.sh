@@ -299,9 +299,10 @@ install_nginx(){
   echo ""
   echo "   1) Install Nginx"
   echo "   2) Install Nginx Vhost for Invidious"
+  echo "   3) Install Let's Encrypt SSL certificates"
   echo ""
-  while [[ $NGINX != "1" && $NGINX != "2" ]]; do
-    read -p "Select an option [1-2]: " NGINX
+  while [[ $NGINX != "1" && $NGINX != "2" && $NGINX != "3" ]]; do
+    read -p "Select an option [1-3]: " NGINX
   done
   case $NGINX in
     1)
@@ -310,7 +311,138 @@ install_nginx(){
     2)
       install_nginx_vhost
       ;;
+    3)
+      install_certbot
+      ;;
   esac
+}
+
+install_certbot() {
+  shopt -s nocasematch
+  if [[ $(lsb_release -si) == "Debian"    ||
+        $(lsb_release -si) == "Ubuntu"    ||
+        $(lsb_release -si) == "LinuxMint" ||
+        $(lsb_release -si) == "PureOS" ]]; then
+    NGINX_VHOST_DIR=/etc/nginx/sites-available
+    get_domain() {
+      echo $(sed -n 's/.*domain *: *\([^ ]*.*\)/\1/p' "$1")
+    }
+    NGINX_DOMAIN_NAME=$(get_domain "$IN_CONFIG")
+    NGINX_VHOST=$NGINX_DOMAIN_NAME.conf
+
+  if [[ -d "${NGINX_VHOST_DIR}" ]]; then
+    echo ""
+    read -p "Do you want to install Let's Encrypt SSL certificates for Invidious? [y/n/q]?" answer
+    echo ""
+    echo "Your Invidious domain name: $NGINX_DOMAIN_NAME"
+    echo ""
+
+    case $answer in
+      [Yy]* )
+    read -p "Please enter your admin email for the domain [E.G: admin@invidious.domain.tld]" admin_email
+    # This sets up Let's Encrypt SSL certificates and automatic renewal 
+    # using certbot: https://certbot.eff.org
+    #
+    # - Run this script as root.
+    # - A webserver must be up and running.
+    #
+    # Certificate files are placed into subdirectories under
+    # /etc/letsencrypt/live/*.
+    # 
+    # Configuration must then be updated for the systems using the 
+    # certificates.
+    #
+    # The certbot-auto program logs to /var/log/letsencrypt.
+    # Source: https://www.exratione.com/2016/06/a-simple-setup-and-installation-script-for-lets-encrypt-ssl-certificates/
+     
+    set -o nounset
+    set -o errexit
+     
+    # May or may not have HOME set, and this drops stuff into ~/.local.
+    export HOME="/root"
+    export PATH="${PATH}:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+     
+    # No package install yet.
+    # wget https://dl.eff.org/certbot-auto
+    # Download last working script that works with Debian based systems
+    wget https://raw.githubusercontent.com/certbot/certbot/v1.9.0/certbot-auto
+    chmod a+x certbot-auto
+    mv certbot-auto /usr/local/bin
+     
+    # Install the dependencies.
+    certbot-auto --noninteractive --os-packages-only
+     
+    # Set up config file.
+    mkdir -p /etc/letsencrypt
+    cat > /etc/letsencrypt/cli.ini <<'EOF' >/dev/null
+# Uncomment to use the staging/testing server - avoids rate limiting.
+# server = https://acme-staging.api.letsencrypt.org/directory
+ 
+# Use a 4096 bit RSA key instead of 2048.
+rsa-key-size = 4096
+ 
+# Set email and domains.
+email = admin@invidious.domain.tld
+domains = invidious.domain.tld
+ 
+# Text interface.
+text = True
+# No prompts.
+non-interactive = True
+# Suppress the Terms of Service agreement interaction.
+agree-tos = True
+ 
+# Use the webroot authenticator.
+authenticator = webroot
+webroot-path = /etc/nginx/html
+EOF
+    ${SUDO} sed -i "s/email = admin@invidious.domain.tld/email = ${admin_email}/g" /etc/letsencrypt/cli.ini
+    ${SUDO} sed -i "s/domains = invidious.domain.tld/domains = ${NGINX_DOMAIN_NAME}/g" /etc/letsencrypt/cli.ini
+    # Obtain cert.
+    certbot-auto certonly
+     
+    # Set up daily cron job.
+    CRON_SCRIPT="/etc/cron.daily/certbot-renew"
+     
+    cat > ${CRON_SCRIPT} <<'EOF' >/dev/null
+#!/bin/bash
+#
+# Renew the Let's Encrypt certificate if it is time. It won't do anything if
+# not.
+#
+# This reads the standard /etc/letsencrypt/cli.ini.
+#
+ 
+# May or may not have HOME set, and this drops stuff into ~/.local.
+export HOME="/root"
+# PATH is never what you want it it to be in cron.
+export PATH="\${PATH}:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+ 
+certbot-auto --no-self-upgrade certonly
+ 
+# If the cert updated, we need to update the services using it. E.g.:
+nginx -t && systemctl reload nginx
+EOF
+    chmod a+x "${CRON_SCRIPT}"
+    echo "Successfully installed Let's Encrypt SSL certificates for Invidious"
+    ;;
+    [Nn]* )
+      sleep 3
+      cd ${CURRDIR}
+      ./${SCRIPT_FILENAME}
+      ;;
+    * ) echo "Enter Y, N or Q, please." ;;
+    esac
+    else
+      echo -e "${RED}${ERROR} Nginx vhost is not installed. Choose option 2 first.${NC}"
+      sleep 3
+      cd ${CURRDIR}
+      ./${SCRIPT_FILENAME}
+    fi
+  else
+    echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
+    exit 1;
+  fi
 }
 
 nginx_autoinstall_url=https://github.com/angristan/nginx-autoinstall/raw/master/nginx-autoinstall.sh
@@ -386,6 +518,10 @@ server {
 
   	access_log off;
   	error_log /var/log/nginx/error.log crit;
+    
+    location ^~ /.well-known/acme-challenge {
+      root /etc/nginx/html;
+    }
 
   	ssl_certificate /etc/letsencrypt/live/invidious.domain.tld/fullchain.pem;
   	ssl_certificate_key /etc/letsencrypt/live/invidious.domain.tld/privkey.pem;
@@ -405,7 +541,6 @@ EOF
   ${SUDO} sed -i "s/invidious.domain.tld/${NGINX_DOMAIN_NAME}/g" $NGINX_VHOST_DIR/$NGINX_VHOST
   ${SUDO} ln -s $NGINX_VHOST_DIR/$NGINX_VHOST /etc/nginx/sites-enabled/$NGINX_VHOST
   nginx -t && systemctl reload nginx || echo "Successfully installed nginx vhost $NGINX_VHOST_DIR/$NGINX_VHOST"
-  
   ;;
   [Nn]* )
     sleep 3
@@ -420,7 +555,6 @@ EOF
     cd ${CURRDIR}
     ./${SCRIPT_FILENAME}
   fi
-  
 }
 
 ## Update invidious_update.sh
