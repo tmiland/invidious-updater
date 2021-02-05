@@ -339,7 +339,7 @@ install_certbot() {
 
     case $answer in
       [Yy]* )
-    read -p "Please enter your admin email for the domain [E.G: admin@invidious.domain.tld]" admin_email
+    read -p "Please enter your admin email for the domain [E.G: admin@invidious.domain.tld]:" admin_email
     # This sets up Let's Encrypt SSL certificates and automatic renewal 
     # using certbot: https://certbot.eff.org
     #
