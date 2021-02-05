@@ -1743,36 +1743,20 @@ start_stop_restart_invidious() {
   esac
 
   while true; do
-    cd ${REPO_DIR}
-    # Restart Invidious
-    echo -e "${ORANGE}${ARROW} ${SERVICE_ACTION} Invidious...${NC}"
-    ${SUDO} systemctl ${SERVICE_ACTION} ${SERVICE_NAME}
-    echo -e "${GREEN}${DONE} done.${NC}"
-    ${SUDO} systemctl status ${SERVICE_NAME} --no-pager
-
-    show_status_banner() {
-
-      header
-
-      echo ""
-      echo ""
-      echo ""
-      echo "Thank you for using the ${SCRIPT_NAME} script."
-      echo ""
-      echo ""
-      echo ""
-      echo -e "${GREEN}${DONE} Invidious ${SERVICE_ACTION} done.${NC}"
-      echo ""
-      echo ""
-      echo ""
-      echo ""
-      echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
-    }
-
-    show_status_banner
-    sleep 5
-    cd ${CURRDIR}
-    ./${SCRIPT_FILENAME}
+    if [[ -d $REPO_DIR ]]; then
+      cd ${REPO_DIR}
+      # Restart Invidious
+      echo -e "${ORANGE}${ARROW} ${SERVICE_ACTION} Invidious...${NC}"
+      ${SUDO} systemctl ${SERVICE_ACTION} ${SERVICE_NAME}
+      echo -e "${GREEN}${DONE} done.${NC}"
+      ${SUDO} systemctl status ${SERVICE_NAME} --no-pager
+      sleep 5
+      cd ${CURRDIR}
+      ./${SCRIPT_FILENAME}
+    else
+      echo -e "${RED}${WARNING} (( Invidious is not installed! ))${NC}"
+      exit 1
+    fi
   done
 }
 
