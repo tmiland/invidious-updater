@@ -1150,7 +1150,8 @@ check_exit_status() {
 }
 
 install_invidious() {
-
+  ## get total free memory size in megabytes(MB) 
+  free=$(free -mt | grep Total | awk '{print $4}')
   chk_git_repo
 
   show_preinstall_banner
@@ -1158,7 +1159,26 @@ install_invidious() {
   echo ""
   echo "Let's go through some configuration options."
   echo ""
+  if [[ "$free" -le 2048  ]]; then
+    echo -e "${ORANGE}Advice: Free memory: $free MB is less than recommended to build Invidious${NC}"
+    # Let the user enter swap options:
+    while [[ $swap_options != "y" && $swap_options != "n" ]]; do
+      read -p "Do you want to add swap space? [y/n]: " swap_options
+    done
 
+    while true; do
+      case $swap_options in
+        [Yy]* )
+          add_swap
+          break
+          ;;
+        [Nn]* ) 
+          break 
+          ;;
+      esac
+    done
+  fi
+  shift
   # Let the user enter advanced options:
   while [[ $advanced_options != "y" && $advanced_options != "n" ]]; do
     read -p "Do you want to enter advanced options? [y/n]: " advanced_options
