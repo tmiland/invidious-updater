@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 
-## Author: Tommy Miland (@tmiland) - Copyright (c) 2020
+## Author: Tommy Miland (@tmiland) - Copyright (c) 2021
 
 
 ######################################################################
@@ -11,7 +11,7 @@
 ####                   Maintained by @tmiland                     ####
 ######################################################################
 
-version='1.5.4' # Must stay on line 14 for updater to fetch the numbers
+version='1.5.5' # Must stay on line 14 for updater to fetch the numbers
 
 #------------------------------------------------------------------------------#
 #
