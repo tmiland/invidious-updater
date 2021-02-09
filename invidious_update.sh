@@ -345,110 +345,48 @@ install_certbot() {
     echo ""
 
     case $answer in
-      [Yy]* )
+    [Yy]* )
+    # Ask user for admin email
     read -p "Please enter your admin email for the domain [E.G: admin@invidious.domain.tld]:" admin_email
-    # This sets up Let's Encrypt SSL certificates and automatic renewal 
-    # using certbot: https://certbot.eff.org
-    #
-    # - Run this script as root.
-    # - A webserver must be up and running.
-    #
-    # Certificate files are placed into subdirectories under
-    # /etc/letsencrypt/live/*.
-    # 
-    # Configuration must then be updated for the systems using the 
-    # certificates.
-    #
-    # The certbot-auto program logs to /var/log/letsencrypt.
-    # Source: https://www.exratione.com/2016/06/a-simple-setup-and-installation-script-for-lets-encrypt-ssl-certificates/
-     
-    set -o nounset
-    set -o errexit
-     
-    # May or may not have HOME set, and this drops stuff into ~/.local.
-    export HOME="/root"
-    export PATH="${PATH}:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-     
-    # No package install yet.
-    # wget https://dl.eff.org/certbot-auto
-    # Download last working script that works with Debian based systems
-    wget https://raw.githubusercontent.com/certbot/certbot/v1.9.0/certbot-auto
-    chmod a+x certbot-auto
-    mv certbot-auto /usr/local/bin
-     
-    # Install the dependencies.
-    certbot-auto --noninteractive --os-packages-only
-     
-    # Set up config file.
-    mkdir -p /etc/letsencrypt
-    cat > /etc/letsencrypt/cli.ini <<'EOF' >/dev/null
-# Uncomment to use the staging/testing server - avoids rate limiting.
-# server = https://acme-staging.api.letsencrypt.org/directory
- 
-# Use a 4096 bit RSA key instead of 2048.
-rsa-key-size = 4096
- 
-# Set email and domains.
-email = admin@invidious.domain.tld
-domains = invidious.domain.tld
- 
-# Text interface.
-text = True
-# No prompts.
-non-interactive = True
-# Suppress the Terms of Service agreement interaction.
-agree-tos = True
- 
-# Use the webroot authenticator.
-authenticator = webroot
-webroot-path = /etc/nginx/html
-EOF
-    ${SUDO} sed -i "s/email = admin@invidious.domain.tld/email = ${admin_email}/g" /etc/letsencrypt/cli.ini
-    ${SUDO} sed -i "s/domains = invidious.domain.tld/domains = ${NGINX_DOMAIN_NAME}/g" /etc/letsencrypt/cli.ini
-    # Obtain cert.
-    certbot-auto certonly
-     
-    # Set up daily cron job.
-    CRON_SCRIPT="/etc/cron.daily/certbot-renew"
-     
-    cat > ${CRON_SCRIPT} <<'EOF' >/dev/null
-#!/bin/bash
-#
-# Renew the Let's Encrypt certificate if it is time. It won't do anything if
-# not.
-#
-# This reads the standard /etc/letsencrypt/cli.ini.
-#
- 
-# May or may not have HOME set, and this drops stuff into ~/.local.
-export HOME="/root"
-# PATH is never what you want it it to be in cron.
-export PATH="\${PATH}:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
- 
-certbot-auto --no-self-upgrade certonly
- 
-# If the cert updated, we need to update the services using it. E.g.:
-nginx -t && systemctl reload nginx
-EOF
-    chmod a+x "${CRON_SCRIPT}"
+    # Set Acme home folder ()
+    acme_home=/etc/acme
+    # Install dependencies
+    apt-get install openssl cron socat curl
+    # Clone from GitHub
+    git clone https://github.com/Neilpang/acme.sh.git
+    # Do the work
+    cd acme.sh
+    ./acme.sh --install  \
+    --home $acme_home \
+    --config-home $acme_home/data \
+    --cert-home  $acme_home/certs \
+    --accountemail  "${admin_email}" \
+    --accountkey  $acme_home/account.key \
+    --accountconf $acme_home/account.conf \
+    --useragent  "Acme client"
+    # Issue cert
+    acme.sh  --issue  -d ${NGINX_DOMAIN_NAME}  -w /etc/nginx/html/${NGINX_DOMAIN_NAME} ||
     echo "Successfully installed Let's Encrypt SSL certificates for Invidious"
+    # Link script to bin
+    sudo ln -s $acme_home/acme.sh /usr/local/bin/
+    # Install cron job
+    # crontab -l | { cat; echo "0 0 * * * \"$acme_home\"/acme.sh --cron --home \"$acme_home\" > /dev/null"; } | crontab - ||
+    echo "done!"
     ;;
     [Nn]* )
       sleep 3
-      cd ${CURRDIR}
-      ./${SCRIPT_FILENAME}
+      indexit
       ;;
     * ) echo "Enter Y, N or Q, please." ;;
     esac
     else
       echo -e "${RED}${ERROR} Nginx vhost is not installed. Choose option 2 first.${NC}"
       sleep 3
-      cd ${CURRDIR}
-      ./${SCRIPT_FILENAME}
+      indexit
     fi
   else
     echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
-    exit 1;
+    indexit
   fi
 }
 
@@ -530,8 +468,8 @@ server {
       root /etc/nginx/html;
     }
 
-  	ssl_certificate /etc/letsencrypt/live/invidious.domain.tld/fullchain.pem;
-  	ssl_certificate_key /etc/letsencrypt/live/invidious.domain.tld/privkey.pem;
+  	ssl_certificate /etc/acme/certs/invidious.domain.tld/fullchain.pem;
+  	ssl_certificate_key /etc/acme/certs/invidious.domain.tld/privkey.pem;
 
   	location / {
   		proxy_pass http://127.0.0.1:3000/;
@@ -547,6 +485,7 @@ EOF
   ${SUDO} sed -i "s/127.0.0.1/${NGINX_HOST}/g" $NGINX_VHOST_DIR/$NGINX_VHOST
   ${SUDO} sed -i "s/invidious.domain.tld/${NGINX_DOMAIN_NAME}/g" $NGINX_VHOST_DIR/$NGINX_VHOST
   ${SUDO} ln -s $NGINX_VHOST_DIR/$NGINX_VHOST /etc/nginx/sites-enabled/$NGINX_VHOST
+  ${SUDO} mkdir /etc/nginx/html/.well-known/acme-challenge
   nginx -t && systemctl reload nginx || echo "Successfully installed nginx vhost $NGINX_VHOST_DIR/$NGINX_VHOST"
   ;;
   [Nn]* )
