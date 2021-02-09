@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 
-## Author: Tommy Miland (@tmiland) - Copyright (c) 2020
+## Author: Tommy Miland (@tmiland) - Copyright (c) 2021
 
 
 ######################################################################
@@ -11,7 +11,7 @@
 ####                   Maintained by @tmiland                     ####
 ######################################################################
 
-version='1.5.4' # Must stay on line 14 for updater to fetch the numbers
+version='1.5.5' # Must stay on line 14 for updater to fetch the numbers
 
 #------------------------------------------------------------------------------#
 #
@@ -44,12 +44,12 @@ version='1.5.4' # Must stay on line 14 for updater to fetch the numbers
 #set -o nounset
 #set -o xtrace
 #timestamp
-time_stamp=$(date)
+# time_stamp=$(date)
 # Detect absolute and full path as well as filename of this script
-cd "$(dirname $0)"
+cd "$(dirname "$0")" || exit
 CURRDIR=$(pwd)
-SCRIPT_FILENAME=$(basename $0)
-cd - > /dev/null
+SCRIPT_FILENAME=$(basename "$0")
+cd - > /dev/null || exit
 sfp=$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || greadlink -f "${BASH_SOURCE[0]}" 2>/dev/null)
 if [ -z "$sfp" ]; then sfp=${BASH_SOURCE[0]}; fi
 SCRIPT_DIR=$(dirname "${sfp}")
@@ -64,16 +64,16 @@ BLUE='\033[0;34m'
 BBLUE='\033[1;34m'
 GREEN='\033[0;32m'
 ORANGE='\033[0;33m'
-DARKORANGE="\033[38;5;208m"
-CYAN='\033[0;36m'
-DARKGREY="\033[48;5;236m"
+# DARKORANGE="\033[38;5;208m"
+# CYAN='\033[0;36m'
+# DARKGREY="\033[48;5;236m"
 NC='\033[0m' # No Color
 # Text formatting used for printing
-BOLD="\033[1m"
-DIM="\033[2m"
-UNDERLINED="\033[4m"
-INVERT="\033[7m"
-HIDDEN="\033[8m"
+# BOLD="\033[1m"
+# DIM="\033[2m"
+# UNDERLINED="\033[4m"
+# INVERT="\033[7m"
+# HIDDEN="\033[8m"
 # Script name
 SCRIPT_NAME="Invidious Update.sh"
 # Repo name
@@ -173,8 +173,7 @@ if ! lsb_release -si >/dev/null 2>&1; then
       su -s "$(which bash)" -c "${PKGCMD} ${LSB}" || echo -e "${RED}${ERROR} Error: could not install ${LSB}!${NC}"
       echo -e "${GREEN}${DONE} Done${NC}"
       sleep 3
-      cd ${CURRDIR}
-      ./${SCRIPT_FILENAME}
+      indexit
       ;;
     [Nn]* )
       exit 1;
@@ -272,11 +271,20 @@ fi
 chk_permissions() {
   if [[ "$EUID" != 0 ]]; then
     echo -e "${RED}${ERROR} This action needs root permissions.${NC} Please enter your root password...";
-    cd "$CURRDIR"
+    cd "$CURRDIR" || exit
     su -s "$(which bash)" -c "./$SCRIPT_FILENAME"
-    cd - > /dev/null
+    cd - > /dev/null || exit
     exit 0; 
   fi
+}
+
+indexit() {
+  cd "${CURRDIR}" || exit
+  ./"${SCRIPT_FILENAME}"
+}
+
+repoexit() {
+  cd ${REPO_DIR} || exit 1
 }
 
 add_swap_url=https://raw.githubusercontent.com/tmiland/swap-add/master/swap-add.sh
@@ -291,8 +299,7 @@ add_swap() {
     exit 0
   fi
   sleep 3
-  cd ${CURRDIR}
-  ./${SCRIPT_FILENAME}
+  indexit
 }
 
 install_nginx(){
@@ -471,10 +478,10 @@ nginx-autoinstall() {
 install_nginx_vhost() {
   NGINX_VHOST_DIR=/etc/nginx/sites-available
   get_domain() {
-    echo $(sed -n 's/.*domain *: *\([^ ]*.*\)/\1/p' "$1")
+    echo "$(sed -n 's/.*domain *: *\([^ ]*.*\)/\1/p' "$1")"
   }
   get_host() {
-    echo $(sed -n 's/.*host *: *\([^ ]*.*\)/\1/p' "$1")
+    echo "$(sed -n 's/.*host *: *\([^ ]*.*\)/\1/p' "$1")"
   }
   # get_port() {
   #   echo $(sed -n 's/.*port *: *\([^ ]*.*\)/\2/p' "$1")
@@ -544,16 +551,14 @@ EOF
   ;;
   [Nn]* )
     sleep 3
-    cd ${CURRDIR}
-    ./${SCRIPT_FILENAME}
+    indexit
     ;;
   * ) echo "Enter Y, N or Q, please." ;;
   esac
   else
     echo -e "${RED}${ERROR} Nginx is not installed${NC}"
     sleep 3
-    cd ${CURRDIR}
-    ./${SCRIPT_FILENAME}
+    indexit
   fi
 }
 
@@ -590,7 +595,7 @@ open_file() { #expects one argument: file_path
 
   if [ "$(uname)" == 'Darwin' ]; then
     open "$1"
-  elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
+  elif [ "$(expr substr "$(uname -s)" 1 5)" == "Linux" ]; then
     xdg-open "$1"
   else
     echo -e "${RED}${ERROR} Error: Sorry, opening files is not supported for your OS.${NC}"
@@ -662,13 +667,13 @@ show_status() {
 
   for service in "${services[@]}"
   do
-    serviceStatus+=($(systemctl is-active "$service.service"))
+    serviceStatus+=("$(systemctl is-active "$service.service")")
   done
 
   echo ""
   echo "Services running:"
 
-  for i in ${!serviceStatus[@]}
+  for i in "${!serviceStatus[@]}"
   do
 
     if [[ "${serviceStatus[$i]}" == "active" ]]; then
@@ -705,10 +710,10 @@ show_docker_status() {
   for container_name in "${container[@]}"
   do
     #status+=($(docker ps "$container_name"))
-    status+=($( echo -n "$running_containers" | grep -oP "(?<= )$container_name$" | wc -l ))
+    status+=("$( echo -n "$running_containers" | grep -oP "(?<= )$container_name$" | wc -l )")
   done
 
-  for i in ${!status[@]}
+  for i in "${!status[@]}"
   do
 
     if [[ "$status"  = "1" ]] ; then
@@ -731,7 +736,7 @@ pgbackup() {
   if [[ ! -d "${CURRDIR}/pgbackup" ]]; then
   printf "\n-- Setting up pgbackup\n"
   git clone https://github.com/tmiland/pgbackup.git
-  cd pgbackup
+  cd pgbackup || exit
   shopt -s nocasematch
   if [[ $(lsb_release -si) == "CentOS" ||
         $(lsb_release -si) == "Fedora" 
@@ -770,14 +775,13 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
   chmod +x pg_backup_rotated.sh && chmod +x pg_backup.sh
   fi
   printf "\n-- Running pgbackup\n"
-  cd ${CURRDIR}/pgbackup
+  cd ${CURRDIR}/pgbackup || exit
   bash ./pg_backup.sh
-  cd -
+  cd - || exit
   printf "\n"
   echo -e "${GREEN}${DONE} Done ${REPO_DIR} ${NC}"
   sleep 3
-  cd ${CURRDIR}
-  ./${SCRIPT_FILENAME}
+  indexit
 }
 
 # BANNERS
@@ -786,7 +790,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
 header() {
   echo -e "${GREEN}\n"
   echo ' ╔═══════════════════════════════════════════════════════════════════╗'
-  echo ' ║                        '${SCRIPT_NAME}'                        ║'
+  echo ' ║                        '"${SCRIPT_NAME}"'                        ║'
   echo ' ║               Automatic update script for Invidious               ║'
   echo ' ║                      Maintained by @tmiland                       ║'
   echo ' ║                          version: '${version}'                           ║'
@@ -803,7 +807,7 @@ show_update_banner() {
   echo "There is a newer version of ${SCRIPT_NAME} available."
   echo ""
   echo ""
-  echo -e "${GREEN}${DONE} New version:${NC} "${RELEASE_TAG}" - ${RELEASE_TITLE}"
+  echo -e "${GREEN}${DONE} New version:${NC} ""${RELEASE_TAG}"" - ${RELEASE_TITLE}"
   echo ""
   echo -e "${ORANGE}${ARROW} Notes:${NC}\n"
   echo -e "${BLUE}${RELEASE_NOTE}${NC}"
@@ -914,8 +918,7 @@ chk_git_repo() {
     echo -e "${ORANGE}${WARNING} If you want to reinstall, please choose option 7 to Uninstall Invidious first!${NC}"
     echo ""
     sleep 3
-    cd ${CURRDIR}
-    ./${SCRIPT_FILENAME}
+    indexit
     #exit 1
   fi
 }
@@ -933,9 +936,9 @@ docker_repo_chk() {
     case $answer in
       [Yy]* )
         echo -e "${GREEN}${ARROW} Setting up Dependencies${NC}"
-        if ! ${PKGCHK} $PRE_INSTALL_PKGS >/dev/null 2>&1; then
+        if ! ${PKGCHK} ${PRE_INSTALL_PKGS} >/dev/null 2>&1; then
           ${UPDATE}
-          for i in $PRE_INSTALL_PKGS; do
+          for i in ${PRE_INSTALL_PKGS}; do
             ${INSTALL} $i 2> /dev/null # || exit 1
           done
         fi
@@ -948,14 +951,13 @@ docker_repo_chk() {
 
         git clone https://github.com/iv-org/invidious
 
-        cd ${REPO_DIR} || exit 1
+        repoexit
         # Checkout
         GetMaster
         ;;
       [Nn]* )
         sleep 3
-        cd ${CURRDIR}
-        ./${SCRIPT_FILENAME}
+        indexit
         ;;
       * ) echo "Enter Y, N or Q, please." ;;
     esac
@@ -1118,11 +1120,11 @@ fi
 # Rebuild Invidious
 rebuild() {
   printf "\n-- Rebuilding ${REPO_DIR}\n"
-  cd ${REPO_DIR} || exit 1
+  repoexit
   shards update && shards install
   crystal build src/invidious.cr --release
   #sudo chown -R 1000:$USER_NAME $USER_DIR
-  cd -
+  cd - || exit
   printf "\n"
   echo -e "${GREEN}${DONE} Done Rebuilding ${REPO_DIR} ${NC}"
   sleep 3
@@ -1146,7 +1148,7 @@ backupConfig() {
   # If directory is not created
   [ ! -d $ConfigBakPath ] && mkdir -p $ConfigBakPath || :
   configBackup=${IN_CONFIG}
-  backupConfigFile=`date +%F`.config.yml
+  backupConfigFile=$(date +%F).config.yml
   /bin/cp -f $configBackup $ConfigBakPath/$backupConfigFile
 }
 
@@ -1160,13 +1162,11 @@ GetMaster() {
 # Update Master branch
 UpdateMaster() {
   
-  if [ "`git log --pretty=%H ...refs/heads/master^ | head -n 1`" = "`git ls-remote origin -h refs/heads/master | cut -f1`" ] ; then
-      status=0
+  if [ "$(git log --pretty=%H ...refs/heads/master^ | head -n 1)" = "$(git ls-remote origin -h refs/heads/master | cut -f1)" ] ; then
       echo ""
       echo -e "${GREEN}${ARROW} Invidious is already up to date...${NC}"
       echo ""
     else
-      status=2
       echo ""
       echo -e "${ORANGE}${ARROW} Not up to date, Pulling Invidious from GitHub${NC}"
       echo ""
@@ -1198,7 +1198,8 @@ update_updater() {
   echo -e "${GREEN}${ARROW} Checking for updates...${NC}"
   get_release_info
   # Get tmpfile from github
-  declare -r tmpfile=$(download_file "$LATEST_RELEASE")
+  local tmpfile
+  tmpfile="$(download_file "$LATEST_RELEASE")"
   # Do the work
   # New function, fetch latest release from GitHub
   if [[ $(get_updater_version "${SCRIPT_DIR}/$SCRIPT_FILENAME") < "${RELEASE_TAG}" ]]; then
@@ -1212,13 +1213,13 @@ update_updater() {
       if [[ $REPLY =~ ^[Yy]$ ]]; then
         mv "${tmpfile}" "${SCRIPT_DIR}/${SCRIPT_FILENAME}"
         chmod u+x "${SCRIPT_DIR}/${SCRIPT_FILENAME}"
-        "${SCRIPT_DIR}/${SCRIPT_FILENAME}" "$@" -d
-        exit 1 # Update available, user chooses to update
+        "${SCRIPT_DIR}/${SCRIPT_FILENAME}" "$@"
+        return 0 # exit 1 # Update available, user chooses to update
       fi
       if [[ $REPLY =~ ^[Nn]$ ]]; then
         show_banner
         rm "${tmpfile}"
-        return 1 # Update available, but user chooses not to update
+        return 0 # Update available, but user chooses not to update
       fi
     fi
   else
@@ -1231,14 +1232,14 @@ update_updater() {
 }
 # Add option to update the Invidious Repo from Cron
 update_invidious_cron() {
-  cd ${REPO_DIR} || exit 1
+  repoexit
   UpdateMaster
   exit
 }
 
 # Ask user to update yes/no
 if [ $# != 0 ]; then
-  while getopts ":ud:c" opt; do
+  while getopts ":udc" opt; do
     case $opt in
       u)
         UPDATE_SCRIPT='yes'
@@ -1261,12 +1262,12 @@ if [ $# != 0 ]; then
   done
 fi
 
-update_updater $@
-cd "$CURRDIR"
+update_updater "$@"
+cd "$CURRDIR" || exit
 
 # Get dbname from config file (used in db maintenance and uninstallation)
 get_dbname() {
-  echo $(sed -n 's/.*dbname *: *\([^ ]*.*\)/\1/p' "$1")
+  echo "$(sed -n 's/.*dbname *: *\([^ ]*.*\)/\1/p' "$1")"
 }
 
 check_exit_status() {
@@ -1284,7 +1285,8 @@ check_exit_status() {
 }
 
 install_invidious() {
-
+  ## get total free memory size in megabytes(MB) 
+  free=$(free -mt | grep Total | awk '{print $4}')
   chk_git_repo
 
   show_preinstall_banner
@@ -1292,7 +1294,26 @@ install_invidious() {
   echo ""
   echo "Let's go through some configuration options."
   echo ""
+  if [[ "$free" -le 2048  ]]; then
+    echo -e "${ORANGE}Advice: Free memory: $free MB is less than recommended to build Invidious${NC}"
+    # Let the user enter swap options:
+    while [[ $swap_options != "y" && $swap_options != "n" ]]; do
+      read -p "Do you want to add swap space? [y/n]: " swap_options
+    done
 
+    while true; do
+      case $swap_options in
+        [Yy]* )
+          add_swap
+          break
+          ;;
+        [Nn]* ) 
+          break 
+          ;;
+      esac
+    done
+  fi
+  shift
   # Let the user enter advanced options:
   while [[ $advanced_options != "y" && $advanced_options != "n" ]]; do
     read -p "Do you want to enter advanced options? [y/n]: " advanced_options
@@ -1391,14 +1412,14 @@ install_invidious() {
   cd $USER_DIR || exit 1
   sudo -i -u invidious \
     git clone https://github.com/iv-org/invidious
-  cd ${REPO_DIR} || exit 1
+  repoexit
   # Checkout
   GetMaster
 
   echo -e "${GREEN}${ARROW} Done${NC}"
   set_permissions
 
-  cd -
+  cd - || exit
 
   if [[ $(lsb_release -si) == "CentOS" || $(lsb_release -si) == "Fedora" ]]; then
     if ! ${PKGCHK} ${PGSQL_SERVICE} >/dev/null 2>&1; then
@@ -1471,7 +1492,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
   # So before we build, make sure permissions are set.
   set_permissions
 
-  cd ${REPO_DIR} || exit 1
+  repoexit
   #sudo -i -u invidious \
     shards update && shards install
   crystal build src/invidious.cr --release
@@ -1486,19 +1507,17 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
   show_install_banner
 
   sleep 5
-  cd ${CURRDIR}
-  ./${SCRIPT_FILENAME}
+  indexit
   #exit
 }
 
 update_invidious() {
 
   echo ""
-  cd ${REPO_DIR} || exit 1
+  repoexit
   UpdateMaster
   sleep 3
-  cd ${CURRDIR}
-  ./${SCRIPT_FILENAME}
+  indexit
 }
 
 deploy_with_docker() {
@@ -1555,25 +1574,22 @@ deploy_with_docker() {
             if [[ $custom_docker_port = "y" ]]; then
               read -p "       Enter the desired port number:" docker_port
               ${SUDO} sed -i "s/127.0.0.1:3000:3000/127.0.0.1:$docker_port:3000/g" ${REPO_DIR}/docker-compose.yml
-              cd ${REPO_DIR}
+              repoexit
               docker-compose up -d
               echo -e "${GREEN}${DONE} Deployment done with custom port $docker_port.${NC}"
               sleep 5
-              cd ${CURRDIR}
-              ./${SCRIPT_FILENAME}
+              indexit
             else
-              cd ${REPO_DIR}
+              repoexit
               docker-compose up -d
               echo -e "${GREEN}${DONE} Deployment done.${NC}"
               sleep 5
-              cd ${CURRDIR}
-              ./${SCRIPT_FILENAME}
+              indexit
           fi
         fi
 
         if [[ $BUILD_DOCKER = "n" ]]; then
-          cd ${CURRDIR}
-          ./${SCRIPT_FILENAME}
+          indexit
         fi
       else
         echo -e "${RED}${ERROR} Docker is not installed, please choose option 5)${NC}"
@@ -1606,11 +1622,10 @@ deploy_with_docker() {
       esac
 
       while true; do
-        cd ${REPO_DIR}
+        repoexit
         docker-compose ${DOCKER_SERVICE}
         sleep 5
-        cd ${CURRDIR}
-        ./${SCRIPT_FILENAME}
+        indexit
       done
       exit
       ;;
@@ -1624,18 +1639,16 @@ deploy_with_docker() {
 
       if ${DOCKERCHK} >/dev/null 2>&1; then
         if [[ $REBUILD_DOCKER = "y" ]]; then
-          cd ${REPO_DIR}
+          repoexit
           #docker-compose build
           docker-compose up -d --build
           echo -e "${GREEN}${DONE} Rebuild done.${NC}"
           sleep 5
-          cd ${CURRDIR}
-          ./${SCRIPT_FILENAME}
+          indexit
         fi
 
         if [[ $REBUILD_DOCKER = "n" ]]; then
-          cd ${CURRDIR}
-          ./${SCRIPT_FILENAME}
+          indexit
         fi
       else
         echo -e "${RED}${ERROR} Docker is not installed, please choose option 5)${NC}"
@@ -1652,19 +1665,17 @@ deploy_with_docker() {
 
       if ${DOCKERCHK} >/dev/null 2>&1; then
         if [[ $DEL_REBUILD_DOCKER = "y" ]]; then
-          cd ${REPO_DIR}
+          repoexit
           docker-compose down
           docker volume rm invidious_postgresdata
           sleep 5
           docker-compose build
           echo -e "${GREEN}${DONE} Data deleted and Rebuild done.${NC}"
           sleep 5
-          cd ${CURRDIR}
-          ./${SCRIPT_FILENAME}
+          indexit
         fi
         if [[ $DEL_REBUILD_DOCKER = "n" ]]; then
-          cd ${CURRDIR}
-          ./${SCRIPT_FILENAME}
+          indexit
         fi
       else
         echo -e "${RED}${ERROR} Docker is not installed, please choose option 5)${NC}"
@@ -1688,7 +1699,7 @@ deploy_with_docker() {
             $(lsb_release -si) == "LinuxMint" ||
             $(lsb_release -si) == "PureOS"
         ]]; then
-        DISTRO=$(printf '%s\n' $(lsb_release -si) | LC_ALL=C tr '[:upper:]' '[:lower:]')
+        DISTRO=$(printf '%s\n' "$(lsb_release -si)" | LC_ALL=C tr '[:upper:]' '[:lower:]')
         #Install packages to allow apt to use a repository over HTTPS:
         ${SUDO} ${INSTALL} \
           apt-transport-https \
@@ -1778,9 +1789,7 @@ deploy_with_docker() {
       echo -e "${GREEN}${DONE}  Docker Installation done.${NC}"
   esac
   sleep 5
-  cd ${CURRDIR}
-  ./${SCRIPT_FILENAME}
-  #exit 1
+  indexit
 }
 
 database_maintenance() {
@@ -1838,17 +1847,14 @@ database_maintenance() {
         sleep 5
         echo -e "${ORANGE}${ARROW} Restarting script. Please try again...${NC}"
         sleep 5
-        cd ${CURRDIR}
-        ./${SCRIPT_FILENAME}
+        indexit
       fi
     fi
   fi
 
   show_maintenance_banner
   sleep 5
-  cd ${CURRDIR}
-  ./${SCRIPT_FILENAME}
-  #exit 1
+  indexit
 }
 
 start_stop_restart_invidious() {
@@ -1877,36 +1883,19 @@ start_stop_restart_invidious() {
   esac
 
   while true; do
-    cd ${REPO_DIR}
-    # Restart Invidious
-    echo -e "${ORANGE}${ARROW} ${SERVICE_ACTION} Invidious...${NC}"
-    ${SUDO} systemctl ${SERVICE_ACTION} ${SERVICE_NAME}
-    echo -e "${GREEN}${DONE} done.${NC}"
-    ${SUDO} systemctl status ${SERVICE_NAME} --no-pager
-
-    show_status_banner() {
-
-      header
-
-      echo ""
-      echo ""
-      echo ""
-      echo "Thank you for using the ${SCRIPT_NAME} script."
-      echo ""
-      echo ""
-      echo ""
-      echo -e "${GREEN}${DONE} Invidious ${SERVICE_ACTION} done.${NC}"
-      echo ""
-      echo ""
-      echo ""
-      echo ""
-      echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
-    }
-
-    show_status_banner
-    sleep 5
-    cd ${CURRDIR}
-    ./${SCRIPT_FILENAME}
+    if [[ -d $REPO_DIR ]]; then
+      repoexit
+      # Restart Invidious
+      echo -e "${ORANGE}${ARROW} ${SERVICE_ACTION} Invidious...${NC}"
+      ${SUDO} systemctl ${SERVICE_ACTION} ${SERVICE_NAME}
+      echo -e "${GREEN}${DONE} done.${NC}"
+      ${SUDO} systemctl status ${SERVICE_NAME} --no-pager
+      sleep 5
+      indexit
+    else
+      echo -e "${RED}${WARNING} (( Invidious is not installed! ))${NC}"
+      exit 1
+    fi
   done
 }
 
@@ -2113,8 +2102,7 @@ uninstall_invidious() {
   echo -e "${GREEN}${DONE} Un-installation done.${NC}"
   echo ""
   sleep 3
-  cd ${CURRDIR}
-  ./${SCRIPT_FILENAME}
+  indexit
   #exit
 }
 
