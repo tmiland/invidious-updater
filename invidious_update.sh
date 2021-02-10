@@ -109,6 +109,14 @@ external_port=
 # Docker compose repo name
 COMPOSE_REPO_NAME="docker/compose"
 
+indexit() {
+  cd "${CURRDIR}" || exit
+  ./"${SCRIPT_FILENAME}"
+}
+
+repoexit() {
+  cd ${REPO_DIR} || exit 1
+}
 # Distro support
 ARCH_CHK=$(uname -m)
 if [ ! ${ARCH_CHK} == 'x86_64' ]; then
@@ -116,57 +124,38 @@ if [ ! ${ARCH_CHK} == 'x86_64' ]; then
   exit 1;
 fi
 shopt -s nocasematch
+if lsb_release -si >/dev/null 2>&1; then
+  DISTRO=$(lsb_release -si)
+fi
+case "$DISTRO" in
+  Debian*|Ubuntu*|LinuxMint*|PureOS*)
+    PKGCMD="apt-get -o Dpkg::Progress-Fancy="1" install -qq"
+    LSB=lsb-release
+    DISTRO_GROUP=Debian
+    ;;
+  CentOS*)
+    PKGCMD="yum install -y"
+    LSB=redhat-lsb
+    DISTRO_GROUP=RHEL
+    ;;
+  Fedora*)
+    PKGCMD="dnf install -y"
+    LSB=redhat-lsb
+    DISTRO_GROUP=RHEL
+    ;;
+  Arch*|Manjaro*)
+    PKGCMD="yes | LC_ALL=en_US.UTF-8 pacman -S"
+    LSB=lsb-release
+    DISTRO_GROUP=Arch
+      ;;
+  *) echo -e "${RED}${ERROR} unknown distro: '$DISTRO'${NC}" ; exit 1 ;;
+esac
 if ! lsb_release -si >/dev/null 2>&1; then
-  if [[ -f /etc/debian_version ]]; then
-    DISTRO=$(cat /etc/issue.net)
-  elif [[ -f /etc/redhat-release ]]; then
-    DISTRO=$(cat /etc/redhat-release)
-  elif [[ -f /etc/os-release ]]; then
-    DISTRO=$(cat /etc/os-release | grep "PRETTY_NAME" | sed 's/PRETTY_NAME=//g' | sed 's/["]//g' | awk '{print $1}')
-  fi
-
-  case "$DISTRO" in
-    Debian*)
-      PKGCMD="apt-get -o Dpkg::Progress-Fancy="1" install -qq"
-      LSB=lsb-release
-      ;;
-    Ubuntu*)
-      PKGCMD="apt-get -o Dpkg::Progress-Fancy="1" install -qq"
-      LSB=lsb-release
-      ;;
-    LinuxMint*)
-      PKGCMD="apt-get -o Dpkg::Progress-Fancy="1" install -qq"
-      LSB=lsb-release
-      ;;
-    PureOS*)
-      PKGCMD="apt-get -o Dpkg::Progress-Fancy="1" install -qq"
-      LSB=lsb-release
-      ;;      
-    CentOS*)
-      PKGCMD="yum install -y"
-      LSB=redhat-lsb
-      ;;
-    Fedora*)
-      PKGCMD="dnf install -y"
-      LSB=redhat-lsb
-      ;;
-    Arch*)
-      PKGCMD="yes | LC_ALL=en_US.UTF-8 pacman -S"
-      LSB=lsb-release
-      ;;
-   Manjaro*)
-      PKGCMD="yes | LC_ALL=en_US.UTF-8 pacman -S"
-      LSB=lsb-release
-      ;;
-    *) echo -e "${RED}${ERROR} unknown distro: '$DISTRO'${NC}" ; exit 1 ;;
-  esac
-
   echo ""
   echo -e "${RED}${ERROR} Looks like ${LSB} is not installed!${NC}"
   echo ""
   read -p "Do you want to download ${LSB}? [y/n]? " answer
   echo ""
-
   case $answer in
     [Yy]* )
       echo -e "${GREEN}${ARROW} Installing ${LSB} on ${DISTRO}...${NC}"
@@ -181,7 +170,6 @@ if ! lsb_release -si >/dev/null 2>&1; then
     * ) echo "Enter Y, N, please." ;;
   esac
 fi
-
 SUDO=""
 UPDATE=""
 INSTALL=""
@@ -190,12 +178,9 @@ PURGE=""
 CLEAN=""
 PKGCHK=""
 PGSQL_SERVICE=""
+DOCKER_PKGS=""
 shopt -s nocasematch
-if [[ $(lsb_release -si) == "Debian"    ||
-      $(lsb_release -si) == "Ubuntu"    ||
-      $(lsb_release -si) == "LinuxMint" ||
-      $(lsb_release -si) == "PureOS"
-    ]]; then
+if [[ $DISTRO_GROUP == "Debian" ]]; then
   export DEBIAN_FRONTEND=noninteractive
   SUDO="sudo"
   UPDATE="apt-get -o Dpkg::Progress-Fancy="1" update -qq"
@@ -212,6 +197,8 @@ if [[ $(lsb_release -si) == "Debian"    ||
   UNINSTALL_PKGS="crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-bin libsqlite3-dev"
   # PostgreSQL Service
   PGSQL_SERVICE="postgresql.service"
+  # Docker pkgs
+  DOCKER_PKGS="docker-ce docker-ce-cli"
 elif [[ $(lsb_release -si) == "CentOS" ]]; then
   SUDO="sudo"
   UPDATE="yum update -q"
@@ -228,6 +215,8 @@ elif [[ $(lsb_release -si) == "CentOS" ]]; then
   UNINSTALL_PKGS="crystal openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-tools sqlite-devel"
 # PostgreSQL Service
   PGSQL_SERVICE="postgresql.service"
+  # Docker pkgs
+  DOCKER_PKGS="docker-ce docker-ce-cli"
 elif [[ $(lsb_release -si) == "Fedora" ]]; then
   SUDO="sudo"
   UPDATE="dnf update -q"
@@ -244,9 +233,9 @@ elif [[ $(lsb_release -si) == "Fedora" ]]; then
   UNINSTALL_PKGS="crystal openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-tools sqlite-devel"
   # PostgreSQL Service
   PGSQL_SERVICE="postgresql.service"
-elif [[ $(lsb_release -si) == "Arch" ||
-        $(lsb_release -si) == "ManjaroLinux" 
-      ]]; then
+  # Docker pkgs
+  DOCKER_PKGS="docker-ce docker-ce-cli"
+elif [[ $DISTRO_GROUP == "Arch" ]]; then
   SUDO="sudo"
   UPDATE="pacman -Syu"
   INSTALL="pacman -S --noconfirm --needed"
@@ -262,6 +251,8 @@ elif [[ $(lsb_release -si) == "Arch" ||
   UNINSTALL_PKGS="base-devel shards crystal librsvg"
   # PostgreSQL Service
   PGSQL_SERVICE="postgresql.service"
+  # Docker pkgs
+  DOCKER_PKGS="docker"
 else
   echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
   exit 1;
@@ -270,21 +261,13 @@ fi
 # Make sure that the script runs with root permissions
 chk_permissions() {
   if [[ "$EUID" != 0 ]]; then
-    echo -e "${RED}${ERROR} This action needs root permissions.${NC} Please enter your root password...";
+    echo -e "${RED}${ERROR} This action needs root permissions."
+    echo -e "${NC}  Please enter your root password...";
     cd "$CURRDIR" || exit
     su -s "$(which bash)" -c "./$SCRIPT_FILENAME"
     cd - > /dev/null || exit
     exit 0; 
   fi
-}
-
-indexit() {
-  cd "${CURRDIR}" || exit
-  ./"${SCRIPT_FILENAME}"
-}
-
-repoexit() {
-  cd ${REPO_DIR} || exit 1
 }
 
 add_swap_url=https://raw.githubusercontent.com/tmiland/swap-add/master/swap-add.sh
@@ -394,11 +377,7 @@ nginx_autoinstall_url=https://github.com/angristan/nginx-autoinstall/raw/master/
 
 nginx-autoinstall() {
   shopt -s nocasematch
-  if [[ $(lsb_release -si) == "Debian"    ||
-        $(lsb_release -si) == "Ubuntu"    ||
-        $(lsb_release -si) == "LinuxMint" ||
-        $(lsb_release -si) == "PureOS"
-      ]]; then
+if [[ $DISTRO_GROUP == "Debian" ]]; then
     if [[ $(command -v 'curl') ]]; then
       source <(curl -sSLf $nginx_autoinstall_url)
     elif [[ $(command -v 'wget') ]]; then
@@ -677,15 +656,9 @@ pgbackup() {
   git clone https://github.com/tmiland/pgbackup.git
   cd pgbackup || exit
   shopt -s nocasematch
-  if [[ $(lsb_release -si) == "CentOS" ||
-        $(lsb_release -si) == "Fedora" 
-      ]]; then
+  if [[ $DISTRO_GROUP == "RHEL" ]]; then
     pgsqlConfigPath=/var/lib/pgsql/data
-  elif [[ $(lsb_release -si) == "Debian"    ||
-          $(lsb_release -si) == "Ubuntu"    ||
-          $(lsb_release -si) == "LinuxMint" ||
-          $(lsb_release -si) == "PureOS"
-        ]]; then
+  elif [[ $DISTRO_GROUP == "Debian" ]]; then
     pgsqlConfigPath=/etc/postgresql/9.6/main
   else
     echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
@@ -963,9 +936,7 @@ update_config() {
 systemd_install() {
   # Setup Systemd Service
   shopt -s nocasematch
-  if [[ $(lsb_release -si) == "CentOS" ||
-        $(lsb_release -si) == "Fedora" 
-      ]]; then
+  if [[ $DISTRO_GROUP == "RHEL" ]]; then
     cp ${REPO_DIR}/${SERVICE_NAME} /etc/systemd/system/${SERVICE_NAME}
     # Set SELinux to permissive
     # sed -i 's/enforcing/permissive/g' /etc/selinux/config
@@ -1011,27 +982,19 @@ logrotate_install() {
 # Get Crystal
 get_crystal() {
   shopt -s nocasematch
-  if [[ $(lsb_release -si) == "Debian"    ||
-        $(lsb_release -si) == "Ubuntu"    ||
-        $(lsb_release -si) == "LinuxMint" ||
-        $(lsb_release -si) == "PureOS"
-      ]]; then
+  if [[ $DISTRO_GROUP == "Debian" ]]; then
     if [[ ! -e /etc/apt/sources.list.d/crystal.list ]]; then
       # Add repo metadata signign key (shared bintray signing key)
       apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 379CE192D401AB61
       echo "deb https://dl.bintray.com/crystal/deb all stable" | tee /etc/apt/sources.list.d/crystal.list
     fi
-  elif [[ $(lsb_release -si) == "CentOS" ||
-          $(lsb_release -si) == "Fedora"
-        ]]; then
+  elif [[ $DISTRO_GROUP == "RHEL" ]]; then
     if [[ ! -e /etc/yum.repos.d/crystal.repo ]]; then
       curl -fsSL https://crystal-lang.org/install.sh | ${SUDO} bash
     fi
   elif [[ $(lsb_release -si) == "Darwin" ]]; then
     exit 1;
-  elif [[ $(lsb_release -si) == "Arch" ||
-          $(lsb_release -si) == "ManjaroLinux"
-        ]]; then
+  elif [[ $DISTRO_GROUP == "Arch" ]]; then
     echo "Arch/Manjaro Linux... Skipping manual crystal install"
   else
     echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
@@ -1360,7 +1323,7 @@ install_invidious() {
 
   cd - || exit
 
-  if [[ $(lsb_release -si) == "CentOS" || $(lsb_release -si) == "Fedora" ]]; then
+  if [[ $DISTRO_GROUP == "RHEL" ]]; then
     if ! ${PKGCHK} ${PGSQL_SERVICE} >/dev/null 2>&1; then
       if [[ $(lsb_release -si) == "CentOS" ]]; then
         ${SUDO} yum config-manager --set-enabled powertools
@@ -1401,7 +1364,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
       ${SUDO} chmod 600 /var/lib/pgsql/data/pg_hba.conf
     fi
   fi
-  if [[ $(lsb_release -si) == "Arch" || $(lsb_release -si) == "ManjaroLinux" ]]; then
+  if [[ $DISTRO_GROUP == "Arch" ]]; then
     if [[ ! -d /var/lib/postgres/data ]]; then
       su - postgres -c "initdb --locale en_US.UTF-8 -D '/var/lib/postgres/data'"
     fi
@@ -1430,28 +1393,20 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
   # Crystal complaining about permissions on CentOS and somewhat Debian
   # So before we build, make sure permissions are set.
   set_permissions
-
   repoexit
-  #sudo -i -u invidious \
-    shards update && shards install
+  shards update && shards install
   crystal build src/invidious.cr --release
   check_exit_status
   # Not figured out why yet, so let's set permissions after as well...
   set_permissions
-
   systemd_install
-
   logrotate_install
-
   show_install_banner
-
   sleep 5
   indexit
-  #exit
 }
 
 update_invidious() {
-
   echo ""
   repoexit
   UpdateMaster
@@ -1460,7 +1415,6 @@ update_invidious() {
 }
 
 deploy_with_docker() {
-
   docker_repo_chk
   header
 
@@ -1488,22 +1442,8 @@ deploy_with_docker() {
       done
 
       docker_repo_chk
-      shopt -s nocasematch
-      if [[ $(lsb_release -si) == "Debian"    ||
-            $(lsb_release -si) == "Ubuntu"    ||
-            $(lsb_release -si) == "LinuxMint" ||
-            $(lsb_release -si) == "PureOS"    ||
-            $(lsb_release -si) == "CentOS"    ||
-            $(lsb_release -si) == "Fedora"
-          ]]; then
-          DOCKERCHK=$PKGCHK docker-ce docker-ce-cli
-        elif [[ $(lsb_release -si) == "Arch" || $(lsb_release -si) == "ManjaroLinux" ]]; then
-          DOCKERCHK=$PKGCHK docker
-        else
-          echo -e "${RED}${ERROR} Docker is not installed... ${NC}"
-      fi
-
-      if ${DOCKERCHK} >/dev/null 2>&1; then
+      # If Docker pkgs is installed
+      if ${PKGCHK} ${DOCKER_PKGS} >/dev/null 2>&1; then
         
         if [[ $BUILD_DOCKER = "y" ]]; then
             # Let the user enter custom port:
@@ -1533,7 +1473,8 @@ deploy_with_docker() {
       else
         echo -e "${RED}${ERROR} Docker is not installed, please choose option 5)${NC}"
       fi
-      exit
+      sleep 5
+      indexit
       ;;
     2) # Start, Stop or Restart Invidious
       # chk_permissions
@@ -1573,10 +1514,8 @@ deploy_with_docker() {
       while [[ $REBUILD_DOCKER !=  "y" && $REBUILD_DOCKER != "n" ]]; do
         read -p "       Rebuild cluster ? [y/n]: " -e REBUILD_DOCKER
       done
-
       docker_repo_chk
-
-      if ${DOCKERCHK} >/dev/null 2>&1; then
+      if ${PKGCHK} ${DOCKER_PKGS} >/dev/null 2>&1; then
         if [[ $REBUILD_DOCKER = "y" ]]; then
           repoexit
           #docker-compose build
@@ -1595,14 +1534,11 @@ deploy_with_docker() {
       exit
       ;;
     4) # Delete data and rebuild
-      # chk_permissions
       while [[ $DEL_REBUILD_DOCKER !=  "y" && $DEL_REBUILD_DOCKER != "n" ]]; do
         read -p "       Delete data and rebuild Docker? [y/n]: " -e DEL_REBUILD_DOCKER
       done
-
       docker_repo_chk
-
-      if ${DOCKERCHK} >/dev/null 2>&1; then
+      if ${PKGCHK} ${DOCKER_PKGS} >/dev/null 2>&1; then
         if [[ $DEL_REBUILD_DOCKER = "y" ]]; then
           repoexit
           docker-compose down
@@ -1633,12 +1569,9 @@ deploy_with_docker() {
       # Update the apt package index:
       ${SUDO} ${UPDATE}
       shopt -s nocasematch
-      if [[ $(lsb_release -si) == "Debian"    ||
-            $(lsb_release -si) == "Ubuntu"    ||
-            $(lsb_release -si) == "LinuxMint" ||
-            $(lsb_release -si) == "PureOS"
-        ]]; then
-        DISTRO=$(printf '%s\n' "$(lsb_release -si)" | LC_ALL=C tr '[:upper:]' '[:lower:]')
+      if [[ $(lsb_release -si) == "Debian" ||
+            $(lsb_release -si) == "Ubuntu" ||
+            $(lsb_release -si) == "PureOS" ]]; then
         #Install packages to allow apt to use a repository over HTTPS:
         ${SUDO} ${INSTALL} \
           apt-transport-https \
@@ -1655,6 +1588,29 @@ deploy_with_docker() {
           "deb [arch=amd64] https://download.docker.com/linux/${DISTRO} \
           $(lsb_release -cs) \
           ${DOCKER_VER}"
+        # Update the apt package index:
+        ${SUDO} ${UPDATE}
+        # Install the latest version of Docker CE and containerd
+        ${SUDO} ${INSTALL} docker-ce docker-ce-cli containerd.io
+        # Verify that Docker CE is installed correctly by running the hello-world image.
+        ${SUDO} docker run hello-world
+      shopt -s nocasematch
+      elif [[ $(lsb_release -si) == "LinuxMint" ]]; then
+        #Install packages to allow apt to use a repository over HTTPS:
+        ${SUDO} ${INSTALL} \
+          apt-transport-https \
+          ca-certificates \
+          curl \
+          gnupg2 \
+          software-properties-common
+        # Add Docker’s official GPG key:
+        curl -fsSLk https://download.docker.com/linux/ubuntu/gpg | ${SUDO} apt-key add -
+        # Verify that you now have the key with the fingerprint 9DC8 5822 9FC7 DD38 854A E2D8 8D81 803C 0EBF CD88, by searching for the last 8 characters of the fingerprint.
+        ${SUDO} apt-key fingerprint 0EBFCD88
+        # install docker docker-compose
+        ${SUDO} add-apt-repository \
+          "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+          $(. /etc/os-release; echo "$UBUNTU_CODENAME") stable"
         # Update the apt package index:
         ${SUDO} ${UPDATE}
         # Install the latest version of Docker CE and containerd
@@ -1697,7 +1653,7 @@ deploy_with_docker() {
         ${SUDO} systemctl start docker
         # Verify that Docker CE is installed correctly by running the hello-world image.
         ${SUDO} docker run hello-world
-      elif [[ $(lsb_release -si) == "Arch" || $(lsb_release -si) == "ManjaroLinux" ]]; then
+      elif [[ $DISTRO_GROUP == "Arch" ]]; then
         ${SUDO} ${INSTALL} docker
         # Enable Docker.
         ${SUDO} systemctl enable docker
@@ -1732,7 +1688,6 @@ deploy_with_docker() {
 }
 
 database_maintenance() {
-  # chk_permissions
 
   read -p "Are you sure you want to run Database Maintenance? Enter [y/n]: " answer
 
@@ -1839,7 +1794,6 @@ start_stop_restart_invidious() {
 }
 
 uninstall_invidious() {
-  # chk_permissions
 
   # Set db backup path
   PgDbBakPath="/home/backup/$USER_NAME"
@@ -1962,16 +1916,11 @@ uninstall_invidious() {
     echo ""
     echo -e "${ORANGE}${ARROW} Removing invidious files and modules files.${NC}"
     echo ""
-    shopt -s nocasematch
-    if [[ $(lsb_release -si) == "Debian"    ||
-          $(lsb_release -si) == "Ubuntu"    ||
-          $(lsb_release -si) == "LinuxMint" ||
-          $(lsb_release -si) == "PureOS"
-        ]]; then
+    if [[ $DISTRO_GROUP == "Debian" ]]; then
       rm -r \
         /lib/systemd/system/${SERVICE_NAME} \
         /etc/apt/sources.list.d/crystal.list
-    elif [[ $(lsb_release -si) == "CentOS" ]]; then
+    elif [[ $DISTRO_GROUP == "RHEL" ]]; then
       rm -r \
         /usr/lib/systemd/system/${SERVICE_NAME} \
         /etc/yum.repos.d/crystal.repo
@@ -2019,16 +1968,10 @@ uninstall_invidious() {
       echo -e "${ORANGE}${ARROW} User $USER_NAME Found, removing user and files${NC}"
       echo ""
       shopt -s nocasematch
-      if [[ $(lsb_release -si) == "Debian"    ||
-            $(lsb_release -si) == "Ubuntu"    ||
-            $(lsb_release -si) == "LinuxMint" ||
-            $(lsb_release -si) == "PureOS"
-          ]]; then
+      if [[ $DISTRO_GROUP == "Debian" ]]; then
         ${SUDO} deluser --remove-home $USER_NAME
       fi
-      if [[ $(lsb_release -si) == "CentOS" ||
-            $(lsb_release -si) == "Fedora" 
-          ]]; then
+      if [[ $DISTRO_GROUP == "RHEL" ]]; then
         /usr/sbin/userdel -r $USER_NAME
       fi
     fi
@@ -2042,14 +1985,22 @@ uninstall_invidious() {
   echo ""
   sleep 3
   indexit
-  #exit
 }
 
 # Start Script
 chk_permissions
 show_banner
 
-while [[ $OPTION !=  "1" && $OPTION != "2" && $OPTION != "3" && $OPTION != "4" && $OPTION != "5" && $OPTION != "6" && $OPTION != "7" && $OPTION != "8" && $OPTION != "9" && $OPTION != "10" ]]; do
+while [[ $OPTION != "1" &&
+         $OPTION != "2" &&
+         $OPTION != "3" &&
+         $OPTION != "4" &&
+         $OPTION != "5" &&
+         $OPTION != "6" &&
+         $OPTION != "7" &&
+         $OPTION != "8" &&
+         $OPTION != "9" &&
+         $OPTION != "10" ]]; do
   read -p "Select an option [1-10]: " OPTION
 done
 
