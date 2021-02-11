@@ -339,7 +339,7 @@ install_certbot() {
     git clone https://github.com/Neilpang/acme.sh.git
     # Do the work
     cd acme.sh
-    ./acme.sh --install  \
+    ./acme.sh --install \
     --home $acme_home \
     --config-home $acme_home/data \
     --cert-home  $acme_home/certs \
@@ -348,13 +348,27 @@ install_certbot() {
     --accountconf $acme_home/account.conf \
     --useragent  "Acme client"
     # Issue cert
-    acme.sh  --issue  -d ${NGINX_DOMAIN_NAME}  -w /etc/nginx/html/${NGINX_DOMAIN_NAME} ||
-    echo "Successfully installed Let's Encrypt SSL certificates for Invidious"
-    # Link script to bin
-    sudo ln -s $acme_home/acme.sh /usr/local/bin/
-    # Install cron job
-    # crontab -l | { cat; echo "0 0 * * * \"$acme_home\"/acme.sh --cron --home \"$acme_home\" > /dev/null"; } | crontab - ||
-    echo "done!"
+    # Use for debugging: --force --test --debug
+    /etc/acme/acme.sh --issue -d ${NGINX_DOMAIN_NAME} -w /etc/nginx/html && echo "Successfully issued Let's Encrypt SSL certificates for Invidious" || echo "Error issuing Let's Encrypt SSL certificates!"
+    # Install cert
+    ${SUDO} mkdir -p /etc/nginx/certs/${NGINX_DOMAIN_NAME}
+    /etc/acme/acme.sh --install-cert -d ${NGINX_DOMAIN_NAME} \
+    --cert-file /etc/nginx/certs/${NGINX_DOMAIN_NAME}/${NGINX_DOMAIN_NAME}.cert \
+    --key-file /etc/nginx/certs/${NGINX_DOMAIN_NAME}/${NGINX_DOMAIN_NAME}.key \
+    --fullchain-file /etc/nginx/certs/${NGINX_DOMAIN_NAME}/${NGINX_DOMAIN_NAME}.fullchain \
+    --reloadcmd "systemctl reload nginx.service"
+    if [ $? -eq 0 ]; then
+      ${SUDO} sed -i "s/# listen/listen/g" $NGINX_VHOST_DIR/$NGINX_VHOST
+      ${SUDO} sed -i "s/# ssl_certificate/ssl_certificate/g" $NGINX_VHOST_DIR/$NGINX_VHOST
+      ${SUDO} sed -i "s/# if ($scheme/if ($scheme/g" $NGINX_VHOST_DIR/$NGINX_VHOST
+      ${SUDO} sed -i "s/# 	return 301/	return 301/g" $NGINX_VHOST_DIR/$NGINX_VHOST
+      ${SUDO} sed -i "s/# }/}/g" $NGINX_VHOST_DIR/$NGINX_VHOST
+      echo "done!"
+      sleep 3
+      indexit
+    else
+      echo "something went wrong!"
+    fi
     ;;
     [Nn]* )
       sleep 3
@@ -435,8 +449,6 @@ tee $NGINX_VHOST_DIR/$NGINX_VHOST <<'EOF' >/dev/null
 server {
   	listen 80;
   	listen [::]:80;
-  	listen 443 ssl http2;
-  	listen [::]:443 ssl http2;
 
     server_name invidious.domain.tld;
 
@@ -446,9 +458,16 @@ server {
     location ^~ /.well-known/acme-challenge {
       root /etc/nginx/html;
     }
+    # Redirect HTTP to HTTPS
+  	# if ($scheme = http) {
+  	# 	return 301 https://$server_name$request_uri;
+  	# }
 
-  	ssl_certificate /etc/acme/certs/invidious.domain.tld/fullchain.pem;
-  	ssl_certificate_key /etc/acme/certs/invidious.domain.tld/privkey.pem;
+    # listen 443 ssl http2;
+  	# listen [::]:443 ssl http2;
+
+    # ssl_certificate /etc/nginx/certs/invidious.domain.tld/invidious.domain.tld.cert;
+  	# ssl_certificate_key /etc/nginx/certs/invidious.domain.tld/invidious.domain.tld.key;
 
   	location / {
   		proxy_pass http://127.0.0.1:3000/;
@@ -458,14 +477,15 @@ server {
   		proxy_set_header Connection "";	# to keep alive
   	}
 
-  	if ($https = '') { return 301 https://"$host$request_uri"; }	# if not connected to HTTPS, perma-redirect to HTTPS
   }
 EOF
   ${SUDO} sed -i "s/127.0.0.1/${NGINX_HOST}/g" $NGINX_VHOST_DIR/$NGINX_VHOST
   ${SUDO} sed -i "s/invidious.domain.tld/${NGINX_DOMAIN_NAME}/g" $NGINX_VHOST_DIR/$NGINX_VHOST
   ${SUDO} ln -s $NGINX_VHOST_DIR/$NGINX_VHOST /etc/nginx/sites-enabled/$NGINX_VHOST
-  ${SUDO} mkdir /etc/nginx/html/.well-known/acme-challenge
-  nginx -t && systemctl reload nginx || echo "Successfully installed nginx vhost $NGINX_VHOST_DIR/$NGINX_VHOST"
+  ${SUDO} chown -R root:www-data /etc/nginx/html
+  nginx -t && systemctl reload nginx && echo "Successfully installed nginx vhost $NGINX_VHOST_DIR/$NGINX_VHOST" || echo "Error installing nginx vhost!"
+  sleep 3
+  indexit
   ;;
   [Nn]* )
     sleep 3
