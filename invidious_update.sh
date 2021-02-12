@@ -363,6 +363,28 @@ install_certbot() {
       ${SUDO} sed -i "s/# if ($scheme/if ($scheme/g" $NGINX_VHOST_DIR/$NGINX_VHOST
       ${SUDO} sed -i "s/# 	return 301/	return 301/g" $NGINX_VHOST_DIR/$NGINX_VHOST
       ${SUDO} sed -i "s/# }/}/g" $NGINX_VHOST_DIR/$NGINX_VHOST
+    if [ -f "$IN_CONFIG" ]; then
+      https_only() {
+        echo $(sed -n 's/.*https_only *: *\([^ ]*.*\)/\1/p' "$1")
+      }
+      https_only=$(https_only "$IN_CONFIG")
+      if [[ $https_only == "false" ]]; then
+        while [[ $https_only != "y" && $https_only != "n" ]]; do
+            read -p "Do you want to turn on https in invidious? [y/n]: " https_only
+        done
+        case $https_only in
+          [Yy]* )
+            ${SUDO} sed -i "s/https_only: false/https_only: true/g" $IN_CONFIG
+            ${SUDO} sed -i "s/external_port: /external_port: 443/g" $IN_CONFIG
+            ;;
+          [Nn]* )
+            exit 1
+            ;;
+        esac
+      else
+        echo "https_only is already set to 443 in Invidious config!"
+      fi
+    fi
       echo "done!"
       sleep 3
       indexit
