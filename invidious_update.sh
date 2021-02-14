@@ -356,7 +356,8 @@ install_certbot() {
     --cert-file /etc/nginx/certs/${NGINX_DOMAIN_NAME}/${NGINX_DOMAIN_NAME}.cert \
     --key-file /etc/nginx/certs/${NGINX_DOMAIN_NAME}/${NGINX_DOMAIN_NAME}.key \
     --fullchain-file /etc/nginx/certs/${NGINX_DOMAIN_NAME}/${NGINX_DOMAIN_NAME}.fullchain \
-    --reloadcmd "systemctl reload nginx.service"
+    # --reloadcmd "systemctl reload nginx.service"
+    nginx -t && ${SUDO} systemctl restart nginx.service || echo "Error restarting nginx.service!"
     if [ $? -eq 0 ]; then
       ${SUDO} sed -i "s/# listen/listen/g" $NGINX_VHOST_DIR/$NGINX_VHOST
       ${SUDO} sed -i "s/# ssl_certificate/ssl_certificate/g" $NGINX_VHOST_DIR/$NGINX_VHOST
@@ -376,6 +377,7 @@ install_certbot() {
           [Yy]* )
             ${SUDO} sed -i "s/https_only: false/https_only: true/g" $IN_CONFIG
             ${SUDO} sed -i "s/external_port: /external_port: 443/g" $IN_CONFIG
+            ${SUDO} systemctl restart invidious.service
             ;;
           [Nn]* )
             exit 1
