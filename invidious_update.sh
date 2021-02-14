@@ -109,6 +109,10 @@ external_port=
 # Docker compose repo name
 COMPOSE_REPO_NAME="docker/compose"
 
+read_sleep() {
+    read -rt "$1" <> <(:) || :
+}
+
 indexit() {
   cd "${CURRDIR}" || exit
   ./"${SCRIPT_FILENAME}"
@@ -161,7 +165,7 @@ if ! lsb_release -si >/dev/null 2>&1; then
       echo -e "${GREEN}${ARROW} Installing ${LSB} on ${DISTRO}...${NC}"
       su -s "$(which bash)" -c "${PKGCMD} ${LSB}" || echo -e "${RED}${ERROR} Error: could not install ${LSB}!${NC}"
       echo -e "${GREEN}${DONE} Done${NC}"
-      sleep 3
+      read_sleep 3
       indexit
       ;;
     [Nn]* )
@@ -281,7 +285,7 @@ add_swap() {
     echo -e "${RED}${ERROR} This script requires curl or wget.\nProcess aborted${NC}"
     exit 0
   fi
-  sleep 3
+  read_sleep 3
   indexit
 }
 
@@ -394,14 +398,14 @@ EOF
   
   ;;
   [Nn]* )
-    sleep 3
+    read_sleep 3
     indexit
     ;;
   * ) echo "Enter Y, N or Q, please." ;;
   esac
   else
     echo -e "${RED}${ERROR} Nginx is not installed${NC}"
-    sleep 3
+    read_sleep 3
     indexit
   fi
   
@@ -610,7 +614,7 @@ host    replication     all             127.0.0.1/32            md5
 host    replication     all             ::1/128                 md5" | ${SUDO} tee $pgsqlConfigPath/pg_hba.conf
   #${SUDO} -i -u postgres sed -i "s/local   all             postgres                                peer/local   all             postgres                                trust/g" /etc/postgresql/9.6/main/pg_hba.conf
   ${SUDO} systemctl restart ${PGSQL_SERVICE}
-  sleep 1
+  read_sleep 1
   chmod +x pg_backup_rotated.sh && chmod +x pg_backup.sh
   fi
   printf "\n-- Running pgbackup\n"
@@ -619,7 +623,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
   cd - || exit
   printf "\n"
   echo -e "${GREEN}${DONE} Done ${REPO_DIR} ${NC}"
-  sleep 3
+  read_sleep 3
   indexit
 }
 
@@ -756,7 +760,7 @@ chk_git_repo() {
     echo ""
     echo -e "${ORANGE}${WARNING} If you want to reinstall, please choose option 7 to Uninstall Invidious first!${NC}"
     echo ""
-    sleep 3
+    read_sleep 3
     indexit
     #exit 1
   fi
@@ -795,7 +799,7 @@ docker_repo_chk() {
         GetMaster
         ;;
       [Nn]* )
-        sleep 3
+        read_sleep 3
         indexit
         ;;
       * ) echo "Enter Y, N or Q, please." ;;
@@ -882,11 +886,11 @@ systemd_install() {
   then
     echo -e "${GREEN}${DONE} Invidious service has been successfully installed!${NC}"
     ${SUDO} systemctl status ${SERVICE_NAME} --no-pager
-    sleep 5
+    read_sleep 5
   else
     echo -e "${RED}${ERROR} Invidious service installation failed...${NC}"
     ${SUDO} journalctl -u ${SERVICE_NAME}
-    sleep 5
+    read_sleep 5
   fi
 }
 
@@ -956,18 +960,18 @@ rebuild() {
   cd - || exit
   printf "\n"
   echo -e "${GREEN}${DONE} Done Rebuilding ${REPO_DIR} ${NC}"
-  sleep 3
+  read_sleep 3
 }
 
 # Restart Invidious
 restart() {
   printf "\n-- restarting Invidious\n"
   ${SUDO} systemctl restart $SERVICE_NAME
-  sleep 2
+  read_sleep 2
   ${SUDO} systemctl status $SERVICE_NAME --no-pager
   printf "\n"
   echo -e "${GREEN}${DONE} Invidious has been restarted ${NC}"
-  sleep 3
+  read_sleep 3
 }
 
 # Backup config file
@@ -1268,7 +1272,7 @@ install_invidious() {
       fi
       ${SUDO} chmod 775 /var/lib/pgsql/data/postgresql.conf
       ${SUDO} chmod 775 /var/lib/pgsql/data/pg_hba.conf
-      sleep 1
+      read_sleep 1
       ${SUDO} sed -i "s/#port = 5432/port = 5432/g" /var/lib/pgsql/data/postgresql.conf
       cp -rp /var/lib/pgsql/data/pg_hba.conf /var/lib/pgsql/data/pg_hba.conf.bak
       echo "# Database administrative login by Unix domain socket
@@ -1297,9 +1301,9 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
     fi
   fi
   ${SUDO} systemctl enable ${PGSQL_SERVICE}
-  sleep 1
+  read_sleep 1
   ${SUDO} systemctl restart ${PGSQL_SERVICE}
-  sleep 1
+  read_sleep 1
   # Create users and set privileges
   echo -e "${ORANGE}${ARROW} Creating user kemal with password $psqlpass ${NC}"
   ${SUDO} -u postgres psql -c "CREATE USER kemal WITH PASSWORD '$psqlpass';"
@@ -1329,7 +1333,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
   systemd_install
   logrotate_install
   show_install_banner
-  sleep 5
+  read_sleep 5
   indexit
 }
 
@@ -1337,7 +1341,7 @@ update_invidious() {
   echo ""
   repoexit
   UpdateMaster
-  sleep 3
+  read_sleep 3
   indexit
 }
 
@@ -1383,13 +1387,13 @@ deploy_with_docker() {
               repoexit
               docker-compose up -d
               echo -e "${GREEN}${DONE} Deployment done with custom port $docker_port.${NC}"
-              sleep 5
+              read_sleep 5
               indexit
             else
               repoexit
               docker-compose up -d
               echo -e "${GREEN}${DONE} Deployment done.${NC}"
-              sleep 5
+              read_sleep 5
               indexit
           fi
         fi
@@ -1400,7 +1404,7 @@ deploy_with_docker() {
       else
         echo -e "${RED}${ERROR} Docker is not installed, please choose option 5)${NC}"
       fi
-      sleep 5
+      read_sleep 5
       indexit
       ;;
     2) # Start, Stop or Restart Invidious
@@ -1431,7 +1435,7 @@ deploy_with_docker() {
       while true; do
         repoexit
         docker-compose ${DOCKER_SERVICE}
-        sleep 5
+        read_sleep 5
         indexit
       done
       exit
@@ -1448,7 +1452,7 @@ deploy_with_docker() {
           #docker-compose build
           docker-compose up -d --build
           echo -e "${GREEN}${DONE} Rebuild done.${NC}"
-          sleep 5
+          read_sleep 5
           indexit
         fi
 
@@ -1470,10 +1474,10 @@ deploy_with_docker() {
           repoexit
           docker-compose down
           docker volume rm invidious_postgresdata
-          sleep 5
+          read_sleep 5
           docker-compose build
           echo -e "${GREEN}${DONE} Data deleted and Rebuild done.${NC}"
-          sleep 5
+          read_sleep 5
           indexit
         fi
         if [[ $DEL_REBUILD_DOCKER = "n" ]]; then
@@ -1601,7 +1605,7 @@ deploy_with_docker() {
       if [[ "$Docker_Compose" = 'y' ]]; then
         # download the latest version of Docker Compose:
         ${SUDO} curl -Lk "https://github.com/docker/compose/releases/download/${Docker_Compose_Ver}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-        sleep 5
+        read_sleep 5
         # Apply executable permissions to the binary:
         ${SUDO} chmod +x /usr/local/bin/docker-compose
         # Create a symbolic link to /usr/bin
@@ -1610,7 +1614,7 @@ deploy_with_docker() {
       # We're done !
       echo -e "${GREEN}${DONE}  Docker Installation done.${NC}"
   esac
-  sleep 5
+  read_sleep 5
   indexit
 }
 
@@ -1631,33 +1635,33 @@ database_maintenance() {
       then
         echo -e "${RED}${ERROR} stopping Invidious...${NC}"
         ${SUDO} systemctl stop ${SERVICE_NAME}
-        sleep 3
+        read_sleep 3
         echo -e "${GREEN}${ARROW} Running Maintenance on $psqldb ${NC}"
         echo -e "${ORANGE}${ARROW} Deleting expired tokens${NC}"
         ${SUDO} -i -u postgres psql $psqldb -c "DELETE FROM nonces * WHERE expire < current_timestamp;"
-        sleep 1
+        read_sleep 1
         echo -e "${ORANGE}${ARROW} Truncating videos table.${NC}"
         ${SUDO} -i -u postgres psql $psqldb -c "TRUNCATE TABLE videos;"
-        sleep 1
+        read_sleep 1
         echo -e "${ORANGE}${ARROW} Vacuuming $psqldb.${NC}"
         ${SUDO} -i -u postgres vacuumdb --dbname=$psqldb --analyze --verbose --table 'videos'
-        sleep 1
+        read_sleep 1
         echo -e "${ORANGE}${ARROW} Reindexing $psqldb.${NC}"
         ${SUDO} -i -u postgres reindexdb --dbname=$psqldb
-        sleep 3
+        read_sleep 3
         echo -e "${GREEN}${DONE} Maintenance on $psqldb done.${NC}"
         # Restart postgresql
         echo -e "${ORANGE}${ARROW} Restarting postgresql...${NC}"
         ${SUDO} systemctl restart ${PGSQL_SERVICE}
         echo -e "${GREEN}${DONE} Restarting postgresql done.${NC}"
         ${SUDO} systemctl status ${PGSQL_SERVICE} --no-pager
-        sleep 5
+        read_sleep 5
         # Restart Invidious
         echo -e "${ORANGE}${ARROW} Restarting Invidious...${NC}"
         ${SUDO} systemctl restart ${SERVICE_NAME}
         echo -e "${GREEN}${DONE} Restarting Invidious done.${NC}"
         ${SUDO} systemctl status ${SERVICE_NAME} --no-pager
-        sleep 1
+        read_sleep 1
       else
         echo -e "${RED}${ERROR} Database Maintenance failed. Is PostgreSQL running?${NC}"
         # Try to restart postgresql
@@ -1665,16 +1669,16 @@ database_maintenance() {
         ${SUDO} systemctl start ${PGSQL_SERVICE}
         echo -e "${GREEN}${DONE} Postgresql started successfully${NC}"
         ${SUDO} systemctl status ${PGSQL_SERVICE} --no-pager
-        sleep 5
+        read_sleep 5
         echo -e "${ORANGE}${ARROW} Restarting script. Please try again...${NC}"
-        sleep 5
+        read_sleep 5
         indexit
       fi
     fi
   fi
 
   show_maintenance_banner
-  sleep 5
+  read_sleep 5
   indexit
 }
 
@@ -1711,7 +1715,7 @@ start_stop_restart_invidious() {
       ${SUDO} systemctl ${SERVICE_ACTION} ${SERVICE_NAME}
       echo -e "${GREEN}${DONE} done.${NC}"
       ${SUDO} systemctl status ${SERVICE_NAME} --no-pager
-      sleep 5
+      read_sleep 5
       indexit
     else
       echo -e "${RED}${WARNING} (( Invidious is not installed! ))${NC}"
@@ -1774,9 +1778,9 @@ uninstall_invidious() {
   if [[ "$RM_PostgreSQLDB" = 'y' ]]; then
     # Stop and disable invidious
     ${SUDO} systemctl stop ${SERVICE_NAME}
-    sleep 1
+    read_sleep 1
     ${SUDO} systemctl restart ${PGSQL_SERVICE}
-    sleep 1
+    read_sleep 1
     # If directory is not created
     if [[ ! -d $PgDbBakPath ]]; then
       echo -e "${ORANGE}${ARROW} Backup Folder Not Found, adding folder${NC}"
@@ -1788,7 +1792,7 @@ uninstall_invidious() {
     echo ""
 
     ${SUDO} -i -u postgres pg_dump ${RM_PSQLDB} > ${PgDbBakPath}/${RM_PSQLDB}.sql
-    sleep 2
+    read_sleep 2
     ${SUDO} chown -R 1000:1000 "/home/backup"
 
     if [[ "$RM_RE_PostgreSQLDB" != 'n' ]]; then
@@ -1883,11 +1887,11 @@ uninstall_invidious() {
   if [[ "$RM_USER" = 'y' ]]; then
     # Stop and disable invidious
     ${SUDO} systemctl stop ${SERVICE_NAME}
-    sleep 1
+    read_sleep 1
     ${SUDO} systemctl restart ${PGSQL_SERVICE}
-    sleep 1
+    read_sleep 1
     ${SUDO} systemctl daemon-reload
-    sleep 1
+    read_sleep 1
     grep $USER_NAME /etc/passwd >/dev/null 2>&1
 
     if [ $? -eq 0 ] ; then
@@ -1910,7 +1914,7 @@ uninstall_invidious() {
   echo ""
   echo -e "${GREEN}${DONE} Un-installation done.${NC}"
   echo ""
-  sleep 3
+  read_sleep 3
   indexit
 }
 
