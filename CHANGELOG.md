@@ -99,3 +99,5 @@
     - Added in [1.5.4](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.5.4)
 - [X] Update for CentOS and Fedora
     - Added in [1.5.5](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.5.5)
+- [X] Added option to install cert from Let's Encrypt
+    - Added in [1.5.6](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.5.6)
