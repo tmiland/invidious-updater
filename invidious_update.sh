@@ -11,7 +11,7 @@
 ####                   Maintained by @tmiland                     ####
 ######################################################################
 
-version='1.5.5' # Must stay on line 14 for updater to fetch the numbers
+version='1.5.6' # Must stay on line 14 for updater to fetch the numbers
 
 #------------------------------------------------------------------------------#
 #
