@@ -66,6 +66,27 @@ $ wget https://github.com/tmiland/Invidious-Updater/raw/master/invidious_update.
 $ chmod +x invidious_update.sh
 $ ./invidious_update.sh
 ```
+### Repository
+
+ ```shell
+ $ sudo curl -SsL -o /etc/apt/sources.list.d/tmiland.list https://deb.tmiland.com/debian/tmiland.list
+ ```
+
+ ```shell
+ $ curl -SsL https://deb.tmiland.com/debian/KEY.gpg | sudo apt-key add -
+ ```
+
+ ```shell
+ $ sudo apt update
+ ```
+ 
+ ```shell
+ $ sudo apt install invidious-updater
+ ```
+ 
+- Run script with ```invidious_update ```
+ 
+- ***Only for Debian/Ubuntu/LinuxMint/PureOS***
 
 #### Check for script update (Default "no")
 
