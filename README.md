@@ -59,6 +59,11 @@ curl -s https://api.github.com/repos/tmiland/Invidious-Updater/releases/latest \
 $ chmod +x invidious_update.sh
 $ ./invidious_update.sh
 ```
+Or directly
+
+```bash
+$ curl -sSL https://github.com/tmiland/Invidious-Updater/releases/latest/download/invidious_update.sh | bash
+```
 
 For master branch
 ```bash
