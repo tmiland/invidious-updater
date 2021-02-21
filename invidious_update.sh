@@ -133,6 +133,7 @@ if lsb_release -si >/dev/null 2>&1; then
 fi
 case "$DISTRO" in
   Debian*|Ubuntu*|LinuxMint*|PureOS*)
+    # shellcheck disable=SC2140
     PKGCMD="apt-get -o Dpkg::Progress-Fancy="1" install -qq"
     LSB=lsb-release
     DISTRO_GROUP=Debian
@@ -187,9 +188,13 @@ shopt -s nocasematch
 if [[ $DISTRO_GROUP == "Debian" ]]; then
   export DEBIAN_FRONTEND=noninteractive
   SUDO="sudo"
+  # shellcheck disable=SC2140
   UPDATE="apt-get -o Dpkg::Progress-Fancy="1" update -qq"
+  # shellcheck disable=SC2140
   INSTALL="apt-get -o Dpkg::Progress-Fancy="1" install -qq"
+  # shellcheck disable=SC2140
   UNINSTALL="apt-get -o Dpkg::Progress-Fancy="1" remove -qq"
+  # shellcheck disable=SC2140
   PURGE="apt-get purge -o Dpkg::Progress-Fancy="1" -qq"
   CLEAN="apt-get clean && apt-get autoremove -qq"
   PKGCHK="dpkg -s"
@@ -278,8 +283,10 @@ add_swap_url=https://raw.githubusercontent.com/tmiland/swap-add/master/swap-add.
 
 add_swap() {
   if [[ $(command -v 'curl') ]]; then
+    # shellcheck disable=SC1090
     source <(curl -sSLf $add_swap_url)
   elif [[ $(command -v 'wget') ]]; then
+    # shellcheck disable=SC1090
     . <(wget -qO - $add_swap_url)
   else
     echo -e "${RED}${ERROR} This script requires curl or wget.\nProcess aborted${NC}"
@@ -319,6 +326,7 @@ install_certbot() {
         $(lsb_release -si) == "PureOS" ]]; then
     NGINX_VHOST_DIR=/etc/nginx/sites-available
     get_domain() {
+      # shellcheck disable=SC2046
       echo $(sed -n 's/.*domain *: *\([^ ]*.*\)/\1/p' "$1")
     }
     NGINX_DOMAIN_NAME=$(get_domain "$IN_CONFIG")
@@ -342,7 +350,7 @@ install_certbot() {
     # Clone from GitHub
     git clone https://github.com/Neilpang/acme.sh.git
     # Do the work
-    cd acme.sh
+    cd acme.sh || exit
     ./acme.sh --install \
     --home $acme_home \
     --config-home $acme_home/data \
@@ -365,11 +373,13 @@ install_certbot() {
     if [ $? -eq 0 ]; then
       ${SUDO} sed -i "s/# listen/listen/g" $NGINX_VHOST_DIR/$NGINX_VHOST
       ${SUDO} sed -i "s/# ssl_certificate/ssl_certificate/g" $NGINX_VHOST_DIR/$NGINX_VHOST
+      # shellcheck disable=SC2154
       ${SUDO} sed -i "s/# if ($scheme/if ($scheme/g" $NGINX_VHOST_DIR/$NGINX_VHOST
       ${SUDO} sed -i "s/# 	return 301/	return 301/g" $NGINX_VHOST_DIR/$NGINX_VHOST
       ${SUDO} sed -i "s/# }/}/g" $NGINX_VHOST_DIR/$NGINX_VHOST
     if [ -f "$IN_CONFIG" ]; then
       https_only() {
+        # shellcheck disable=SC2046
         echo $(sed -n 's/.*https_only *: *\([^ ]*.*\)/\1/p' "$1")
       }
       https_only=$(https_only "$IN_CONFIG")
@@ -421,8 +431,10 @@ nginx-autoinstall() {
   shopt -s nocasematch
 if [[ $DISTRO_GROUP == "Debian" ]]; then
     if [[ $(command -v 'curl') ]]; then
+      # shellcheck disable=SC1090
       source <(curl -sSLf $nginx_autoinstall_url)
     elif [[ $(command -v 'wget') ]]; then
+      # shellcheck disable=SC1090
       . <(wget -qO - $nginx_autoinstall_url)
     else
       echo -e "${RED}${ERROR} This script requires curl or wget.\nProcess aborted${NC}"
@@ -535,6 +547,7 @@ DOWNLOAD_METHOD=''
 if [[ $(command -v 'curl') ]]; then
   DOWNLOAD_METHOD='curl'
 elif [[ $(command -v 'wget') ]]; then
+  # shellcheck disable=SC2034
   DOWNLOAD_METHOD='wget'
 else
   echo -e "${RED}${ERROR} This script requires curl or wget.\nProcess aborted${NC}"
@@ -544,6 +557,7 @@ fi
 # Download files
 download_file() {
   declare -r url=$1
+  # shellcheck disable=SC2155
   declare -r tf=$(mktemp)
   local dlcmd=''
 
@@ -609,6 +623,7 @@ get_release_info() {
 
 # Returns the version number of invidious_update.sh file on line 14
 get_updater_version() {
+  # shellcheck disable=SC2046
   echo $(sed -n '14 s/[^0-9.]*\([0-9.]*\).*/\1/p' "$1")
 }
 
@@ -681,7 +696,7 @@ show_docker_status() {
 
   for i in "${!status[@]}"
   do
-
+    # shellcheck disable=SC2128
     if [[ "$status"  = "1" ]] ; then
       line+="${containerName[$i]}: ${GREEN}● running${NC} "
     else
@@ -955,7 +970,7 @@ update_config() {
   TFILE="/tmp/config.yml"
   [ ! -d $BPATH ] && mkdir -p $BPATH || :
   for f in $DPATH
-  do
+  do # shellcheck disable=SC2166
     if [ -f $f -a -r $f ]; then
       /bin/cp -f $f $BPATH
       echo -e "${GREEN}${ARROW} Updating config.yml with new info...${NC}"
