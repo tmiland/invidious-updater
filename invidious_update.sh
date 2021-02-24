@@ -132,7 +132,7 @@ if lsb_release -si >/dev/null 2>&1; then
   DISTRO=$(lsb_release -si)
 fi
 case "$DISTRO" in
-  Debian*|Ubuntu*|LinuxMint*|PureOS*)
+  Debian*|Ubuntu*|LinuxMint*|PureOS*|Devuan*)
     # shellcheck disable=SC2140
     PKGCMD="apt-get -o Dpkg::Progress-Fancy="1" install -qq"
     LSB=lsb-release
