@@ -11,7 +11,7 @@
 ####                   Maintained by @tmiland                     ####
 ######################################################################
 
-version='1.5.6' # Must stay on line 14 for updater to fetch the numbers
+version='1.5.7' # Must stay on line 14 for updater to fetch the numbers
 
 #------------------------------------------------------------------------------#
 #
@@ -128,9 +128,13 @@ if [ ! ${ARCH_CHK} == 'x86_64' ]; then
   exit 1;
 fi
 shopt -s nocasematch
-if lsb_release -si >/dev/null 2>&1; then
-  DISTRO=$(lsb_release -si)
-fi
+  if [[ -f /etc/debian_version ]]; then
+    DISTRO=$(cat /etc/issue.net)
+  elif [[ -f /etc/redhat-release ]]; then
+    DISTRO=$(cat /etc/redhat-release)
+  elif [[ -f /etc/os-release ]]; then
+    DISTRO=$(cat /etc/os-release | grep "PRETTY_NAME" | sed 's/PRETTY_NAME=//g' | sed 's/["]//g' | awk '{print $1}')
+  fi
 case "$DISTRO" in
   Debian*|Ubuntu*|LinuxMint*|PureOS*)
     # shellcheck disable=SC2140
@@ -152,7 +156,7 @@ case "$DISTRO" in
     PKGCMD="yes | LC_ALL=en_US.UTF-8 pacman -S"
     LSB=lsb-release
     DISTRO_GROUP=Arch
-      ;;
+    ;;
   *) echo -e "${RED}${ERROR} unknown distro: '$DISTRO'${NC}" ; exit 1 ;;
 esac
 if ! lsb_release -si >/dev/null 2>&1; then
