@@ -1821,14 +1821,15 @@ database_maintenance() {
 start_stop_restart_invidious() {
   # chk_permissions
   echo ""
-  echo "Do you want to start, stop or restart Invidious?"
+  echo "Do you want to start, stop, restart or rebuild Invidious?"
   echo "   1) Start"
   echo "   2) Stop"
   echo "   3) Restart"
+  echo "   4) Rebuild"
   echo ""
 
-  while [[ $SERVICE_ACTION != "1" && $SERVICE_ACTION != "2" && $SERVICE_ACTION != "3" ]]; do
-    read -p "Select an option [1-3]: " SERVICE_ACTION
+  while [[ $SERVICE_ACTION != "1" && $SERVICE_ACTION != "2" && $SERVICE_ACTION != "3" && $SERVICE_ACTION != "4" ]]; do
+    read -p "Select an option [1-4]: " SERVICE_ACTION
   done
 
   case $SERVICE_ACTION in
@@ -1841,9 +1842,14 @@ start_stop_restart_invidious() {
     3)
       SERVICE_ACTION=restart
       ;;
+    4)
+      rebuild
+      read_sleep 3
+      indexit
+      ;;
   esac
 
-  while true; do
+while [[ $SERVICE_ACTION =  "1" && $SERVICE_ACTION = "2" && $SERVICE_ACTION = "3" ]]; do
     if [[ -d $REPO_DIR ]]; then
       repoexit
       # Restart Invidious
