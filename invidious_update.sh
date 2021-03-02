@@ -1821,17 +1821,18 @@ database_maintenance() {
 start_stop_restart_invidious() {
   # chk_permissions
   echo ""
-  echo "Do you want to start, stop or restart Invidious?"
+  echo "Do you want to start, stop, restart or rebuild Invidious?"
   echo "   1) Start"
   echo "   2) Stop"
   echo "   3) Restart"
+  echo "   4) Rebuild"
   echo ""
 
-  while [[ $SERVICE_ACTION != "1" && $SERVICE_ACTION != "2" && $SERVICE_ACTION != "3" ]]; do
-    read -p "Select an option [1-3]: " SERVICE_ACTION
+  while [[ $SERVICE_INPUT != "1" && $SERVICE_INPUT != "2" && $SERVICE_INPUT != "3" && $SERVICE_INPUT != "4" ]]; do
+    read -p "Select an option [1-4]: " SERVICE_INPUT
   done
 
-  case $SERVICE_ACTION in
+  case $SERVICE_INPUT in
     1)
       SERVICE_ACTION=start
       ;;
@@ -1841,21 +1842,31 @@ start_stop_restart_invidious() {
     3)
       SERVICE_ACTION=restart
       ;;
+    4)
+      echo "Rebuild Invidious"
+      ;;
   esac
 
   while true; do
     if [[ -d $REPO_DIR ]]; then
-      repoexit
-      # Restart Invidious
-      echo -e "${ORANGE}${ARROW} ${SERVICE_ACTION} Invidious...${NC}"
-      ${SUDO} systemctl ${SERVICE_ACTION} ${SERVICE_NAME}
-      echo -e "${GREEN}${DONE} done.${NC}"
-      ${SUDO} systemctl status ${SERVICE_NAME} --no-pager
-      read_sleep 5
-      indexit
-    else
-      echo -e "${RED}${WARNING} (( Invidious is not installed! ))${NC}"
-      exit 1
+      if [[ $SERVICE_INPUT = "1" || $SERVICE_INPUT = "2" || $SERVICE_INPUT = "3" ]]; then
+        repoexit
+        # Restart Invidious
+        echo -e "${ORANGE}${ARROW} ${SERVICE_ACTION} Invidious...${NC}"
+        ${SUDO} systemctl ${SERVICE_ACTION} ${SERVICE_NAME}
+        echo -e "${GREEN}${DONE} done.${NC}"
+        ${SUDO} systemctl status ${SERVICE_NAME} --no-pager
+        read_sleep 5
+        indexit
+      fi
+      if  [[ $SERVICE_INPUT = "4" ]]; then
+        rebuild
+        read_sleep 3
+        indexit
+      fi
+      else
+        echo -e "${RED}${WARNING} (( Invidious is not installed! ))${NC}"
+        exit 1
     fi
   done
 }
