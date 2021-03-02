@@ -89,7 +89,7 @@ REPO_DIR=$USER_DIR/invidious
 # Set config file path
 IN_CONFIG=${REPO_DIR}/config/config.yml
 # Service name
-SERVICE_NAME=invidious.service
+SERVICE_NAME=invidious
 # Default branch
 IN_BRANCH=master
 # Default domain
@@ -188,6 +188,7 @@ CLEAN=""
 PKGCHK=""
 PGSQL_SERVICE=""
 DOCKER_PKGS=""
+SYSTEM_CMD=""
 shopt -s nocasematch
 if [[ $DISTRO_GROUP == "Debian" ]]; then
   export DEBIAN_FRONTEND=noninteractive
@@ -209,9 +210,11 @@ if [[ $DISTRO_GROUP == "Debian" ]]; then
   #Uninstall packages
   UNINSTALL_PKGS="crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-bin libsqlite3-dev"
   # PostgreSQL Service
-  PGSQL_SERVICE="postgresql.service"
+  PGSQL_SERVICE="postgresql"
   # Docker pkgs
   DOCKER_PKGS="docker-ce docker-ce-cli"
+  # System cmd
+  SYSTEM_CMD="systemctl"
 elif [[ $(lsb_release -si) == "CentOS" ]]; then
   SUDO="sudo"
   UPDATE="yum update -q"
@@ -227,9 +230,11 @@ elif [[ $(lsb_release -si) == "CentOS" ]]; then
   #Uninstall packages
   UNINSTALL_PKGS="crystal openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-tools sqlite-devel"
 # PostgreSQL Service
-  PGSQL_SERVICE="postgresql.service"
+  PGSQL_SERVICE="postgresql"
   # Docker pkgs
   DOCKER_PKGS="docker-ce docker-ce-cli"
+  # System cmd
+  SYSTEM_CMD="systemctl"
 elif [[ $(lsb_release -si) == "Fedora" ]]; then
   SUDO="sudo"
   UPDATE="dnf update -q"
@@ -245,9 +250,11 @@ elif [[ $(lsb_release -si) == "Fedora" ]]; then
   #Uninstall packages
   UNINSTALL_PKGS="crystal openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-tools sqlite-devel"
   # PostgreSQL Service
-  PGSQL_SERVICE="postgresql.service"
+  PGSQL_SERVICE="postgresql"
   # Docker pkgs
   DOCKER_PKGS="docker-ce docker-ce-cli"
+  # System cmd
+  SYSTEM_CMD="systemctl"
 elif [[ $DISTRO_GROUP == "Arch" ]]; then
   SUDO="sudo"
   UPDATE="pacman -Syu"
@@ -263,9 +270,11 @@ elif [[ $DISTRO_GROUP == "Arch" ]]; then
   #Uninstall packages
   UNINSTALL_PKGS="base-devel shards crystal librsvg"
   # PostgreSQL Service
-  PGSQL_SERVICE="postgresql.service"
+  PGSQL_SERVICE="postgresql"
   # Docker pkgs
   DOCKER_PKGS="docker"
+  # System cmd
+  SYSTEM_CMD="systemctl"
 else
   echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
   exit 1;
@@ -372,8 +381,8 @@ install_certbot() {
     --cert-file /etc/nginx/certs/${NGINX_DOMAIN_NAME}/${NGINX_DOMAIN_NAME}.cert \
     --key-file /etc/nginx/certs/${NGINX_DOMAIN_NAME}/${NGINX_DOMAIN_NAME}.key \
     --fullchain-file /etc/nginx/certs/${NGINX_DOMAIN_NAME}/${NGINX_DOMAIN_NAME}.fullchain \
-    # --reloadcmd "systemctl reload nginx.service"
-    nginx -t && ${SUDO} systemctl restart nginx.service || echo "Error restarting nginx.service!"
+    # --reloadcmd "$SYSTEM_CMD reload nginx"
+    nginx -t && ${SUDO} $SYSTEM_CMD restart nginx || echo "Error restarting nginx!"
     if [ $? -eq 0 ]; then
       ${SUDO} sed -i "s/# listen/listen/g" $NGINX_VHOST_DIR/$NGINX_VHOST
       ${SUDO} sed -i "s/# ssl_certificate/ssl_certificate/g" $NGINX_VHOST_DIR/$NGINX_VHOST
@@ -395,7 +404,7 @@ install_certbot() {
           [Yy]* )
             ${SUDO} sed -i "s/https_only: false/https_only: true/g" $IN_CONFIG
             ${SUDO} sed -i "s/external_port: /external_port: 443/g" $IN_CONFIG
-            ${SUDO} systemctl restart invidious.service
+            ${SUDO} $SYSTEM_CMD restart invidious
             ;;
           [Nn]* )
             exit 1
@@ -527,7 +536,7 @@ EOF
   ${SUDO} sed -i "s/invidious.domain.tld/${NGINX_DOMAIN_NAME}/g" $NGINX_VHOST_DIR/$NGINX_VHOST
   ${SUDO} ln -s $NGINX_VHOST_DIR/$NGINX_VHOST /etc/nginx/sites-enabled/$NGINX_VHOST
   ${SUDO} chown -R root:www-data /etc/nginx/html
-  nginx -t && systemctl reload nginx && echo "Successfully installed nginx vhost $NGINX_VHOST_DIR/$NGINX_VHOST" || echo "Error installing nginx vhost!"
+  nginx -t && $SYSTEM_CMD reload nginx && echo "Successfully installed nginx vhost $NGINX_VHOST_DIR/$NGINX_VHOST" || echo "Error installing nginx vhost!"
   sleep 3
   indexit
   ;;
@@ -652,7 +661,7 @@ show_status() {
 
   for service in "${services[@]}"
   do
-    serviceStatus+=("$(systemctl is-active "$service.service")")
+    serviceStatus+=("$($SYSTEM_CMD is-active "$service")")
   done
 
   echo ""
@@ -671,7 +680,7 @@ show_status() {
   echo -e "$line"
 }
 
-if ( systemctl -q is-active ${SERVICE_NAME}); then
+if ( $SYSTEM_CMD -q is-active ${SERVICE_NAME}); then
   SHOW_STATUS=$(show_status)
 fi
 
@@ -710,7 +719,7 @@ show_docker_status() {
 
   echo -e "$line"
 }
-if ( ! systemctl -q is-active ${SERVICE_NAME}); then
+if ( ! $SYSTEM_CMD -q is-active ${SERVICE_NAME}); then
   if docker ps >/dev/null 2>&1; then
     SHOW_DOCKER_STATUS=$(show_docker_status)
   fi
@@ -749,7 +758,7 @@ local   replication     all                                     peer
 host    replication     all             127.0.0.1/32            md5
 host    replication     all             ::1/128                 md5" | ${SUDO} tee $pgsqlConfigPath/pg_hba.conf
   #${SUDO} -i -u postgres sed -i "s/local   all             postgres                                peer/local   all             postgres                                trust/g" /etc/postgresql/9.6/main/pg_hba.conf
-  ${SUDO} systemctl restart ${PGSQL_SERVICE}
+  ${SUDO} $SYSTEM_CMD restart ${PGSQL_SERVICE}
   read_sleep 1
   chmod +x pg_backup_rotated.sh && chmod +x pg_backup.sh
   fi
@@ -905,7 +914,7 @@ chk_git_repo() {
 docker_repo_chk() {
   # Check if the folder is a git repo
   if [[ ! -d "${REPO_DIR}/.git" ]]; then
-    #if (systemctl -q is-active invidious.service) && -d "${REPO_DIR}/.git" then
+    #if ($SYSTEM_CMD -q is-active invidious) && -d "${REPO_DIR}/.git" then
     echo ""
     echo -e "${RED}${ERROR} Looks like Invidious is not installed!${NC}"
     echo ""
@@ -1013,15 +1022,15 @@ systemd_install() {
   fi
   #${SUDO} sed -i "s/invidious -o invidious.log/invidious -b ${ip} -p ${port} -o invidious.log/g" /lib/systemd/system/${SERVICE_NAME}
   # Enable invidious start at boot
-  ${SUDO} systemctl enable ${SERVICE_NAME}
+  ${SUDO} $SYSTEM_CMD enable ${SERVICE_NAME}
   # Reload Systemd
-  ${SUDO} systemctl daemon-reload
+  ${SUDO} $SYSTEM_CMD daemon-reload
   # Restart Invidious
-  ${SUDO} systemctl start ${SERVICE_NAME}
-  if ( systemctl -q is-active ${SERVICE_NAME})
+  ${SUDO} $SYSTEM_CMD start ${SERVICE_NAME}
+  if ( $SYSTEM_CMD -q is-active ${SERVICE_NAME})
   then
     echo -e "${GREEN}${DONE} Invidious service has been successfully installed!${NC}"
-    ${SUDO} systemctl status ${SERVICE_NAME} --no-pager
+    ${SUDO} $SYSTEM_CMD status ${SERVICE_NAME} --no-pager
     read_sleep 5
   else
     echo -e "${RED}${ERROR} Invidious service installation failed...${NC}"
@@ -1102,9 +1111,9 @@ rebuild() {
 # Restart Invidious
 restart() {
   printf "\n-- restarting Invidious\n"
-  ${SUDO} systemctl restart $SERVICE_NAME
+  ${SUDO} $SYSTEM_CMD restart $SERVICE_NAME
   read_sleep 2
-  ${SUDO} systemctl status $SERVICE_NAME --no-pager
+  ${SUDO} $SYSTEM_CMD status $SERVICE_NAME --no-pager
   printf "\n"
   echo -e "${GREEN}${DONE} Invidious has been restarted ${NC}"
   read_sleep 3
@@ -1436,9 +1445,9 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
       su - postgres -c "initdb --locale en_US.UTF-8 -D '/var/lib/postgres/data'"
     fi
   fi
-  ${SUDO} systemctl enable ${PGSQL_SERVICE}
+  ${SUDO} $SYSTEM_CMD enable ${PGSQL_SERVICE}
   read_sleep 1
-  ${SUDO} systemctl restart ${PGSQL_SERVICE}
+  ${SUDO} $SYSTEM_CMD restart ${PGSQL_SERVICE}
   read_sleep 1
   # Create users and set privileges
   echo -e "${ORANGE}${ARROW} Creating user kemal with password $psqlpass ${NC}"
@@ -1700,7 +1709,7 @@ deploy_with_docker() {
         # Install the latest version of Docker CE and containerd
         ${SUDO} ${INSTALL} docker-ce docker-ce-cli containerd.io
         # Start Docker.
-        ${SUDO} systemctl start docker
+        ${SUDO} $SYSTEM_CMD start docker
         # Verify that Docker CE is installed correctly by running the hello-world image.
         ${SUDO} docker run hello-world
       elif [[ $(lsb_release -si) == "Fedora" ]]; then
@@ -1717,15 +1726,15 @@ deploy_with_docker() {
         # Install the latest version of Docker CE and containerd
         ${SUDO} ${INSTALL} docker-ce docker-ce-cli containerd.io
         # Start Docker.
-        ${SUDO} systemctl start docker
+        ${SUDO} $SYSTEM_CMD start docker
         # Verify that Docker CE is installed correctly by running the hello-world image.
         ${SUDO} docker run hello-world
       elif [[ $DISTRO_GROUP == "Arch" ]]; then
         ${SUDO} ${INSTALL} docker
         # Enable Docker.
-        ${SUDO} systemctl enable docker
+        ${SUDO} $SYSTEM_CMD enable docker
         # Start Docker.
-        ${SUDO} systemctl start docker
+        ${SUDO} $SYSTEM_CMD start docker
       else
         echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
         exit 1;
@@ -1767,10 +1776,10 @@ database_maintenance() {
     read -p "Is that correct? Enter [y/n]: " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
 
     if [[ "$answer" = 'y' ]]; then
-      if ( systemctl -q is-active ${PGSQL_SERVICE})
+      if ( $SYSTEM_CMD -q is-active ${PGSQL_SERVICE})
       then
         echo -e "${RED}${ERROR} stopping Invidious...${NC}"
-        ${SUDO} systemctl stop ${SERVICE_NAME}
+        ${SUDO} $SYSTEM_CMD stop ${SERVICE_NAME}
         read_sleep 3
         echo -e "${GREEN}${ARROW} Running Maintenance on $psqldb ${NC}"
         echo -e "${ORANGE}${ARROW} Deleting expired tokens${NC}"
@@ -1788,23 +1797,23 @@ database_maintenance() {
         echo -e "${GREEN}${DONE} Maintenance on $psqldb done.${NC}"
         # Restart postgresql
         echo -e "${ORANGE}${ARROW} Restarting postgresql...${NC}"
-        ${SUDO} systemctl restart ${PGSQL_SERVICE}
+        ${SUDO} $SYSTEM_CMD restart ${PGSQL_SERVICE}
         echo -e "${GREEN}${DONE} Restarting postgresql done.${NC}"
-        ${SUDO} systemctl status ${PGSQL_SERVICE} --no-pager
+        ${SUDO} $SYSTEM_CMD status ${PGSQL_SERVICE} --no-pager
         read_sleep 5
         # Restart Invidious
         echo -e "${ORANGE}${ARROW} Restarting Invidious...${NC}"
-        ${SUDO} systemctl restart ${SERVICE_NAME}
+        ${SUDO} $SYSTEM_CMD restart ${SERVICE_NAME}
         echo -e "${GREEN}${DONE} Restarting Invidious done.${NC}"
-        ${SUDO} systemctl status ${SERVICE_NAME} --no-pager
+        ${SUDO} $SYSTEM_CMD status ${SERVICE_NAME} --no-pager
         read_sleep 1
       else
         echo -e "${RED}${ERROR} Database Maintenance failed. Is PostgreSQL running?${NC}"
         # Try to restart postgresql
         echo -e "${GREEN}${ARROW} trying to start postgresql...${NC}"
-        ${SUDO} systemctl start ${PGSQL_SERVICE}
+        ${SUDO} $SYSTEM_CMD start ${PGSQL_SERVICE}
         echo -e "${GREEN}${DONE} Postgresql started successfully${NC}"
-        ${SUDO} systemctl status ${PGSQL_SERVICE} --no-pager
+        ${SUDO} $SYSTEM_CMD status ${PGSQL_SERVICE} --no-pager
         read_sleep 5
         echo -e "${ORANGE}${ARROW} Restarting script. Please try again...${NC}"
         read_sleep 5
@@ -1853,9 +1862,9 @@ start_stop_restart_invidious() {
         repoexit
         # Restart Invidious
         echo -e "${ORANGE}${ARROW} ${SERVICE_ACTION} Invidious...${NC}"
-        ${SUDO} systemctl ${SERVICE_ACTION} ${SERVICE_NAME}
+        ${SUDO} $SYSTEM_CMD ${SERVICE_ACTION} ${SERVICE_NAME}
         echo -e "${GREEN}${DONE} done.${NC}"
-        ${SUDO} systemctl status ${SERVICE_NAME} --no-pager
+        ${SUDO} $SYSTEM_CMD status ${SERVICE_NAME} --no-pager
         read_sleep 5
         indexit
       fi
@@ -1924,9 +1933,9 @@ uninstall_invidious() {
   # Remove PostgreSQL database if user answer is yes
   if [[ "$RM_PostgreSQLDB" = 'y' ]]; then
     # Stop and disable invidious
-    ${SUDO} systemctl stop ${SERVICE_NAME}
+    ${SUDO} $SYSTEM_CMD stop ${SERVICE_NAME}
     read_sleep 1
-    ${SUDO} systemctl restart ${PGSQL_SERVICE}
+    ${SUDO} $SYSTEM_CMD restart ${PGSQL_SERVICE}
     read_sleep 1
     # If directory is not created
     if [[ ! -d $PgDbBakPath ]]; then
@@ -1966,7 +1975,7 @@ uninstall_invidious() {
   fi
 
   # Reload Systemd
-  ${SUDO} systemctl daemon-reload
+  ${SUDO} $SYSTEM_CMD daemon-reload
   # Remove packages installed during installation
   if [[ "$RM_PACKAGES" = 'y' ]]; then
     echo ""
@@ -2033,11 +2042,11 @@ uninstall_invidious() {
   # Remove user and settings
   if [[ "$RM_USER" = 'y' ]]; then
     # Stop and disable invidious
-    ${SUDO} systemctl stop ${SERVICE_NAME}
+    ${SUDO} $SYSTEM_CMD stop ${SERVICE_NAME}
     read_sleep 1
-    ${SUDO} systemctl restart ${PGSQL_SERVICE}
+    ${SUDO} $SYSTEM_CMD restart ${PGSQL_SERVICE}
     read_sleep 1
-    ${SUDO} systemctl daemon-reload
+    ${SUDO} $SYSTEM_CMD daemon-reload
     read_sleep 1
     grep $USER_NAME /etc/passwd >/dev/null 2>&1
 
