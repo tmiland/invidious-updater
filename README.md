@@ -233,7 +233,7 @@ See [Changelog](https://github.com/tmiland/Invidious-Updater/blob/master/CHANGEL
 * Arch Linux
 
 ## Credits
-- Code is mixed and and customized from these sources:
+- Code is mixed and customized from these sources:
   * [Invidious](https://github.com/omarroth/invidious#linux)
   * [nginx-autoinstall](https://github.com/angristan/nginx-autoinstall)
   * [Git-Repo-Update](https://github.com/KillianKemps/Git-Repo-Update)
