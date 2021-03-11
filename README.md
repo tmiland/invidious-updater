@@ -103,6 +103,8 @@ $ ./invidious_update.sh
  
  #### Update Invidious via Cron
 
+**Select option 2 once to manually set GitHub Credentials**
+
 ```bash
 
 $ /path/to/script/invidious_update.sh -c
