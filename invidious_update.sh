@@ -1484,6 +1484,14 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
 
 update_invidious() {
   echo ""
+  if [ ! -f /root/.gitconfig ]; then
+    echo "Please provide your GitHub Credentials"
+    echo ""
+    read -p "GitHub email: " github_email
+    read -p "GitHub name: " github_name
+    git config --global user.email "$github_email"
+    git config --global user.name "$github_name"
+  fi
   repoexit
   UpdateMaster
   read_sleep 3
