@@ -89,7 +89,7 @@ REPO_DIR=$USER_DIR/invidious
 # Set config file path
 IN_CONFIG=${REPO_DIR}/config/config.yml
 # Service name
-SERVICE_NAME=invidious
+SERVICE_NAME=invidious.service
 # Default branch
 IN_BRANCH=master
 # Default domain
