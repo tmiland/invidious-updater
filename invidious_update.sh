@@ -1472,12 +1472,12 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
   # So before we build, make sure permissions are set.
   set_permissions
   repoexit
+  systemd_install
   shards update && shards install
   crystal build src/invidious.cr --release
   check_exit_status
   # Not figured out why yet, so let's set permissions after as well...
   set_permissions
-  systemd_install
   logrotate_install
   show_install_banner
   read_sleep 5
