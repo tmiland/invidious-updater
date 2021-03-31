@@ -11,13 +11,13 @@
 ####                   Maintained by @tmiland                     ####
 ######################################################################
 
-version='1.5.7' # Must stay on line 14 for updater to fetch the numbers
+version='1.5.8' # Must stay on line 14 for updater to fetch the numbers
 
 #------------------------------------------------------------------------------#
 #
 # MIT License
 #
-# Copyright (c) 2020 Tommy Miland
+# Copyright (c) 2021 Tommy Miland
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -108,6 +108,8 @@ https_only=false
 external_port=
 # Docker compose repo name
 COMPOSE_REPO_NAME="docker/compose"
+# Crystal Version
+CRYSTAL_VERSION=0.36.1-1
 
 read_sleep() {
     read -rt "$1" <> <(:) || :
@@ -206,7 +208,7 @@ if [[ $DISTRO_GROUP == "Debian" ]]; then
   # Pre-install packages
   PRE_INSTALL_PKGS="apt-transport-https git curl sudo gnupg"
   # Install packages
-  INSTALL_PKGS="crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-bin postgresql libsqlite3-dev"
+  INSTALL_PKGS="crystal=$CRYSTAL_VERSION libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-bin postgresql libsqlite3-dev"
   #Uninstall packages
   UNINSTALL_PKGS="crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-bin libsqlite3-dev"
   # PostgreSQL Service
@@ -226,7 +228,7 @@ elif [[ $(lsb_release -si) == "CentOS" ]]; then
   # Pre-install packages
   PRE_INSTALL_PKGS="epel-release git curl sudo dnf-plugins-core"
   # Install packages
-  INSTALL_PKGS="crystal openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-tools sqlite-devel postgresql postgresql-server"
+  INSTALL_PKGS="crystal-$CRYSTAL_VERSION openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-tools sqlite-devel postgresql postgresql-server"
   #Uninstall packages
   UNINSTALL_PKGS="crystal openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-tools sqlite-devel"
 # PostgreSQL Service
@@ -246,7 +248,7 @@ elif [[ $(lsb_release -si) == "Fedora" ]]; then
   # Pre-install packages
   PRE_INSTALL_PKGS="git curl sudo"
   # Install packages
-  INSTALL_PKGS="crystal openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-tools sqlite-devel postgresql postgresql-server"
+  INSTALL_PKGS="crystal-$CRYSTAL_VERSION openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-tools sqlite-devel postgresql postgresql-server"
   #Uninstall packages
   UNINSTALL_PKGS="crystal openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-tools sqlite-devel"
   # PostgreSQL Service
@@ -266,7 +268,7 @@ elif [[ $DISTRO_GROUP == "Arch" ]]; then
   # Pre-install packages
   PRE_INSTALL_PKGS="git curl sudo"
   # Install packages
-  INSTALL_PKGS="base-devel shards crystal librsvg postgresql"
+  INSTALL_PKGS="base-devel shards crystal=$CRYSTAL_VERSION librsvg postgresql"
   #Uninstall packages
   UNINSTALL_PKGS="base-devel shards crystal librsvg"
   # PostgreSQL Service
