@@ -1500,6 +1500,17 @@ update_invidious() {
   indexit
 }
 
+download_docker_compose_file() {
+  if [[ $(command -v 'curl') ]]; then
+    curl -fsSLk https://github.com/tmiland/Invidious-Updater/raw/master/docker-compose.yml > ${REPO_DIR}/docker-compose.yml
+  elif [[ $(command -v 'wget') ]]; then
+    wget -q https://github.com/tmiland/Invidious-Updater/raw/master/docker-compose.yml -O ${REPO_DIR}/docker-compose.yml
+  else
+    echo -e "${RED}${ERROR} This script requires curl or wget.\nProcess aborted${NC}"
+    exit 0
+  fi
+}
+
 deploy_with_docker() {
   docker_repo_chk
   header
@@ -1513,10 +1524,11 @@ deploy_with_docker() {
   echo "   3) Rebuild cluster"
   echo "   4) Delete data and rebuild"
   echo "   5) Install Docker CE"
+  echo "   6) Run database maintenance"
   echo ""
 
-  while [[ $DOCKER_OPTION !=  "1" && $DOCKER_OPTION != "2" && $DOCKER_OPTION != "3" && $DOCKER_OPTION != "4" && $DOCKER_OPTION != "5" ]]; do
-    read -p "Select an option [1-5]: " DOCKER_OPTION
+  while [[ $DOCKER_OPTION !=  "1" && $DOCKER_OPTION != "2" && $DOCKER_OPTION != "3" && $DOCKER_OPTION != "4" && $DOCKER_OPTION != "5" && $DOCKER_OPTION != "6" ]]; do
+    read -p "Select an option [1-6]: " DOCKER_OPTION
   done
 
   case $DOCKER_OPTION in
@@ -1528,6 +1540,7 @@ deploy_with_docker() {
       done
 
       docker_repo_chk
+      download_docker_compose_file
       # If Docker pkgs is installed
       if ${PKGCHK} ${DOCKER_PKGS} >/dev/null 2>&1; then
         
@@ -1768,6 +1781,17 @@ deploy_with_docker() {
       fi
       # We're done !
       echo -e "${GREEN}${DONE}  Docker Installation done.${NC}"
+      ;;
+    6) # Database Maintenance
+      read -p "Are you sure you want to run Database Maintenance? Enter [y/n]: " answer
+      if [[ "$answer" = 'y' ]]; then
+        docker exec -u postgres -it invidious_postgres_1 bash -c "psql -U kemal invidious -c \"DELETE FROM nonces * WHERE expire < current_timestamp\" > /dev/null"
+        docker exec -u postgres -it invidious_postgres_1 bash -c "psql -U kemal invidious -c \"TRUNCATE TABLE videos\" > /dev/null"
+        echo ""
+        echo -e "${GREEN}${DONE} Database Maintenance done.${NC}"
+        read_sleep 5
+        indexit
+      fi
   esac
   read_sleep 5
   indexit
