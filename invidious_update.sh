@@ -1216,10 +1216,78 @@ update_invidious_cron() {
   UpdateMaster
   exit
 }
+# Get dbname from config file (used in db maintenance and uninstallation)
+get_dbname() {
+  echo "$(sed -n 's/.*dbname *: *\([^ ]*.*\)/\1/p' "$1")"
+}
+
+database_maintenance() {
+
+  read -p "Are you sure you want to run Database Maintenance? Enter [y/n]: " answer
+
+  if [[ ! "$answer" = 'n' ]]; then
+    psqldb=$(get_dbname "${IN_CONFIG}")
+    # Let's allow the user to confirm that what they've typed in is correct:
+    echo ""
+    echo "Your Invidious database name: $psqldb"
+    echo ""
+    read -p "Is that correct? Enter [y/n]: " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
+
+    if [[ "$answer" = 'y' ]]; then
+      if ( $SYSTEM_CMD -q is-active ${PGSQL_SERVICE})
+      then
+        echo -e "${RED}${ERROR} stopping Invidious...${NC}"
+        ${SUDO} $SYSTEM_CMD stop ${SERVICE_NAME}
+        read_sleep 3
+        echo -e "${GREEN}${ARROW} Running Maintenance on $psqldb ${NC}"
+        echo -e "${ORANGE}${ARROW} Deleting expired tokens${NC}"
+        ${SUDO} -i -u postgres psql $psqldb -c "DELETE FROM nonces * WHERE expire < current_timestamp;"
+        read_sleep 1
+        echo -e "${ORANGE}${ARROW} Truncating videos table.${NC}"
+        ${SUDO} -i -u postgres psql $psqldb -c "TRUNCATE TABLE videos;"
+        read_sleep 1
+        echo -e "${ORANGE}${ARROW} Vacuuming $psqldb.${NC}"
+        ${SUDO} -i -u postgres vacuumdb --dbname=$psqldb --analyze --verbose --table 'videos'
+        read_sleep 1
+        echo -e "${ORANGE}${ARROW} Reindexing $psqldb.${NC}"
+        ${SUDO} -i -u postgres reindexdb --dbname=$psqldb
+        read_sleep 3
+        echo -e "${GREEN}${DONE} Maintenance on $psqldb done.${NC}"
+        # Restart postgresql
+        echo -e "${ORANGE}${ARROW} Restarting postgresql...${NC}"
+        ${SUDO} $SYSTEM_CMD restart ${PGSQL_SERVICE}
+        echo -e "${GREEN}${DONE} Restarting postgresql done.${NC}"
+        ${SUDO} $SYSTEM_CMD status ${PGSQL_SERVICE} --no-pager
+        read_sleep 5
+        # Restart Invidious
+        echo -e "${ORANGE}${ARROW} Restarting Invidious...${NC}"
+        ${SUDO} $SYSTEM_CMD restart ${SERVICE_NAME}
+        echo -e "${GREEN}${DONE} Restarting Invidious done.${NC}"
+        ${SUDO} $SYSTEM_CMD status ${SERVICE_NAME} --no-pager
+        read_sleep 1
+      else
+        echo -e "${RED}${ERROR} Database Maintenance failed. Is PostgreSQL running?${NC}"
+        # Try to restart postgresql
+        echo -e "${GREEN}${ARROW} trying to start postgresql...${NC}"
+        ${SUDO} $SYSTEM_CMD start ${PGSQL_SERVICE}
+        echo -e "${GREEN}${DONE} Postgresql started successfully${NC}"
+        ${SUDO} $SYSTEM_CMD status ${PGSQL_SERVICE} --no-pager
+        read_sleep 5
+        echo -e "${ORANGE}${ARROW} Restarting script. Please try again...${NC}"
+        read_sleep 5
+        indexit
+      fi
+    fi
+  fi
+
+  show_maintenance_banner
+  read_sleep 5
+  indexit
+}
 
 # Ask user to update yes/no
 if [ $# != 0 ]; then
-  while getopts ":udc" opt; do
+  while getopts ":udcm" opt; do
     case $opt in
       u)
         UPDATE_SCRIPT='yes'
@@ -1229,6 +1297,9 @@ if [ $# != 0 ]; then
         ;;
       c)
         update_invidious_cron
+        ;;
+      m)
+        database_maintenance
         ;;
       \?)
         echo -e "${RED}\n ${ERROR} Error! Invalid option: -$OPTARG${NC}" >&2
@@ -1244,11 +1315,6 @@ fi
 
 update_updater "$@"
 cd "$CURRDIR" || exit
-
-# Get dbname from config file (used in db maintenance and uninstallation)
-get_dbname() {
-  echo "$(sed -n 's/.*dbname *: *\([^ ]*.*\)/\1/p' "$1")"
-}
 
 check_exit_status() {
   if [ $? -eq 0 ]
@@ -1793,70 +1859,6 @@ deploy_with_docker() {
         indexit
       fi
   esac
-  read_sleep 5
-  indexit
-}
-
-database_maintenance() {
-
-  read -p "Are you sure you want to run Database Maintenance? Enter [y/n]: " answer
-
-  if [[ ! "$answer" = 'n' ]]; then
-    psqldb=$(get_dbname "${IN_CONFIG}")
-    # Let's allow the user to confirm that what they've typed in is correct:
-    echo ""
-    echo "Your Invidious database name: $psqldb"
-    echo ""
-    read -p "Is that correct? Enter [y/n]: " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
-
-    if [[ "$answer" = 'y' ]]; then
-      if ( $SYSTEM_CMD -q is-active ${PGSQL_SERVICE})
-      then
-        echo -e "${RED}${ERROR} stopping Invidious...${NC}"
-        ${SUDO} $SYSTEM_CMD stop ${SERVICE_NAME}
-        read_sleep 3
-        echo -e "${GREEN}${ARROW} Running Maintenance on $psqldb ${NC}"
-        echo -e "${ORANGE}${ARROW} Deleting expired tokens${NC}"
-        ${SUDO} -i -u postgres psql $psqldb -c "DELETE FROM nonces * WHERE expire < current_timestamp;"
-        read_sleep 1
-        echo -e "${ORANGE}${ARROW} Truncating videos table.${NC}"
-        ${SUDO} -i -u postgres psql $psqldb -c "TRUNCATE TABLE videos;"
-        read_sleep 1
-        echo -e "${ORANGE}${ARROW} Vacuuming $psqldb.${NC}"
-        ${SUDO} -i -u postgres vacuumdb --dbname=$psqldb --analyze --verbose --table 'videos'
-        read_sleep 1
-        echo -e "${ORANGE}${ARROW} Reindexing $psqldb.${NC}"
-        ${SUDO} -i -u postgres reindexdb --dbname=$psqldb
-        read_sleep 3
-        echo -e "${GREEN}${DONE} Maintenance on $psqldb done.${NC}"
-        # Restart postgresql
-        echo -e "${ORANGE}${ARROW} Restarting postgresql...${NC}"
-        ${SUDO} $SYSTEM_CMD restart ${PGSQL_SERVICE}
-        echo -e "${GREEN}${DONE} Restarting postgresql done.${NC}"
-        ${SUDO} $SYSTEM_CMD status ${PGSQL_SERVICE} --no-pager
-        read_sleep 5
-        # Restart Invidious
-        echo -e "${ORANGE}${ARROW} Restarting Invidious...${NC}"
-        ${SUDO} $SYSTEM_CMD restart ${SERVICE_NAME}
-        echo -e "${GREEN}${DONE} Restarting Invidious done.${NC}"
-        ${SUDO} $SYSTEM_CMD status ${SERVICE_NAME} --no-pager
-        read_sleep 1
-      else
-        echo -e "${RED}${ERROR} Database Maintenance failed. Is PostgreSQL running?${NC}"
-        # Try to restart postgresql
-        echo -e "${GREEN}${ARROW} trying to start postgresql...${NC}"
-        ${SUDO} $SYSTEM_CMD start ${PGSQL_SERVICE}
-        echo -e "${GREEN}${DONE} Postgresql started successfully${NC}"
-        ${SUDO} $SYSTEM_CMD status ${PGSQL_SERVICE} --no-pager
-        read_sleep 5
-        echo -e "${ORANGE}${ARROW} Restarting script. Please try again...${NC}"
-        read_sleep 5
-        indexit
-      fi
-    fi
-  fi
-
-  show_maintenance_banner
   read_sleep 5
   indexit
 }
