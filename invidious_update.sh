@@ -100,8 +100,10 @@ IP=${IP:-localhost}
 PORT=${PORT:-3000}
 # Default dbname
 PSQLDB=${PSQLDB:-invidious}
-# Default dbpass
-PSQLPASS=${PSQLPASS:-kemal}
+# Generate db password
+PSSQLPASS_GEN=$(openssl rand -base64 14)
+# Default dbpass (generated)
+PSQLPASS=${PSQLPASS:-$PSSQLPASS_GEN}
 # Default https only
 HTTPS_ONLY=false
 # Default external port
