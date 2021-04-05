@@ -101,7 +101,7 @@ PORT=${PORT:-3000}
 # Default dbname
 PSQLDB=${PSQLDB:-invidious}
 # Generate db password
-PSSQLPASS_GEN=$(openssl rand -base64 14)
+PSSQLPASS_GEN=$(openssl rand -base64 32 | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
 # Default dbpass (generated)
 PSQLPASS=${PSQLPASS:-$PSSQLPASS_GEN}
 # Default https only
