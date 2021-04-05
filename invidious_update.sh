@@ -1319,13 +1319,17 @@ cd "$CURRDIR" || exit
 check_exit_status() {
   if [ $? -eq 0 ]
   then
-    echo
+    echo ""
     echo -e "${GREEN}${DONE} Success${NC}"
-    echo
+    echo ""
   else
-    echo
-    echo -e "${RED}${ERROR}[ERROR] Process Failed!${NC}"
-    echo
+    echo ""
+    echo -e "${RED}${ERROR} [ERROR] Build Process Failed!${NC}"
+    echo ""
+    echo -e "${ORANGE} This is most likely an issue with Invidious, not this script!${NC}"
+    echo ""
+    echo -e "${ORANGE}${ARROW} Report issue:${NC} https://github.com/iv-org/invidious/issues"
+    echo ""
     exit
   fi
 }
