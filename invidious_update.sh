@@ -1931,55 +1931,48 @@ start_stop_restart_invidious() {
 }
 
 uninstall_invidious() {
+# Set default uninstallation parameters  
+RM_PostgreSQLDB=${RM_PostgreSQLDB:-y}
+RM_RE_PGSQLDB=${RM_RE_PGSQLDB:-n}
+RM_PACKAGES=${RM_PACKAGES:-n}
+RM_PURGE=${RM_PURGE:-n}
+RM_FILES=${RM_FILES:-y}
+RM_USER=${RM_USER:-n}
+# Set db backup path
+PGSQLDB_BAK_PATH="/home/backup/$USER_NAME"
+# Get dbname from config.yml
+RM_PSQLDB=$(get_dbname "${IN_CONFIG}")
 
-  # Set db backup path
-  PGSQLDB_BAK_PATH="/home/backup/$USER_NAME"
-  # Get dbname
-  RM_PSQLDB=$(get_dbname "${IN_CONFIG}")
-  # Let's go
-  while [[ $RM_PostgreSQLDB !=  "y" && $RM_PostgreSQLDB != "n" ]]; do
-    read -p "       Remove database for Invidious ? [y/n]: " -e RM_PostgreSQLDB
-    if [[ ! $RM_PostgreSQLDB !=  "y" ]]; then
-      echo -e "       ${ORANGE}${WARNING} (( A backup will be placed in ${ARROW} $PGSQLDB_BAK_PATH ))${NC}"
-      echo -e "       Your Invidious database name: $RM_PSQLDB"
-    fi
-    if [[ ! $RM_PostgreSQLDB !=  "y" ]]; then
-      while [[ $RM_RE_PGSQLDB !=  "y" && $RM_RE_PGSQLDB != "n" ]]; do
-        echo -e "       ${ORANGE}${WARNING} (( If yes, only data will be dropped ))${NC}"
-        read -p "       Do you intend to reinstall?: " RM_RE_PGSQLDB
-      done
-    fi
-  done
+read -p "Express uninstall ? [y/n]: " EXPRESS_UNINSTALL
 
-  while [[ $RM_PACKAGES !=  "y" && $RM_PACKAGES != "n" ]]; do
-    read -p "       Remove Packages ? [y/n]: " -e RM_PACKAGES
-  done
-
-  if [[ $RM_PACKAGES = "y" ]]; then
-    while [[ $RM_PURGE !=  "y" && $RM_PURGE != "n" ]]; do
-      read -p "       Purge Package configuration files ? [y/n]: " -e RM_PURGE
-    done
+if [[ ! $EXPRESS_UNINSTALL =  "y" ]]; then
+  echo ""
+  read -e -i "$RM_PostgreSQLDB" -p "       Remove database for Invidious ? [y/n]: " RM_PostgreSQLDB
+  if [[ $RM_PostgreSQLDB =  "y" ]]; then
+    echo -e "       ${ORANGE}${WARNING} (( A backup will be placed in ${ARROW} $PGSQLDB_BAK_PATH ))${NC}"
+    echo -e "       Your Invidious database name: $RM_PSQLDB"
   fi
-
-  while [[ $RM_FILES !=  "y" && $RM_FILES != "n" ]]; do
-    echo -e "       ${ORANGE}${WARNING} (( This option will remove ${ARROW} ${REPO_DIR} ))${NC}"
-    read -p "       Remove files ? [y/n]: " -e RM_FILES
-    if [[ "$RM_FILES" = 'y' ]]; then
-      while [[ $RM_USER !=  "y" && $RM_USER != "n" ]]; do
-        echo -e "       ${RED}${WARNING} (( This option will remove ${ARROW} $USER_DIR ))${NC}"
-        echo -e "       ${ORANGE}${WARNING} (( Not needed for reinstall ))${NC}"
-        read -p "       Remove user ? [y/n]: " -e RM_USER
-      done
-    fi
-  done
-
-  # Let's allow the user to confirm that what they've typed in is correct:
-  read -p "       Is that correct? [y/n]: " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
-
+  if [[ $RM_PostgreSQLDB =  "y" ]]; then
+    echo -e "       ${ORANGE}${WARNING} (( If yes, only data will be dropped ))${NC}"
+    read -e -i "$RM_RE_PGSQLDB" -p "       Do you intend to reinstall?: " RM_RE_PGSQLDB
+  fi
+  read -e -i "$RM_PACKAGES" -p "       Remove Packages ? [y/n]: " RM_PACKAGES
+  if [[ $RM_PACKAGES = "y" ]]; then
+    read -e -i "$RM_PURGE" -p "       Purge Package configuration files ? [y/n]: " RM_PURGE
+  fi
+  echo -e "       ${ORANGE}${WARNING} (( This option will remove ${ARROW} ${REPO_DIR} ))${NC}"
+  read -e -i "$RM_FILES" -p "       Remove files ? [y/n]: " RM_FILES
+  if [[ "$RM_FILES" = "y" ]]; then
+    echo -e "       ${RED}${WARNING} (( This option will remove ${ARROW} $USER_DIR ))${NC}"
+    echo -e "       ${ORANGE}${WARNING} (( Not needed for reinstall ))${NC}"
+    read -e -i "$RM_USER" -p "       Remove user ? [y/n]: " RM_USER
+  fi
   echo ""
-  read -n1 -r -p "Invidious is ready to be uninstalled, press any key to continue..."
+  echo -e "${GREEN}${ARROW} Invidious is ready to be uninstalled${NC}"
   echo ""
-
+  read -n1 -r -p "press any key to continue or Ctrl+C to cancel..."
+  echo ""
+fi
   # Remove PostgreSQL database if user ANSWER is yes
   if [[ "$RM_PostgreSQLDB" = 'y' ]]; then
     # Stop and disable invidious
