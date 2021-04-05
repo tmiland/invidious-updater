@@ -2014,7 +2014,7 @@ fi
       echo ""
       echo -e "${RED}${ARROW} Dropping Invidious PostgreSQL database${NC}"
       echo ""
-      ${SUDO} -i -u postgres psql -c "DROP DATABASE $RM_PSQLDB;"
+      ${SUDO} -i -u postgres psql -c "DROP DATABASE $RM_PSQLDB"
       echo ""
       echo -e "${ORANGE}${DONE} Database dropped and backed up to ${ARROW} ${PGSQLDB_BAK_PATH}/${RM_PSQLDB}.sql ${NC}"
       echo ""
