@@ -1418,12 +1418,18 @@ install_invidious() {
   echo -e " ${DONE} domain        : $DOMAIN"
   echo -e " ${DONE} ip address    : $IP"
   echo -e " ${DONE} port          : $PORT"
-  echo -e " ${DONE} external port : $EXTERNAL_PORT"
+  if [ ! -z "$EXTERNAL_PORT" ]; then
+    echo -e " ${DONE} external port : $EXTERNAL_PORT"
+  fi
   echo -e " ${DONE} dbname        : $PSQLDB"
   echo -e " ${DONE} dbpass        : $PSQLPASS"
   echo -e " ${DONE} https only    : $HTTPS_ONLY"
-  echo -e " ${DONE} admins        : $ADMINS"
-  echo -e " ${DONE} captcha key   : $CAPTCHA_KEY"
+  if [ ! -z "$ADMINS" ]; then
+    echo -e " ${DONE} admins        : $ADMINS"
+  fi
+  if [ ! -z "$CAPTCHA_KEY" ]; then
+    echo -e " ${DONE} captcha key   : $CAPTCHA_KEY"
+  fi
   echo -e " ${NC}"
   echo ""
   echo ""
