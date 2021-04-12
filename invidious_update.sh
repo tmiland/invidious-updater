@@ -11,13 +11,13 @@
 ####                   Maintained by @tmiland                     ####
 ######################################################################
 
-version='1.5.6' # Must stay on line 14 for updater to fetch the numbers
+VERSION='1.5.9' # Must stay on line 14 for updater to fetch the numbers
 
 #------------------------------------------------------------------------------#
 #
 # MIT License
 #
-# Copyright (c) 2020 Tommy Miland
+# Copyright (c) 2021 Tommy Miland
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -93,21 +93,29 @@ SERVICE_NAME=invidious.service
 # Default branch
 IN_BRANCH=master
 # Default domain
-domain=invidious.tube
+DOMAIN=${DOMAIN:-invidious.tube}
 # Default ip
-ip=localhost
+IP=${IP:-localhost}
 # Default port
-port=3000
+PORT=${PORT:-3000}
 # Default dbname
-psqldb=invidious
-# Default dbpass
-psqlpass=kemal
+PSQLDB=${PSQLDB:-invidious}
+# Generate db password
+PSSQLPASS_GEN=$(openssl rand -base64 32 | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
+# Default dbpass (generated)
+PSQLPASS=${PSQLPASS:-$PSSQLPASS_GEN}
 # Default https only
-https_only=false
+HTTPS_ONLY=false
 # Default external port
-external_port=
+EXTERNAL_PORT=
+# Default admins
+ADMINS=
+# Default Captcha Key
+CAPTCHA_KEY=
 # Docker compose repo name
 COMPOSE_REPO_NAME="docker/compose"
+# Crystal Version
+CRYSTAL_VERSION=0.36.1-1
 
 read_sleep() {
     read -rt "$1" <> <(:) || :
@@ -128,11 +136,15 @@ if [ ! ${ARCH_CHK} == 'x86_64' ]; then
   exit 1;
 fi
 shopt -s nocasematch
-if lsb_release -si >/dev/null 2>&1; then
-  DISTRO=$(lsb_release -si)
-fi
+  if [[ -f /etc/debian_version ]]; then
+    DISTRO=$(cat /etc/issue.net)
+  elif [[ -f /etc/redhat-release ]]; then
+    DISTRO=$(cat /etc/redhat-release)
+  elif [[ -f /etc/os-release ]]; then
+    DISTRO=$(cat /etc/os-release | grep "PRETTY_NAME" | sed 's/PRETTY_NAME=//g' | sed 's/["]//g' | awk '{print $1}')
+  fi
 case "$DISTRO" in
-  Debian*|Ubuntu*|LinuxMint*|PureOS*|Devuan*)
+  Debian*|Ubuntu*|LinuxMint*|PureOS*|Pop*|Devuan*)
     # shellcheck disable=SC2140
     PKGCMD="apt-get -o Dpkg::Progress-Fancy="1" install -qq"
     LSB=lsb-release
@@ -152,16 +164,16 @@ case "$DISTRO" in
     PKGCMD="yes | LC_ALL=en_US.UTF-8 pacman -S"
     LSB=lsb-release
     DISTRO_GROUP=Arch
-      ;;
+    ;;
   *) echo -e "${RED}${ERROR} unknown distro: '$DISTRO'${NC}" ; exit 1 ;;
 esac
 if ! lsb_release -si >/dev/null 2>&1; then
   echo ""
   echo -e "${RED}${ERROR} Looks like ${LSB} is not installed!${NC}"
   echo ""
-  read -p "Do you want to download ${LSB}? [y/n]? " answer
+  read -p "Do you want to download ${LSB}? [y/n]? " ANSWER
   echo ""
-  case $answer in
+  case $ANSWER in
     [Yy]* )
       echo -e "${GREEN}${ARROW} Installing ${LSB} on ${DISTRO}...${NC}"
       su -s "$(which bash)" -c "${PKGCMD} ${LSB}" || echo -e "${RED}${ERROR} Error: could not install ${LSB}!${NC}"
@@ -184,6 +196,7 @@ CLEAN=""
 PKGCHK=""
 PGSQL_SERVICE=""
 DOCKER_PKGS=""
+SYSTEM_CMD=""
 shopt -s nocasematch
 if [[ $DISTRO_GROUP == "Debian" ]]; then
   export DEBIAN_FRONTEND=noninteractive
@@ -201,13 +214,15 @@ if [[ $DISTRO_GROUP == "Debian" ]]; then
   # Pre-install packages
   PRE_INSTALL_PKGS="apt-transport-https git curl sudo gnupg"
   # Install packages
-  INSTALL_PKGS="crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-bin postgresql libsqlite3-dev"
+  INSTALL_PKGS="crystal=$CRYSTAL_VERSION libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-bin postgresql libsqlite3-dev"
   #Uninstall packages
   UNINSTALL_PKGS="crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-bin libsqlite3-dev"
   # PostgreSQL Service
-  PGSQL_SERVICE="postgresql.service"
+  PGSQL_SERVICE="postgresql"
   # Docker pkgs
   DOCKER_PKGS="docker-ce docker-ce-cli"
+  # System cmd
+  SYSTEM_CMD="systemctl"
 elif [[ $(lsb_release -si) == "CentOS" ]]; then
   SUDO="sudo"
   UPDATE="yum update -q"
@@ -219,13 +234,15 @@ elif [[ $(lsb_release -si) == "CentOS" ]]; then
   # Pre-install packages
   PRE_INSTALL_PKGS="epel-release git curl sudo dnf-plugins-core"
   # Install packages
-  INSTALL_PKGS="crystal openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-tools sqlite-devel postgresql postgresql-server"
+  INSTALL_PKGS="crystal-$CRYSTAL_VERSION openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-tools sqlite-devel postgresql postgresql-server"
   #Uninstall packages
   UNINSTALL_PKGS="crystal openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-tools sqlite-devel"
 # PostgreSQL Service
-  PGSQL_SERVICE="postgresql.service"
+  PGSQL_SERVICE="postgresql"
   # Docker pkgs
   DOCKER_PKGS="docker-ce docker-ce-cli"
+  # System cmd
+  SYSTEM_CMD="systemctl"
 elif [[ $(lsb_release -si) == "Fedora" ]]; then
   SUDO="sudo"
   UPDATE="dnf update -q"
@@ -237,13 +254,15 @@ elif [[ $(lsb_release -si) == "Fedora" ]]; then
   # Pre-install packages
   PRE_INSTALL_PKGS="git curl sudo"
   # Install packages
-  INSTALL_PKGS="crystal openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-tools sqlite-devel postgresql postgresql-server"
+  INSTALL_PKGS="crystal-$CRYSTAL_VERSION openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-tools sqlite-devel postgresql postgresql-server"
   #Uninstall packages
   UNINSTALL_PKGS="crystal openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-tools sqlite-devel"
   # PostgreSQL Service
-  PGSQL_SERVICE="postgresql.service"
+  PGSQL_SERVICE="postgresql"
   # Docker pkgs
   DOCKER_PKGS="docker-ce docker-ce-cli"
+  # System cmd
+  SYSTEM_CMD="systemctl"
 elif [[ $DISTRO_GROUP == "Arch" ]]; then
   SUDO="sudo"
   UPDATE="pacman -Syu"
@@ -255,13 +274,15 @@ elif [[ $DISTRO_GROUP == "Arch" ]]; then
   # Pre-install packages
   PRE_INSTALL_PKGS="git curl sudo"
   # Install packages
-  INSTALL_PKGS="base-devel shards crystal librsvg postgresql"
+  INSTALL_PKGS="base-devel shards crystal=$CRYSTAL_VERSION librsvg postgresql"
   #Uninstall packages
   UNINSTALL_PKGS="base-devel shards crystal librsvg"
   # PostgreSQL Service
-  PGSQL_SERVICE="postgresql.service"
+  PGSQL_SERVICE="postgresql"
   # Docker pkgs
   DOCKER_PKGS="docker"
+  # System cmd
+  SYSTEM_CMD="systemctl"
 else
   echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
   exit 1;
@@ -279,15 +300,15 @@ chk_permissions() {
   fi
 }
 
-add_swap_url=https://raw.githubusercontent.com/tmiland/swap-add/master/swap-add.sh
+ADD_SWAP_URL=https://raw.githubusercontent.com/tmiland/swap-add/master/swap-add.sh
 
 add_swap() {
   if [[ $(command -v 'curl') ]]; then
     # shellcheck disable=SC1090
-    source <(curl -sSLf $add_swap_url)
+    source <(curl -sSLf $ADD_SWAP_URL)
   elif [[ $(command -v 'wget') ]]; then
     # shellcheck disable=SC1090
-    . <(wget -qO - $add_swap_url)
+    . <(wget -qO - $ADD_SWAP_URL)
   else
     echo -e "${RED}${ERROR} This script requires curl or wget.\nProcess aborted${NC}"
     exit 0
@@ -334,17 +355,17 @@ install_certbot() {
 
   if [[ -d "${NGINX_VHOST_DIR}" ]]; then
     echo ""
-    read -p "Do you want to install Let's Encrypt SSL certificates for Invidious? [y/n/q]?" answer
+    read -p "Do you want to install Let's Encrypt SSL certificates for Invidious? [y/n/q]?" ANSWER
     echo ""
     echo "Your Invidious domain name: $NGINX_DOMAIN_NAME"
     echo ""
 
-    case $answer in
+    case $ANSWER in
     [Yy]* )
     # Ask user for admin email
-    read -p "Please enter your admin email for the domain [E.G: admin@invidious.domain.tld]:" admin_email
+    read -p "Please enter your admin email for the domain [E.G: admin@invidious.domain.tld]:" ADMIN_EMAIL
     # Set Acme home folder ()
-    acme_home=/etc/acme
+    ACME_HOME=/etc/acme
     # Install dependencies
     apt-get install openssl cron socat curl
     # Clone from GitHub
@@ -352,12 +373,12 @@ install_certbot() {
     # Do the work
     cd acme.sh || exit
     ./acme.sh --install \
-    --home $acme_home \
-    --config-home $acme_home/data \
-    --cert-home  $acme_home/certs \
-    --accountemail  "${admin_email}" \
-    --accountkey  $acme_home/account.key \
-    --accountconf $acme_home/account.conf \
+    --home $ACME_HOME \
+    --config-home $ACME_HOME/data \
+    --cert-home  $ACME_HOME/certs \
+    --accountemail  "${ADMIN_EMAIL}" \
+    --accountkey  $ACME_HOME/account.key \
+    --accountconf $ACME_HOME/account.conf \
     --useragent  "Acme client"
     # Issue cert
     # Use for debugging: --force --test --debug
@@ -368,8 +389,8 @@ install_certbot() {
     --cert-file /etc/nginx/certs/${NGINX_DOMAIN_NAME}/${NGINX_DOMAIN_NAME}.cert \
     --key-file /etc/nginx/certs/${NGINX_DOMAIN_NAME}/${NGINX_DOMAIN_NAME}.key \
     --fullchain-file /etc/nginx/certs/${NGINX_DOMAIN_NAME}/${NGINX_DOMAIN_NAME}.fullchain \
-    # --reloadcmd "systemctl reload nginx.service"
-    nginx -t && ${SUDO} systemctl restart nginx.service || echo "Error restarting nginx.service!"
+    # --reloadcmd "$SYSTEM_CMD reload nginx"
+    nginx -t && ${SUDO} $SYSTEM_CMD restart nginx || echo "Error restarting nginx!"
     if [ $? -eq 0 ]; then
       ${SUDO} sed -i "s/# listen/listen/g" $NGINX_VHOST_DIR/$NGINX_VHOST
       ${SUDO} sed -i "s/# ssl_certificate/ssl_certificate/g" $NGINX_VHOST_DIR/$NGINX_VHOST
@@ -382,16 +403,16 @@ install_certbot() {
         # shellcheck disable=SC2046
         echo $(sed -n 's/.*https_only *: *\([^ ]*.*\)/\1/p' "$1")
       }
-      https_only=$(https_only "$IN_CONFIG")
-      if [[ $https_only == "false" ]]; then
-        while [[ $https_only != "y" && $https_only != "n" ]]; do
-            read -p "Do you want to turn on https in invidious? [y/n]: " https_only
+      HTTPS_ONLY=$(https_only "$IN_CONFIG")
+      if [[ $HTTPS_ONLY == "false" ]]; then
+        while [[ $HTTPS_ONLY != "y" && $HTTPS_ONLY != "n" ]]; do
+            read -p "Do you want to turn on https in invidious? [y/n]: " HTTPS_ONLY
         done
-        case $https_only in
+        case $HTTPS_ONLY in
           [Yy]* )
             ${SUDO} sed -i "s/https_only: false/https_only: true/g" $IN_CONFIG
             ${SUDO} sed -i "s/external_port: /external_port: 443/g" $IN_CONFIG
-            ${SUDO} systemctl restart invidious.service
+            ${SUDO} $SYSTEM_CMD restart invidious
             ;;
           [Nn]* )
             exit 1
@@ -425,17 +446,17 @@ install_certbot() {
   fi
 }
 
-nginx_autoinstall_url=https://github.com/angristan/nginx-autoinstall/raw/master/nginx-autoinstall.sh
+NGINX_AUTOINSTALL_URL=https://github.com/angristan/nginx-autoinstall/raw/master/nginx-autoinstall.sh
 
 nginx-autoinstall() {
   shopt -s nocasematch
 if [[ $DISTRO_GROUP == "Debian" ]]; then
     if [[ $(command -v 'curl') ]]; then
       # shellcheck disable=SC1090
-      source <(curl -sSLf $nginx_autoinstall_url)
+      source <(curl -sSLf $NGINX_AUTOINSTALL_URL)
     elif [[ $(command -v 'wget') ]]; then
       # shellcheck disable=SC1090
-      . <(wget -qO - $nginx_autoinstall_url)
+      . <(wget -qO - $NGINX_AUTOINSTALL_URL)
     else
       echo -e "${RED}${ERROR} This script requires curl or wget.\nProcess aborted${NC}"
       exit 0
@@ -465,12 +486,12 @@ install_nginx_vhost() {
 
 if [[ -d "${NGINX_VHOST_DIR}" ]]; then
   echo ""
-  read -p "Do you want to install a nginx vhost file for Invidious? [y/n/q]?" answer
+  read -p "Do you want to install a nginx vhost file for Invidious? [y/n/q]?" ANSWER
   echo ""
   echo "Your Invidious domain name: $NGINX_DOMAIN_NAME"
   echo ""
 
-  case $answer in
+  case $ANSWER in
     [Yy]* )
 tee $NGINX_VHOST_DIR/default.conf <<'EOF' >/dev/null
 server {
@@ -523,7 +544,7 @@ EOF
   ${SUDO} sed -i "s/invidious.domain.tld/${NGINX_DOMAIN_NAME}/g" $NGINX_VHOST_DIR/$NGINX_VHOST
   ${SUDO} ln -s $NGINX_VHOST_DIR/$NGINX_VHOST /etc/nginx/sites-enabled/$NGINX_VHOST
   ${SUDO} chown -R root:www-data /etc/nginx/html
-  nginx -t && systemctl reload nginx && echo "Successfully installed nginx vhost $NGINX_VHOST_DIR/$NGINX_VHOST" || echo "Error installing nginx vhost!"
+  nginx -t && $SYSTEM_CMD reload nginx && echo "Successfully installed nginx vhost $NGINX_VHOST_DIR/$NGINX_VHOST" || echo "Error installing nginx vhost!"
   sleep 3
   indexit
   ;;
@@ -556,18 +577,18 @@ fi
 
 # Download files
 download_file() {
-  declare -r url=$1
+  declare -r URL=$1
   # shellcheck disable=SC2155
-  declare -r tf=$(mktemp)
-  local dlcmd=''
+  declare -r TF=$(mktemp)
+  local DLCMD=''
 
   #if [ $DOWNLOAD_METHOD = 'curl' ]; then
-  #  dlcmd="curl -o $tf"
+  #  DLCMD="curl -o $TF"
   #else
-  dlcmd="wget -O $tf"
+  DLCMD="wget -O $TF"
   #fi
 
-  $dlcmd "${url}" &>/dev/null && echo "$tf" || echo '' # return the temp-filename (or empty string on error)
+  $DLCMD "${URL}" &>/dev/null && echo "$TF" || echo '' # return the temp-filename (or empty string on error)
 }
 
 # Open files
@@ -588,7 +609,7 @@ get_compose_release_tag() {
   grep '"tag_name":' |
   sed -n 's/[^0-9.]*\([0-9.]*\).*/\1/p'
 }
-Docker_Compose_Ver=$(get_compose_release_tag ${COMPOSE_REPO_NAME})
+DOCKER_COMPOSE_VER=$(get_compose_release_tag ${COMPOSE_REPO_NAME})
 
 get_release_info() {
   # Get latest release tag from GitHub
@@ -648,7 +669,7 @@ show_status() {
 
   for service in "${services[@]}"
   do
-    serviceStatus+=("$(systemctl is-active "$service.service")")
+    serviceStatus+=("$($SYSTEM_CMD is-active "$service")")
   done
 
   echo ""
@@ -667,7 +688,7 @@ show_status() {
   echo -e "$line"
 }
 
-if ( systemctl -q is-active ${SERVICE_NAME}); then
+if ( $SYSTEM_CMD -q is-active ${SERVICE_NAME}); then
   SHOW_STATUS=$(show_status)
 fi
 
@@ -706,7 +727,7 @@ show_docker_status() {
 
   echo -e "$line"
 }
-if ( ! systemctl -q is-active ${SERVICE_NAME}); then
+if ( ! $SYSTEM_CMD -q is-active ${SERVICE_NAME}); then
   if docker ps >/dev/null 2>&1; then
     SHOW_DOCKER_STATUS=$(show_docker_status)
   fi
@@ -745,7 +766,7 @@ local   replication     all                                     peer
 host    replication     all             127.0.0.1/32            md5
 host    replication     all             ::1/128                 md5" | ${SUDO} tee $pgsqlConfigPath/pg_hba.conf
   #${SUDO} -i -u postgres sed -i "s/local   all             postgres                                peer/local   all             postgres                                trust/g" /etc/postgresql/9.6/main/pg_hba.conf
-  ${SUDO} systemctl restart ${PGSQL_SERVICE}
+  ${SUDO} $SYSTEM_CMD restart ${PGSQL_SERVICE}
   read_sleep 1
   chmod +x pg_backup_rotated.sh && chmod +x pg_backup.sh
   fi
@@ -768,7 +789,7 @@ header() {
   echo ' ║                        '"${SCRIPT_NAME}"'                        ║'
   echo ' ║               Automatic update script for Invidious               ║'
   echo ' ║                      Maintained by @tmiland                       ║'
-  echo ' ║                          version: '${version}'                           ║'
+  echo ' ║                          version: '${VERSION}'                           ║'
   echo ' ╚═══════════════════════════════════════════════════════════════════╝'
   echo -e "${NC}"
 }
@@ -811,7 +832,7 @@ show_install_banner() {
   echo ""
   echo ""
   echo ""
-  echo -e "${GREEN}${DONE} Invidious install done.${NC} Now visit http://${ip}:${port}"
+  echo -e "${GREEN}${DONE} Invidious install done.${NC} Now visit http://${IP}:${PORT}"
   echo ""
   echo ""
   echo ""
@@ -901,14 +922,14 @@ chk_git_repo() {
 docker_repo_chk() {
   # Check if the folder is a git repo
   if [[ ! -d "${REPO_DIR}/.git" ]]; then
-    #if (systemctl -q is-active invidious.service) && -d "${REPO_DIR}/.git" then
+    #if ($SYSTEM_CMD -q is-active invidious) && -d "${REPO_DIR}/.git" then
     echo ""
     echo -e "${RED}${ERROR} Looks like Invidious is not installed!${NC}"
     echo ""
-    read -p "Do you want to download Invidious? [y/n/q]?" answer
+    read -p "Do you want to download Invidious? [y/n/q]?" ANSWER
     echo ""
 
-    case $answer in
+    case $ANSWER in
       [Yy]* )
         echo -e "${GREEN}${ARROW} Setting up Dependencies${NC}"
         if ! ${PKGCHK} ${PRE_INSTALL_PKGS} >/dev/null 2>&1; then
@@ -952,19 +973,19 @@ update_config() {
   BAKPATH="/home/backup/$USER_NAME/config"
   # Lets change the default password
   OLDPASS="password: kemal"
-  NEWPASS="password: $psqlpass"
+  NEWPASS="password: $PSQLPASS"
   # Lets change the default database name
   OLDDBNAME="dbname: invidious"
-  NEWDBNAME="dbname: $psqldb"
+  NEWDBNAME="dbname: $PSQLDB"
   # Lets change the default domain
   OLDDOMAIN="domain:"
-  NEWDOMAIN="domain: $domain"
+  NEWDOMAIN="domain: $DOMAIN"
   # Lets change https_only value
   OLDHTTPS="https_only: false"
-  NEWHTTPS="https_only: $https_only"
+  NEWHTTPS="https_only: $HTTPS_ONLY"
   # Lets change external_port
   OLDEXTERNAL="external_port:"
-  NEWEXTERNAL="external_port: $external_port"
+  NEWEXTERNAL="external_port: $EXTERNAL_PORT"
   DPATH="${IN_CONFIG}"
   BPATH="$BAKPATH"
   TFILE="/tmp/config.yml"
@@ -977,8 +998,11 @@ update_config() {
       # Add external_port: to config on line 13
       sed -i "11i\external_port:" "$f" > $TFILE
       sed -i "12i\check_tables: true" "$f" > $TFILE
-      sed -i "13i\port: $port" "$f" > $TFILE
-      sed -i "14i\host_binding: $ip" "$f" > $TFILE
+      sed -i "13i\port: $PORT" "$f" > $TFILE
+      sed -i "14i\host_binding: $IP" "$f" > $TFILE
+      sed -i "15i\admins: \n- $ADMINS" "$f" > $TFILE
+      sed -i "17i\captcha_key: $CAPTCHA_KEY" "$f" > $TFILE
+      sed -i "18i\captcha_api_url: https://api.anti-captcha.com" "$f" > $TFILE
       sed "s/$OLDPASS/$NEWPASS/g; s/$OLDDBNAME/$NEWDBNAME/g; s/$OLDDOMAIN/$NEWDOMAIN/g; s/$OLDHTTPS/$NEWHTTPS/g; s/$OLDEXTERNAL/$NEWEXTERNAL/g;" "$f" > $TFILE &&
       mv $TFILE "$f"
     else
@@ -1001,23 +1025,20 @@ systemd_install() {
   shopt -s nocasematch
   if [[ $DISTRO_GROUP == "RHEL" ]]; then
     cp ${REPO_DIR}/${SERVICE_NAME} /etc/systemd/system/${SERVICE_NAME}
-    # Set SELinux to permissive
-    # sed -i 's/enforcing/permissive/g' /etc/selinux/config
-    ${SUDO} setenforce 0
   else
     cp ${REPO_DIR}/${SERVICE_NAME} /lib/systemd/system/${SERVICE_NAME}
   fi
   #${SUDO} sed -i "s/invidious -o invidious.log/invidious -b ${ip} -p ${port} -o invidious.log/g" /lib/systemd/system/${SERVICE_NAME}
   # Enable invidious start at boot
-  ${SUDO} systemctl enable ${SERVICE_NAME}
+  ${SUDO} $SYSTEM_CMD enable ${SERVICE_NAME}
   # Reload Systemd
-  ${SUDO} systemctl daemon-reload
+  ${SUDO} $SYSTEM_CMD daemon-reload
   # Restart Invidious
-  ${SUDO} systemctl start ${SERVICE_NAME}
-  if ( systemctl -q is-active ${SERVICE_NAME})
+  ${SUDO} $SYSTEM_CMD start ${SERVICE_NAME}
+  if ( $SYSTEM_CMD -q is-active ${SERVICE_NAME})
   then
     echo -e "${GREEN}${DONE} Invidious service has been successfully installed!${NC}"
-    ${SUDO} systemctl status ${SERVICE_NAME} --no-pager
+    ${SUDO} $SYSTEM_CMD status ${SERVICE_NAME} --no-pager
     read_sleep 5
   else
     echo -e "${RED}${ERROR} Invidious service installation failed...${NC}"
@@ -1098,9 +1119,9 @@ rebuild() {
 # Restart Invidious
 restart() {
   printf "\n-- restarting Invidious\n"
-  ${SUDO} systemctl restart $SERVICE_NAME
+  ${SUDO} $SYSTEM_CMD restart $SERVICE_NAME
   read_sleep 2
-  ${SUDO} systemctl status $SERVICE_NAME --no-pager
+  ${SUDO} $SYSTEM_CMD status $SERVICE_NAME --no-pager
   printf "\n"
   echo -e "${GREEN}${DONE} Invidious has been restarted ${NC}"
   read_sleep 3
@@ -1163,34 +1184,34 @@ update_updater() {
   echo -e "${GREEN}${ARROW} Checking for updates...${NC}"
   get_release_info
   # Get tmpfile from github
-  local tmpfile
-  tmpfile="$(download_file "$LATEST_RELEASE")"
+  local TMPFILE
+  TMPFILE="$(download_file "$LATEST_RELEASE")"
   # Do the work
   # New function, fetch latest release from GitHub
   if [[ $(get_updater_version "${SCRIPT_DIR}/$SCRIPT_FILENAME") < "${RELEASE_TAG}" ]]; then
-    #if [[ $(get_updater_version "${SCRIPT_DIR}/${SCRIPT_FILENAME}") < $(get_updater_version "${tmpfile}") ]]; then
-    #LV=$(get_updater_version "${tmpfile}")
+    #if [[ $(get_updater_version "${SCRIPT_DIR}/${SCRIPT_FILENAME}") < $(get_updater_version "${TMPFILE}") ]]; then
+    #LV=$(get_updater_version "${TMPFILE}")
     if [ $UPDATE_SCRIPT = 'yes' ]; then
       show_update_banner
       echo -e "${RED}${ARROW} Do you want to update [Y/N?]${NC}"
       read -p "" -n 1 -r
       echo -e "\n\n"
       if [[ $REPLY =~ ^[Yy]$ ]]; then
-        mv "${tmpfile}" "${SCRIPT_DIR}/${SCRIPT_FILENAME}"
+        mv "${TMPFILE}" "${SCRIPT_DIR}/${SCRIPT_FILENAME}"
         chmod u+x "${SCRIPT_DIR}/${SCRIPT_FILENAME}"
         "${SCRIPT_DIR}/${SCRIPT_FILENAME}" "$@"
         return 0 # exit 1 # Update available, user chooses to update
       fi
       if [[ $REPLY =~ ^[Nn]$ ]]; then
         show_banner
-        rm "${tmpfile}"
+        rm "${TMPFILE}"
         return 0 # Update available, but user chooses not to update
       fi
     fi
   else
     echo -e "${GREEN}${DONE} No update available.${NC}"
-    if [[ "${tmpfile}" ]]; then
-      rm "${tmpfile}"
+    if [[ "${TMPFILE}" ]]; then
+      rm "${TMPFILE}"
     fi
     return 0 # No update available
   fi
@@ -1201,10 +1222,72 @@ update_invidious_cron() {
   UpdateMaster
   exit
 }
+# Get dbname from config file (used in db maintenance and uninstallation)
+get_dbname() {
+  echo "$(sed -n 's/.*dbname *: *\([^ ]*.*\)/\1/p' "$1")"
+}
 
+database_maintenance() {
+
+PSQLDB=$(get_dbname "${IN_CONFIG}")
+
+echo ""
+echo "Your Invidious database name: $PSQLDB"
+echo ""
+
+  if ( $SYSTEM_CMD -q is-active ${PGSQL_SERVICE})
+  then
+    echo -e "${RED}${ERROR} stopping Invidious...${NC}"
+    ${SUDO} $SYSTEM_CMD stop ${SERVICE_NAME}
+    read_sleep 3
+    echo -e "${GREEN}${ARROW} Running Maintenance on $PSQLDB ${NC}"
+    echo -e "${ORANGE}${ARROW} Deleting expired tokens${NC}"
+    ${SUDO} -i -u postgres psql $PSQLDB -c "DELETE FROM nonces * WHERE expire < current_timestamp;"
+    read_sleep 1
+    echo -e "${ORANGE}${ARROW} Truncating videos table.${NC}"
+    ${SUDO} -i -u postgres psql $PSQLDB -c "TRUNCATE TABLE videos;"
+    read_sleep 1
+    echo -e "${ORANGE}${ARROW} Vacuuming $PSQLDB.${NC}"
+    ${SUDO} -i -u postgres vacuumdb --dbname=$PSQLDB --analyze --verbose --table 'videos'
+    read_sleep 1
+    echo -e "${ORANGE}${ARROW} Reindexing $PSQLDB.${NC}"
+    ${SUDO} -i -u postgres reindexdb --dbname=$PSQLDB
+    read_sleep 3
+    echo -e "${GREEN}${DONE} Maintenance on $PSQLDB done.${NC}"
+    # Restart postgresql
+    echo -e "${ORANGE}${ARROW} Restarting postgresql...${NC}"
+    ${SUDO} $SYSTEM_CMD restart ${PGSQL_SERVICE}
+    echo -e "${GREEN}${DONE} Restarting postgresql done.${NC}"
+    ${SUDO} $SYSTEM_CMD status ${PGSQL_SERVICE} --no-pager
+    read_sleep 5
+    # Restart Invidious
+    echo -e "${ORANGE}${ARROW} Restarting Invidious...${NC}"
+    ${SUDO} $SYSTEM_CMD restart ${SERVICE_NAME}
+    echo -e "${GREEN}${DONE} Restarting Invidious done.${NC}"
+    ${SUDO} $SYSTEM_CMD status ${SERVICE_NAME} --no-pager
+    read_sleep 1
+  else
+    echo -e "${RED}${ERROR} Database Maintenance failed. Is PostgreSQL running?${NC}"
+    # Try to restart postgresql
+    echo -e "${GREEN}${ARROW} trying to start postgresql...${NC}"
+    ${SUDO} $SYSTEM_CMD start ${PGSQL_SERVICE}
+    echo -e "${GREEN}${DONE} Postgresql started successfully${NC}"
+    ${SUDO} $SYSTEM_CMD status ${PGSQL_SERVICE} --no-pager
+    read_sleep 5
+    echo -e "${ORANGE}${ARROW} Restarting script. Please try again...${NC}"
+    read_sleep 5
+    indexit
+  fi
+}
+
+database_maintenance_exit() {
+  show_maintenance_banner
+  read_sleep 5
+  indexit
+}
 # Ask user to update yes/no
 if [ $# != 0 ]; then
-  while getopts ":udc" opt; do
+  while getopts ":udcm" opt; do
     case $opt in
       u)
         UPDATE_SCRIPT='yes'
@@ -1214,6 +1297,9 @@ if [ $# != 0 ]; then
         ;;
       c)
         update_invidious_cron
+        ;;
+      m)
+        database_maintenance
         ;;
       \?)
         echo -e "${RED}\n ${ERROR} Error! Invalid option: -$OPTARG${NC}" >&2
@@ -1230,21 +1316,20 @@ fi
 update_updater "$@"
 cd "$CURRDIR" || exit
 
-# Get dbname from config file (used in db maintenance and uninstallation)
-get_dbname() {
-  echo "$(sed -n 's/.*dbname *: *\([^ ]*.*\)/\1/p' "$1")"
-}
-
 check_exit_status() {
   if [ $? -eq 0 ]
   then
-    echo
+    echo ""
     echo -e "${GREEN}${DONE} Success${NC}"
-    echo
+    echo ""
   else
-    echo
-    echo -e "${RED}${ERROR}[ERROR] Process Failed!${NC}"
-    echo
+    echo ""
+    echo -e "${RED}${ERROR} [ERROR] Build Process Failed!${NC}"
+    echo ""
+    echo -e "${ORANGE} This is most likely an issue with Invidious, not this script!${NC}"
+    echo ""
+    echo -e "${ORANGE}${ARROW} Report issue:${NC} https://github.com/iv-org/invidious/issues"
+    echo ""
     exit
   fi
 }
@@ -1262,12 +1347,12 @@ install_invidious() {
   if [[ "$free" -le 2048  ]]; then
     echo -e "${ORANGE}Advice: Free memory: $free MB is less than recommended to build Invidious${NC}"
     # Let the user enter swap options:
-    while [[ $swap_options != "y" && $swap_options != "n" ]]; do
-      read -p "Do you want to add swap space? [y/n]: " swap_options
+    while [[ $SWAP_OPTIONS != "y" && $SWAP_OPTIONS != "n" ]]; do
+      read -p "Do you want to add swap space? [y/n]: " SWAP_OPTIONS
     done
 
     while true; do
-      case $swap_options in
+      case $SWAP_OPTIONS in
         [Yy]* )
           add_swap
           break
@@ -1280,59 +1365,71 @@ install_invidious() {
   fi
   shift
   # Let the user enter advanced options:
-  while [[ $advanced_options != "y" && $advanced_options != "n" ]]; do
-    read -p "Do you want to enter advanced options? [y/n]: " advanced_options
+  while [[ $ADVANCED_OPTIONS != "y" && $ADVANCED_OPTIONS != "n" ]]; do
+    read -p "Do you want to enter advanced options? [y/n]: " ADVANCED_OPTIONS
   done
 
   while :;
   do
-    case $advanced_options in
+    case $ADVANCED_OPTIONS in
       [Yy]* )
       echo -e "${ORANGE}Advice: Add domain name, or blank if not using one${NC}"
-        read -p "       Enter the desired domain name:" domain
+        read -e -i "$DOMAIN" -p "       Enter the desired domain name: " DOMAIN
       echo -e "${ORANGE}Advice: Add local or public ip you want to bind to (Default: localhost)${NC}"
-        read -p "       Enter the desired ip address:" ip
+        read -e -i "$IP" -p "       Enter the desired ip address: " IP
       echo -e "${ORANGE}Advice: Add port number (Default: 3000)${NC}"
-        read -p "       Enter the desired port number:" port
+        read -e -i "$PORT" -p "       Enter the desired port number: " PORT
       echo -e "${ORANGE}Advice: Add database name (Default: Invidious)${NC}"
-        read -p "       Select database name:" psqldb
+        read -e -i "$PSQLDB" -p "       Select database name: " PSQLDB
       echo -e "${ORANGE}Advice: Add database password (Default: kemal)${NC}"
-        read -p "       Select database password:" psqlpass
+        read -e -i "$PSQLPASS" -p "       Select database password: " PSQLPASS
+      echo -e "${ORANGE}Advice: Enter Admin account user name (Leave blank to disable)${NC}"
+        read -p "       Enter Admin username: " ADMINS
+      echo -e "${ORANGE}Advice: Enter captcha key from anti-captcha.com (Leave blank to disable)${NC}"
+        read -p "       Enter captcha key: " CAPTCHA_KEY
         ;;
       [Nn]* ) break ;;
     esac
     shift
 
-    while [[ $https_only != "y" && $https_only != "n" ]]; do
+    while [[ $HTTPS_ONLY != "y" && $HTTPS_ONLY != "n" ]]; do
       echo -e "${ORANGE}Advice: If you're going to serve Invidious via port 80, choose no, otherwise yes for 443 (HTTPS)"
       echo -e "                 HTTPS is typically used with a reverse proxy like Nginx${NC}"
-        read -p "Are you going to use https only? [y/n]: " https_only
+        read -p "Are you going to use https only? [y/n]: " HTTPS_ONLY
     done
 
-    case $https_only in
+    case $HTTPS_ONLY in
       [Yy]* )
-        https_only=true
-        external_port=443
+        HTTPS_ONLY=true
+        EXTERNAL_PORT=443
         break ;;
       [Nn]* )
-        https_only=false
-        external_port=
+        HTTPS_ONLY=false
+        EXTERNAL_PORT=
         break ;;
     esac
   done
 
-  psqldb=$(printf '%s\n' $psqldb | LC_ALL=C tr '[:upper:]' '[:lower:]')
+  PSQLDB=$(printf '%s\n' $PSQLDB | LC_ALL=C tr '[:upper:]' '[:lower:]')
 
   echo -e "${GREEN}\n"
   echo -e "You entered: \n"
   echo -e " ${DONE} branch        : $IN_BRANCH"
-  echo -e " ${DONE} domain        : $domain"
-  echo -e " ${DONE} ip address    : $ip"
-  echo -e " ${DONE} port          : $port"
-  echo -e " ${DONE} external port : $external_port"
-  echo -e " ${DONE} dbname        : $psqldb"
-  echo -e " ${DONE} dbpass        : $psqlpass"
-  echo -e " ${DONE} https only    : $https_only"
+  echo -e " ${DONE} domain        : $DOMAIN"
+  echo -e " ${DONE} ip address    : $IP"
+  echo -e " ${DONE} port          : $PORT"
+  if [ ! -z "$EXTERNAL_PORT" ]; then
+    echo -e " ${DONE} external port : $EXTERNAL_PORT"
+  fi
+  echo -e " ${DONE} dbname        : $PSQLDB"
+  echo -e " ${DONE} dbpass        : $PSQLPASS"
+  echo -e " ${DONE} https only    : $HTTPS_ONLY"
+  if [ ! -z "$ADMINS" ]; then
+    echo -e " ${DONE} admins        : $ADMINS"
+  fi
+  if [ ! -z "$CAPTCHA_KEY" ]; then
+    echo -e " ${DONE} captcha key   : $CAPTCHA_KEY"
+  fi
   echo -e " ${NC}"
   echo ""
   echo ""
@@ -1432,22 +1529,22 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
       su - postgres -c "initdb --locale en_US.UTF-8 -D '/var/lib/postgres/data'"
     fi
   fi
-  ${SUDO} systemctl enable ${PGSQL_SERVICE}
+  ${SUDO} $SYSTEM_CMD enable ${PGSQL_SERVICE}
   read_sleep 1
-  ${SUDO} systemctl restart ${PGSQL_SERVICE}
+  ${SUDO} $SYSTEM_CMD restart ${PGSQL_SERVICE}
   read_sleep 1
   # Create users and set privileges
-  echo -e "${ORANGE}${ARROW} Creating user kemal with password $psqlpass ${NC}"
-  ${SUDO} -u postgres psql -c "CREATE USER kemal WITH PASSWORD '$psqlpass';"
-  echo -e "${ORANGE}${ARROW} Creating database $psqldb with owner kemal${NC}"
-  ${SUDO} -u postgres psql -c "CREATE DATABASE $psqldb WITH OWNER kemal;"
-  echo -e "${ORANGE}${ARROW} Grant all on database $psqldb to user kemal${NC}"
-  ${SUDO} -u postgres psql -c "GRANT ALL ON DATABASE $psqldb TO kemal;"
+  echo -e "${ORANGE}${ARROW} Creating user kemal with password $PSQLPASS ${NC}"
+  ${SUDO} -u postgres psql -c "CREATE USER kemal WITH PASSWORD '$PSQLPASS';"
+  echo -e "${ORANGE}${ARROW} Creating database $PSQLDB with owner kemal${NC}"
+  ${SUDO} -u postgres psql -c "CREATE DATABASE $PSQLDB WITH OWNER kemal;"
+  echo -e "${ORANGE}${ARROW} Grant all on database $PSQLDB to user kemal${NC}"
+  ${SUDO} -u postgres psql -c "GRANT ALL ON DATABASE $PSQLDB TO kemal;"
   # Import db files
   if [[ -d ${REPO_DIR}/config/sql ]]; then
     for file in ${REPO_DIR}/config/sql/*; do
       echo -e "${ORANGE}${ARROW} Running $file ${NC}"
-      ${SUDO} -i -u postgres psql -d $psqldb -f $file
+      ${SUDO} -i -u postgres psql -d $PSQLDB -f $file
     done
   fi
   echo -e "${GREEN}${DONE} Finished Database section${NC}"
@@ -1460,9 +1557,13 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
   shards update && shards install
   crystal build src/invidious.cr --release
   check_exit_status
+  if [[ $DISTRO_GROUP == "RHEL" ]]; then
+    # Set SELinux to permissive on RHEL
+    ${SUDO} setenforce 0
+  fi
+  systemd_install
   # Not figured out why yet, so let's set permissions after as well...
   set_permissions
-  systemd_install
   logrotate_install
   show_install_banner
   read_sleep 5
@@ -1471,10 +1572,29 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
 
 update_invidious() {
   echo ""
+  if [ ! -f /root/.gitconfig ]; then
+    echo "Please provide your GitHub Credentials"
+    echo ""
+    read -p "GitHub email: " GITHUB_EMAIL
+    read -p "GitHub name: " GITHUB_NAME
+    git config --global user.email "$GITHUB_EMAIL"
+    git config --global user.name "$GITHUB_NAME"
+  fi
   repoexit
   UpdateMaster
   read_sleep 3
   indexit
+}
+
+download_docker_compose_file() {
+  if [[ $(command -v 'curl') ]]; then
+    curl -fsSLk https://github.com/tmiland/Invidious-Updater/raw/master/docker-compose.yml > ${REPO_DIR}/docker-compose.yml
+  elif [[ $(command -v 'wget') ]]; then
+    wget -q https://github.com/tmiland/Invidious-Updater/raw/master/docker-compose.yml -O ${REPO_DIR}/docker-compose.yml
+  else
+    echo -e "${RED}${ERROR} This script requires curl or wget.\nProcess aborted${NC}"
+    exit 0
+  fi
 }
 
 deploy_with_docker() {
@@ -1490,10 +1610,11 @@ deploy_with_docker() {
   echo "   3) Rebuild cluster"
   echo "   4) Delete data and rebuild"
   echo "   5) Install Docker CE"
+  echo "   6) Run database maintenance"
   echo ""
 
-  while [[ $DOCKER_OPTION !=  "1" && $DOCKER_OPTION != "2" && $DOCKER_OPTION != "3" && $DOCKER_OPTION != "4" && $DOCKER_OPTION != "5" ]]; do
-    read -p "Select an option [1-5]: " DOCKER_OPTION
+  while [[ $DOCKER_OPTION !=  "1" && $DOCKER_OPTION != "2" && $DOCKER_OPTION != "3" && $DOCKER_OPTION != "4" && $DOCKER_OPTION != "5" && $DOCKER_OPTION != "6" ]]; do
+    read -p "Select an option [1-6]: " DOCKER_OPTION
   done
 
   case $DOCKER_OPTION in
@@ -1505,20 +1626,21 @@ deploy_with_docker() {
       done
 
       docker_repo_chk
+      download_docker_compose_file
       # If Docker pkgs is installed
       if ${PKGCHK} ${DOCKER_PKGS} >/dev/null 2>&1; then
         
         if [[ $BUILD_DOCKER = "y" ]]; then
             # Let the user enter custom port:
-            while [[ $custom_docker_port != "y" && $custom_docker_port != "n" ]]; do
-              read -p "Do you want to use a custom port? [y/n]: " custom_docker_port
+            while [[ $CUSTOM_DOCKER_PORT != "y" && $CUSTOM_DOCKER_PORT != "n" ]]; do
+              read -p "Do you want to use a custom port? [y/n]: " CUSTOM_DOCKER_PORT
             done
-            if [[ $custom_docker_port = "y" ]]; then
-              read -p "       Enter the desired port number:" docker_port
-              ${SUDO} sed -i "s/127.0.0.1:3000:3000/127.0.0.1:$docker_port:3000/g" ${REPO_DIR}/docker-compose.yml
+            if [[ $CUSTOM_DOCKER_PORT = "y" ]]; then
+              read -p "       Enter the desired port number:" DOCKER_PORT
+              ${SUDO} sed -i "s/127.0.0.1:3000:3000/127.0.0.1:$DOCKER_PORT:3000/g" ${REPO_DIR}/docker-compose.yml
               repoexit
               docker-compose up -d
-              echo -e "${GREEN}${DONE} Deployment done with custom port $docker_port.${NC}"
+              echo -e "${GREEN}${DONE} Deployment done with custom port $DOCKER_PORT.${NC}"
               read_sleep 5
               indexit
             else
@@ -1696,7 +1818,7 @@ deploy_with_docker() {
         # Install the latest version of Docker CE and containerd
         ${SUDO} ${INSTALL} docker-ce docker-ce-cli containerd.io
         # Start Docker.
-        ${SUDO} systemctl start docker
+        ${SUDO} $SYSTEM_CMD start docker
         # Verify that Docker CE is installed correctly by running the hello-world image.
         ${SUDO} docker run hello-world
       elif [[ $(lsb_release -si) == "Fedora" ]]; then
@@ -1713,15 +1835,15 @@ deploy_with_docker() {
         # Install the latest version of Docker CE and containerd
         ${SUDO} ${INSTALL} docker-ce docker-ce-cli containerd.io
         # Start Docker.
-        ${SUDO} systemctl start docker
+        ${SUDO} $SYSTEM_CMD start docker
         # Verify that Docker CE is installed correctly by running the hello-world image.
         ${SUDO} docker run hello-world
       elif [[ $DISTRO_GROUP == "Arch" ]]; then
         ${SUDO} ${INSTALL} docker
         # Enable Docker.
-        ${SUDO} systemctl enable docker
+        ${SUDO} $SYSTEM_CMD enable docker
         # Start Docker.
-        ${SUDO} systemctl start docker
+        ${SUDO} $SYSTEM_CMD start docker
       else
         echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
         exit 1;
@@ -1730,13 +1852,13 @@ deploy_with_docker() {
       # We're almost done !
       echo -e "${GREEN}${DONE} Docker Installation done.${NC}"
 
-      while [[ $Docker_Compose !=  "y" && $Docker_Compose != "n" ]]; do
-        read -p "       Install Docker Compose ? [y/n]: " -e Docker_Compose
+      while [[ $DOCKER_COMPOSE !=  "y" && $DOCKER_COMPOSE != "n" ]]; do
+        read -p "       Install Docker Compose ? [y/n]: " -e DOCKER_COMPOSE
       done
 
-      if [[ "$Docker_Compose" = 'y' ]]; then
+      if [[ "$DOCKER_COMPOSE" = 'y' ]]; then
         # download the latest version of Docker Compose:
-        ${SUDO} curl -Lk "https://github.com/docker/compose/releases/download/${Docker_Compose_Ver}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        ${SUDO} curl -Lk "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VER}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
         read_sleep 5
         # Apply executable permissions to the binary:
         ${SUDO} chmod +x /usr/local/bin/docker-compose
@@ -1745,71 +1867,18 @@ deploy_with_docker() {
       fi
       # We're done !
       echo -e "${GREEN}${DONE}  Docker Installation done.${NC}"
-  esac
-  read_sleep 5
-  indexit
-}
-
-database_maintenance() {
-
-  read -p "Are you sure you want to run Database Maintenance? Enter [y/n]: " answer
-
-  if [[ ! "$answer" = 'n' ]]; then
-    psqldb=$(get_dbname "${IN_CONFIG}")
-    # Let's allow the user to confirm that what they've typed in is correct:
-    echo ""
-    echo "Your Invidious database name: $psqldb"
-    echo ""
-    read -p "Is that correct? Enter [y/n]: " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
-
-    if [[ "$answer" = 'y' ]]; then
-      if ( systemctl -q is-active ${PGSQL_SERVICE})
-      then
-        echo -e "${RED}${ERROR} stopping Invidious...${NC}"
-        ${SUDO} systemctl stop ${SERVICE_NAME}
-        read_sleep 3
-        echo -e "${GREEN}${ARROW} Running Maintenance on $psqldb ${NC}"
-        echo -e "${ORANGE}${ARROW} Deleting expired tokens${NC}"
-        ${SUDO} -i -u postgres psql $psqldb -c "DELETE FROM nonces * WHERE expire < current_timestamp;"
-        read_sleep 1
-        echo -e "${ORANGE}${ARROW} Truncating videos table.${NC}"
-        ${SUDO} -i -u postgres psql $psqldb -c "TRUNCATE TABLE videos;"
-        read_sleep 1
-        echo -e "${ORANGE}${ARROW} Vacuuming $psqldb.${NC}"
-        ${SUDO} -i -u postgres vacuumdb --dbname=$psqldb --analyze --verbose --table 'videos'
-        read_sleep 1
-        echo -e "${ORANGE}${ARROW} Reindexing $psqldb.${NC}"
-        ${SUDO} -i -u postgres reindexdb --dbname=$psqldb
-        read_sleep 3
-        echo -e "${GREEN}${DONE} Maintenance on $psqldb done.${NC}"
-        # Restart postgresql
-        echo -e "${ORANGE}${ARROW} Restarting postgresql...${NC}"
-        ${SUDO} systemctl restart ${PGSQL_SERVICE}
-        echo -e "${GREEN}${DONE} Restarting postgresql done.${NC}"
-        ${SUDO} systemctl status ${PGSQL_SERVICE} --no-pager
-        read_sleep 5
-        # Restart Invidious
-        echo -e "${ORANGE}${ARROW} Restarting Invidious...${NC}"
-        ${SUDO} systemctl restart ${SERVICE_NAME}
-        echo -e "${GREEN}${DONE} Restarting Invidious done.${NC}"
-        ${SUDO} systemctl status ${SERVICE_NAME} --no-pager
-        read_sleep 1
-      else
-        echo -e "${RED}${ERROR} Database Maintenance failed. Is PostgreSQL running?${NC}"
-        # Try to restart postgresql
-        echo -e "${GREEN}${ARROW} trying to start postgresql...${NC}"
-        ${SUDO} systemctl start ${PGSQL_SERVICE}
-        echo -e "${GREEN}${DONE} Postgresql started successfully${NC}"
-        ${SUDO} systemctl status ${PGSQL_SERVICE} --no-pager
-        read_sleep 5
-        echo -e "${ORANGE}${ARROW} Restarting script. Please try again...${NC}"
+      ;;
+    6) # Database Maintenance
+      read -p "Are you sure you want to run Database Maintenance? Enter [y/n]: " ANSWER
+      if [[ "$ANSWER" = 'y' ]]; then
+        docker exec -u postgres -it invidious_postgres_1 bash -c "psql -U kemal invidious -c \"DELETE FROM nonces * WHERE expire < current_timestamp\" > /dev/null"
+        docker exec -u postgres -it invidious_postgres_1 bash -c "psql -U kemal invidious -c \"TRUNCATE TABLE videos\" > /dev/null"
+        echo ""
+        echo -e "${GREEN}${DONE} Database Maintenance done.${NC}"
         read_sleep 5
         indexit
       fi
-    fi
-  fi
-
-  show_maintenance_banner
+  esac
   read_sleep 5
   indexit
 }
@@ -1817,17 +1886,18 @@ database_maintenance() {
 start_stop_restart_invidious() {
   # chk_permissions
   echo ""
-  echo "Do you want to start, stop or restart Invidious?"
+  echo "Do you want to start, stop, restart or rebuild Invidious?"
   echo "   1) Start"
   echo "   2) Stop"
   echo "   3) Restart"
+  echo "   4) Rebuild"
   echo ""
 
-  while [[ $SERVICE_ACTION != "1" && $SERVICE_ACTION != "2" && $SERVICE_ACTION != "3" ]]; do
-    read -p "Select an option [1-3]: " SERVICE_ACTION
+  while [[ $SERVICE_INPUT != "1" && $SERVICE_INPUT != "2" && $SERVICE_INPUT != "3" && $SERVICE_INPUT != "4" ]]; do
+    read -p "Select an option [1-4]: " SERVICE_INPUT
   done
 
-  case $SERVICE_ACTION in
+  case $SERVICE_INPUT in
     1)
       SERVICE_ACTION=start
       ;;
@@ -1837,113 +1907,116 @@ start_stop_restart_invidious() {
     3)
       SERVICE_ACTION=restart
       ;;
+    4)
+      echo "Rebuild Invidious"
+      ;;
   esac
 
   while true; do
     if [[ -d $REPO_DIR ]]; then
-      repoexit
-      # Restart Invidious
-      echo -e "${ORANGE}${ARROW} ${SERVICE_ACTION} Invidious...${NC}"
-      ${SUDO} systemctl ${SERVICE_ACTION} ${SERVICE_NAME}
-      echo -e "${GREEN}${DONE} done.${NC}"
-      ${SUDO} systemctl status ${SERVICE_NAME} --no-pager
-      read_sleep 5
-      indexit
-    else
-      echo -e "${RED}${WARNING} (( Invidious is not installed! ))${NC}"
-      exit 1
+      if [[ $SERVICE_INPUT = "1" || $SERVICE_INPUT = "2" || $SERVICE_INPUT = "3" ]]; then
+        repoexit
+        # Restart Invidious
+        echo -e "${ORANGE}${ARROW} ${SERVICE_ACTION} Invidious...${NC}"
+        ${SUDO} $SYSTEM_CMD ${SERVICE_ACTION} ${SERVICE_NAME}
+        echo -e "${GREEN}${DONE} done.${NC}"
+        ${SUDO} $SYSTEM_CMD status ${SERVICE_NAME} --no-pager
+        read_sleep 5
+        indexit
+      fi
+      if  [[ $SERVICE_INPUT = "4" ]]; then
+        rebuild
+        read_sleep 3
+        indexit
+      fi
+      else
+        echo -e "${RED}${WARNING} (( Invidious is not installed! ))${NC}"
+        exit 1
     fi
   done
 }
 
 uninstall_invidious() {
+# Set default uninstallation parameters  
+RM_PostgreSQLDB=${RM_PostgreSQLDB:-y}
+RM_RE_PGSQLDB=${RM_RE_PGSQLDB:-n}
+RM_PACKAGES=${RM_PACKAGES:-n}
+RM_PURGE=${RM_PURGE:-n}
+RM_FILES=${RM_FILES:-y}
+RM_USER=${RM_USER:-n}
+# Set db backup path
+PGSQLDB_BAK_PATH="/home/backup/$USER_NAME"
+# Get dbname from config.yml
+RM_PSQLDB=$(get_dbname "${IN_CONFIG}")
 
-  # Set db backup path
-  PgDbBakPath="/home/backup/$USER_NAME"
-  # Get dbname
-  RM_PSQLDB=$(get_dbname "${IN_CONFIG}")
-  # Let's go
-  while [[ $RM_PostgreSQLDB !=  "y" && $RM_PostgreSQLDB != "n" ]]; do
-    read -p "       Remove database for Invidious ? [y/n]: " -e RM_PostgreSQLDB
-    if [[ ! $RM_PostgreSQLDB !=  "y" ]]; then
-      echo -e "       ${ORANGE}${WARNING} (( A backup will be placed in ${ARROW} $PgDbBakPath ))${NC}"
-      echo -e "       Your Invidious database name: $RM_PSQLDB"
-    fi
-    if [[ ! $RM_PostgreSQLDB !=  "y" ]]; then
-      while [[ $RM_RE_PostgreSQLDB !=  "y" && $RM_RE_PostgreSQLDB != "n" ]]; do
-        echo -e "       ${ORANGE}${WARNING} (( If yes, only data will be dropped ))${NC}"
-        read -p "       Do you intend to reinstall?: " RM_RE_PostgreSQLDB
-      done
-    fi
-  done
+read -p "Express uninstall ? [y/n]: " EXPRESS_UNINSTALL
 
-  while [[ $RM_PACKAGES !=  "y" && $RM_PACKAGES != "n" ]]; do
-    read -p "       Remove Packages ? [y/n]: " -e RM_PACKAGES
-  done
-
-  if [[ $RM_PACKAGES = "y" ]]; then
-    while [[ $RM_PURGE !=  "y" && $RM_PURGE != "n" ]]; do
-      read -p "       Purge Package configuration files ? [y/n]: " -e RM_PURGE
-    done
+if [[ ! $EXPRESS_UNINSTALL =  "y" ]]; then
+  echo ""
+  read -e -i "$RM_PostgreSQLDB" -p "       Remove database for Invidious ? [y/n]: " RM_PostgreSQLDB
+  if [[ $RM_PostgreSQLDB =  "y" ]]; then
+    echo -e "       ${ORANGE}${WARNING} (( A backup will be placed in ${ARROW} $PGSQLDB_BAK_PATH ))${NC}"
+    echo -e "       Your Invidious database name: $RM_PSQLDB"
   fi
-
-  while [[ $RM_FILES !=  "y" && $RM_FILES != "n" ]]; do
-    echo -e "       ${ORANGE}${WARNING} (( This option will remove ${ARROW} ${REPO_DIR} ))${NC}"
-    read -p "       Remove files ? [y/n]: " -e RM_FILES
-    if [[ "$RM_FILES" = 'y' ]]; then
-      while [[ $RM_USER !=  "y" && $RM_USER != "n" ]]; do
-        echo -e "       ${RED}${WARNING} (( This option will remove ${ARROW} $USER_DIR ))${NC}"
-        echo -e "       ${ORANGE}${WARNING} (( Not needed for reinstall ))${NC}"
-        read -p "       Remove user ? [y/n]: " -e RM_USER
-      done
-    fi
-  done
-
-  # Let's allow the user to confirm that what they've typed in is correct:
-  read -p "       Is that correct? [y/n]: " confirm && [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]] || exit 1
-
+  if [[ $RM_PostgreSQLDB =  "y" ]]; then
+    echo -e "       ${ORANGE}${WARNING} (( If yes, only data will be dropped ))${NC}"
+    read -e -i "$RM_RE_PGSQLDB" -p "       Do you intend to reinstall?: " RM_RE_PGSQLDB
+  fi
+  read -e -i "$RM_PACKAGES" -p "       Remove Packages ? [y/n]: " RM_PACKAGES
+  if [[ $RM_PACKAGES = "y" ]]; then
+    read -e -i "$RM_PURGE" -p "       Purge Package configuration files ? [y/n]: " RM_PURGE
+  fi
+  echo -e "       ${ORANGE}${WARNING} (( This option will remove ${ARROW} ${REPO_DIR} ))${NC}"
+  read -e -i "$RM_FILES" -p "       Remove files ? [y/n]: " RM_FILES
+  if [[ "$RM_FILES" = "y" ]]; then
+    echo -e "       ${RED}${WARNING} (( This option will remove ${ARROW} $USER_DIR ))${NC}"
+    echo -e "       ${ORANGE}${WARNING} (( Not needed for reinstall ))${NC}"
+    read -e -i "$RM_USER" -p "       Remove user ? [y/n]: " RM_USER
+  fi
   echo ""
-  read -n1 -r -p "Invidious is ready to be uninstalled, press any key to continue..."
+  echo -e "${GREEN}${ARROW} Invidious is ready to be uninstalled${NC}"
   echo ""
-
-  # Remove PostgreSQL database if user answer is yes
+  read -n1 -r -p "press any key to continue or Ctrl+C to cancel..."
+  echo ""
+fi
+  # Remove PostgreSQL database if user ANSWER is yes
   if [[ "$RM_PostgreSQLDB" = 'y' ]]; then
     # Stop and disable invidious
-    ${SUDO} systemctl stop ${SERVICE_NAME}
+    ${SUDO} $SYSTEM_CMD stop ${SERVICE_NAME}
     read_sleep 1
-    ${SUDO} systemctl restart ${PGSQL_SERVICE}
+    ${SUDO} $SYSTEM_CMD restart ${PGSQL_SERVICE}
     read_sleep 1
     # If directory is not created
-    if [[ ! -d $PgDbBakPath ]]; then
+    if [[ ! -d $PGSQLDB_BAK_PATH ]]; then
       echo -e "${ORANGE}${ARROW} Backup Folder Not Found, adding folder${NC}"
-      ${SUDO} mkdir -p $PgDbBakPath
+      ${SUDO} mkdir -p $PGSQLDB_BAK_PATH
     fi
 
     echo ""
     echo -e "${GREEN}${ARROW} Running database backup${NC}"
     echo ""
 
-    ${SUDO} -i -u postgres pg_dump ${RM_PSQLDB} > ${PgDbBakPath}/${RM_PSQLDB}.sql
+    ${SUDO} -i -u postgres pg_dump ${RM_PSQLDB} > ${PGSQLDB_BAK_PATH}/${RM_PSQLDB}.sql
     read_sleep 2
     ${SUDO} chown -R 1000:1000 "/home/backup"
 
-    if [[ "$RM_RE_PostgreSQLDB" != 'n' ]]; then
+    if [[ "$RM_RE_PGSQLDB" != 'n' ]]; then
       echo ""
       echo -e "${RED}${ARROW} Dropping Invidious PostgreSQL data${NC}"
       echo ""
       ${SUDO} -i -u postgres psql -c "DROP OWNED BY kemal CASCADE;"
       echo ""
-      echo -e "${ORANGE}${DONE} Data dropped and backed up to ${ARROW} ${PgDbBakPath}/${RM_PSQLDB}.sql ${NC}"
+      echo -e "${ORANGE}${DONE} Data dropped and backed up to ${ARROW} ${PGSQLDB_BAK_PATH}/${RM_PSQLDB}.sql ${NC}"
       echo ""
     fi
 
-    if [[ "$RM_RE_PostgreSQLDB" != 'y' ]]; then
+    if [[ "$RM_RE_PGSQLDB" != 'y' ]]; then
       echo ""
       echo -e "${RED}${ARROW} Dropping Invidious PostgreSQL database${NC}"
       echo ""
-      ${SUDO} -i -u postgres psql -c "DROP DATABASE $RM_PSQLDB;"
+      ${SUDO} -i -u postgres psql -c "DROP DATABASE $RM_PSQLDB"
       echo ""
-      echo -e "${ORANGE}${DONE} Database dropped and backed up to ${ARROW} ${PgDbBakPath}/${RM_PSQLDB}.sql ${NC}"
+      echo -e "${ORANGE}${DONE} Database dropped and backed up to ${ARROW} ${PGSQLDB_BAK_PATH}/${RM_PSQLDB}.sql ${NC}"
       echo ""
       echo -e "${RED}${ARROW} Removing user kemal${NC}"
       ${SUDO} -i -u postgres psql -c "DROP ROLE IF EXISTS kemal;"
@@ -1951,7 +2024,7 @@ uninstall_invidious() {
   fi
 
   # Reload Systemd
-  ${SUDO} systemctl daemon-reload
+  ${SUDO} $SYSTEM_CMD daemon-reload
   # Remove packages installed during installation
   if [[ "$RM_PACKAGES" = 'y' ]]; then
     echo ""
@@ -2018,11 +2091,11 @@ uninstall_invidious() {
   # Remove user and settings
   if [[ "$RM_USER" = 'y' ]]; then
     # Stop and disable invidious
-    ${SUDO} systemctl stop ${SERVICE_NAME}
+    ${SUDO} $SYSTEM_CMD stop ${SERVICE_NAME}
     read_sleep 1
-    ${SUDO} systemctl restart ${PGSQL_SERVICE}
+    ${SUDO} $SYSTEM_CMD restart ${PGSQL_SERVICE}
     read_sleep 1
-    ${SUDO} systemctl daemon-reload
+    ${SUDO} $SYSTEM_CMD daemon-reload
     read_sleep 1
     grep $USER_NAME /etc/passwd >/dev/null 2>&1
 
@@ -2082,6 +2155,7 @@ case $OPTION in
     ;;
   5) # Database maintenance
       database_maintenance
+      database_maintenance_exit
     ;;
   6) # Start, Stop or Restart Invidious
       start_stop_restart_invidious

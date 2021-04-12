@@ -101,3 +101,16 @@
     - Added in [1.5.5](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.5.5)
 - [X] Added option to install cert from Let's Encrypt
     - Added in [1.5.6](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.5.6)
+- [X] Bug fix on Distro detection
+    - Fixed in [1.5.7](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.5.7)
+- [X] Define Crystal Version
+    - Added in [1.5.8](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.5.8)
+- [X] Update to v1.5.9
+    - Added default advanced options
+    - Added admins to advanced option
+    - Added Captcha key to advanced option
+    - Fixed systemd install
+    - Added argument -m to run database maintenance.
+    - Added option to run database maintenance on Docker, and added docker-compose file from [iv-org/invidious#1895 (comment)](https://github.com/iv-org/invidious/issues/1895#issuecomment-812642053)
+    - Turned all variables to uppercase as per bash recommendations.
+    - Added in [1.5.9](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.5.9)

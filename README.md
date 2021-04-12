@@ -103,6 +103,8 @@ $ ./invidious_update.sh
  
  #### Update Invidious via Cron
 
+**Select option 2 once to manually set GitHub Credentials**
+
 ```bash
 
 $ /path/to/script/invidious_update.sh -c
@@ -134,14 +136,10 @@ sudo passwd root
 
 2. Update Invidious
 
-   * Let's go through some configuration options.
-
-   * Do you want to checkout Invidious release or master?
-     * 1) release
-     * 2) master
-   * Select an option [1-2]: 1
-   * You entered: 
-     * branch: release
+  ***Note: GitHub Credentials needs to be provided to keep the update from failing***
+  (Credentials are stored in /root/.gitconfig)
+  **This is required to stash & checkout a new branch which was implemented to prevent "Detached HEAD state".**
+   
    * Invidious is ready to be updated, press any key to continue...
 
 
@@ -153,6 +151,7 @@ sudo passwd root
    * 3) Rebuild cluster
    * 4) Delete data and rebuild
    * 5) Install Docker CE
+   * 6) Run database maintenance
 
 4. Add Swap Space
 
@@ -162,6 +161,12 @@ sudo passwd root
 5. Run database maintenance
 
    * Database maintenance option [Database Information and Maintenance](https://github.com/omarroth/invidious/wiki/Database-Information-and-Maintenance)
+
+   ***Also works with argument -m***
+
+   ```bash
+   $ /path/to/script/invidious_update.sh -m
+   ```
 
 
 6. Start, Stop or Restart Invidious
@@ -174,7 +179,9 @@ sudo passwd root
   
    * Set up [pgbackup - Automated PostgreSQL Backup on Linux](https://github.com/tmiland/pgbackup)
 
-9. Exit
+9. Install Nginx
+
+10. Exit
 
    * Exits the script
 
@@ -233,7 +240,7 @@ See [Changelog](https://github.com/tmiland/Invidious-Updater/blob/master/CHANGEL
 * Arch Linux
 
 ## Credits
-- Code is mixed and and customized from these sources:
+- Code is mixed and customized from these sources:
   * [Invidious](https://github.com/omarroth/invidious#linux)
   * [nginx-autoinstall](https://github.com/angristan/nginx-autoinstall)
   * [Git-Repo-Update](https://github.com/KillianKemps/Git-Repo-Update)
