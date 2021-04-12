@@ -287,7 +287,13 @@ else
   echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
   exit 1;
 fi
-
+# Check if systemd is installed on Devuan
+if [[ $(lsb_release -si) == "Devuan" ]]; then
+  if ( ! $SYSTEM_CMD 2>/dev/null); then
+    echo -e "${RED}${ERROR} Error: Sorry, you need systemd to run this script.${NC}"
+    exit 1;
+  fi
+fi
 # Make sure that the script runs with root permissions
 chk_permissions() {
   if [[ "$EUID" != 0 ]]; then
