@@ -1771,12 +1771,12 @@ deploy_with_docker() {
           gnupg2 \
           software-properties-common
         # Add Docker’s official GPG key:
-        curl -fsSLk https://download.docker.com/linux/${DISTRO}/gpg | ${SUDO} apt-key add -
+        curl -fsSLk https://download.docker.com/linux/debian/gpg | ${SUDO} apt-key add -
         # Verify that you now have the key with the fingerprint 9DC8 5822 9FC7 DD38 854A E2D8 8D81 803C 0EBF CD88, by searching for the last 8 characters of the fingerprint.
         ${SUDO} apt-key fingerprint 0EBFCD88
 
         ${SUDO} add-apt-repository \
-          "deb [arch=amd64] https://download.docker.com/linux/${DISTRO} \
+          "deb [arch=amd64] https://download.docker.com/linux/debian \
           $(lsb_release -cs) \
           ${DOCKER_VER}"
         # Update the apt package index:
