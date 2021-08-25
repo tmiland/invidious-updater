@@ -1162,9 +1162,9 @@ UpdateMaster() {
     if [[ $(lsb_release -rs) == "16.04" ]]; then
       mv ${IN_CONFIG} /tmp
     fi
-      # currentVersion=$(git rev-list --max-count=1 --abbrev-commit HEAD)
+      currentVersion=$(git rev-list --max-count=1 --abbrev-commit HEAD)
       git pull
-      # for i in `git rev-list --abbrev-commit $currentVersion..HEAD` ; do file=${REPO_DIR}/config/migrate-scripts/migrate-db-$i.sh ; [ -f $file ] && $file ; done
+      for i in `git rev-list --abbrev-commit $currentVersion..HEAD` ; do file=${REPO_DIR}/config/migrate-scripts/migrate-db-$i.sh ; [ -f $file ] && $file ; done
       git stash
       git checkout origin/${IN_BRANCH} -B ${IN_BRANCH}
     if [[ $(lsb_release -rs) == "16.04" ]]; then
