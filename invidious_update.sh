@@ -386,7 +386,7 @@ install_certbot() {
     --useragent  "Acme client"
     # Issue cert
     # Use for debugging: --force --test --debug
-    /etc/acme/acme.sh --issue -d ${NGINX_DOMAIN_NAME} -w /etc/nginx/html && echo "Successfully issued Let's Encrypt SSL certificates for Invidious" || echo "Error issuing Let's Encrypt SSL certificates!"
+    /etc/acme/acme.sh --issue -d ${NGINX_DOMAIN_NAME} -w /etc/nginx/html  --server letsencrypt && echo "Successfully issued Let's Encrypt SSL certificates for Invidious" || echo "Error issuing Let's Encrypt SSL certificates!"
     # Install cert
     ${SUDO} mkdir -p /etc/nginx/certs/${NGINX_DOMAIN_NAME}
     /etc/acme/acme.sh --install-cert -d ${NGINX_DOMAIN_NAME} \
