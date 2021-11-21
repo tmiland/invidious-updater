@@ -114,6 +114,8 @@ ADMINS=
 CAPTCHA_KEY=
 # Docker compose repo name
 COMPOSE_REPO_NAME="docker/compose"
+# Docker compose version
+DOCKER_COMPOSE_VER=1.25.0
 
 read_sleep() {
     read -rt "$1" <> <(:) || :
@@ -608,12 +610,12 @@ open_file() { #expects one argument: file_path
 }
 
 # Get latest Docker compose release tag from GitHub
-get_compose_release_tag() {
-  curl --silent "https://api.github.com/repos/$1/releases/latest" |
-  grep '"tag_name":' |
-  sed -n 's/[^0-9.]*\([0-9.]*\).*/\1/p'
-}
-DOCKER_COMPOSE_VER=$(get_compose_release_tag ${COMPOSE_REPO_NAME})
+# get_compose_release_tag() {
+#   curl --silent "https://api.github.com/repos/$1/releases/latest" |
+#   grep '"tag_name":' |
+#   sed -n 's/[^0-9.]*\([0-9.]*\).*/\1/p'
+# }
+# DOCKER_COMPOSE_VER=$(get_compose_release_tag ${COMPOSE_REPO_NAME})
 
 get_release_info() {
   # Get latest release tag from GitHub
