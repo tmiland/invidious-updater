@@ -300,7 +300,7 @@ chk_permissions() {
     cd "$CURRDIR" || exit
     su -s "$(which bash)" -c "./$SCRIPT_FILENAME"
     cd - > /dev/null || exit
-    exit 0; 
+    exit 0;
   fi
 }
 
@@ -519,7 +519,7 @@ server {
 
   	access_log off;
   	error_log /var/log/nginx/error.log crit;
-    
+
     location ^~ /.well-known/acme-challenge {
       root /etc/nginx/html;
     }
@@ -1149,7 +1149,7 @@ GetMaster() {
 
 # Update Master branch
 UpdateMaster() {
-  
+
   if [ "$(git log --pretty=%H ...refs/heads/master^ | head -n 1)" = "$(git ls-remote origin -h refs/heads/master | cut -f1)" ] ; then
       echo ""
       echo -e "${GREEN}${ARROW} Invidious is already up to date...${NC}"
@@ -1337,7 +1337,7 @@ check_exit_status() {
 }
 
 install_invidious() {
-  ## get total free memory size in megabytes(MB) 
+  ## get total free memory size in megabytes(MB)
   free=$(free -mt | grep Total | awk '{print $4}')
   chk_git_repo
 
@@ -1359,8 +1359,8 @@ install_invidious() {
           add_swap
           break
           ;;
-        [Nn]* ) 
-          break 
+        [Nn]* )
+          break
           ;;
       esac
     done
@@ -1454,7 +1454,7 @@ install_invidious() {
       ${SUDO} ${INSTALL} $i 2> /dev/null # || exit 1 #--allow-unauthenticated
     done
   fi
-  
+
   # Setup Repository
   # https://stackoverflow.com/a/51894266
   grep $USER_NAME /etc/passwd >/dev/null 2>&1
@@ -1531,6 +1531,9 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
       su - postgres -c "initdb --locale en_US.UTF-8 -D '/var/lib/postgres/data'"
     fi
   fi
+  if [[ -d /etc/postgresql/11/main ]]; then
+    ${SUDO} -u postgres sed -i "s/local   all             all                                     peer/local   all             all                                     md5/g" /etc/postgresql/11/main/pg_hba.conf
+  fi
   ${SUDO} $SYSTEM_CMD enable ${PGSQL_SERVICE}
   read_sleep 1
   ${SUDO} $SYSTEM_CMD restart ${PGSQL_SERVICE}
@@ -1546,7 +1549,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
   if [[ -d ${REPO_DIR}/config/sql ]]; then
     for file in ${REPO_DIR}/config/sql/*; do
       echo -e "${ORANGE}${ARROW} Running $file ${NC}"
-      ${SUDO} -i -u postgres psql -d $PSQLDB -f $file
+      ${SUDO} -i -u postgres PGPASSWORD="$PSQLPASS" psql -U kemal -d $PSQLDB -f $file
     done
   fi
   echo -e "${GREEN}${DONE} Finished Database section${NC}"
@@ -1631,7 +1634,7 @@ deploy_with_docker() {
       download_docker_compose_file
       # If Docker pkgs is installed
       if ${PKGCHK} ${DOCKER_PKGS} >/dev/null 2>&1; then
-        
+
         if [[ $BUILD_DOCKER = "y" ]]; then
             # Let the user enter custom port:
             while [[ $CUSTOM_DOCKER_PORT != "y" && $CUSTOM_DOCKER_PORT != "n" ]]; do
@@ -1939,7 +1942,7 @@ start_stop_restart_invidious() {
 }
 
 uninstall_invidious() {
-# Set default uninstallation parameters  
+# Set default uninstallation parameters
 RM_PostgreSQLDB=${RM_PostgreSQLDB:-y}
 RM_RE_PGSQLDB=${RM_RE_PGSQLDB:-n}
 RM_PACKAGES=${RM_PACKAGES:-n}
