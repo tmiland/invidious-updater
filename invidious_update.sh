@@ -93,7 +93,7 @@ SERVICE_NAME=invidious.service
 # Default branch
 IN_BRANCH=master
 # Default domain
-DOMAIN=${DOMAIN:-invidious.tube}
+DOMAIN=${DOMAIN:-invidious.snopyta.org}
 # Default ip
 IP=${IP:-localhost}
 # Default port
