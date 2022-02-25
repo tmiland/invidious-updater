@@ -1111,7 +1111,7 @@ fi
 rebuild() {
   printf "\n-- Rebuilding ${REPO_DIR}\n"
   repoexit
-  shards update && shards install
+  shards install --production
   crystal build src/invidious.cr --release
   #sudo chown -R 1000:$USER_NAME $USER_DIR
   cd - || exit
@@ -1561,7 +1561,7 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
   # So before we build, make sure permissions are set.
   set_permissions
   repoexit
-  shards update && shards install
+  shards install --production
   crystal build src/invidious.cr --release
   check_exit_status
   if [[ $DISTRO_GROUP == "RHEL" ]]; then
