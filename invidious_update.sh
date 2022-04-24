@@ -116,6 +116,12 @@ CAPTCHA_KEY=
 COMPOSE_REPO_NAME="docker/compose"
 # Docker compose version
 DOCKER_COMPOSE_VER=1.25.0
+# Logfile
+LOGFILE=invidious_update.log
+
+install_log() {
+  exec > >(tee ${LOGFILE}) 2>&1
+}
 
 read_sleep() {
     read -rt "$1" <> <(:) || :
@@ -1291,7 +1297,7 @@ database_maintenance_exit() {
 }
 # Ask user to update yes/no
 if [ $# != 0 ]; then
-  while getopts ":udcm" opt; do
+  while getopts ":udcml" opt; do
     case $opt in
       u)
         UPDATE_SCRIPT='yes'
@@ -1304,6 +1310,9 @@ if [ $# != 0 ]; then
         ;;
       m)
         database_maintenance
+        ;;
+      l)
+        install_log
         ;;
       \?)
         echo -e "${RED}\n ${ERROR} Error! Invalid option: -$OPTARG${NC}" >&2
