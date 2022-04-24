@@ -300,6 +300,16 @@ if [[ $(lsb_release -si) == "Devuan" ]]; then
     exit 1;
   fi
 fi
+
+usage() {
+  echo "script usage: $SCRIPT_FILENAME [-u] [-d] [-c] [-m] [-l]"
+  echo "   [-u] Check for script update"
+  echo "   [-d] Do not check for script update (Default)"
+  echo "   [-c] Update Invidious with cron"
+  echo "   [-m] Database Maintenance"
+  echo "   [-l] Activate logging"
+}
+
 # Make sure that the script runs with root permissions
 chk_permissions() {
   if [[ "$EUID" != 0 ]]; then
