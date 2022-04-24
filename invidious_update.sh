@@ -1533,8 +1533,9 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
       su - postgres -c "initdb --locale en_US.UTF-8 -D '/var/lib/postgres/data'"
     fi
   fi
-  if [[ -d /etc/postgresql/11/main ]]; then
-    ${SUDO} -u postgres sed -i "s/local   all             all                                     peer/local   all             all                                     md5/g" /etc/postgresql/11/main/pg_hba.conf
+  pgsql_config_folder=$(find "/etc/postgresql/" -maxdepth 1 -type d -name "*" | sort -V | tail -1)
+  if [[ -d ${pgsql_config_folder}/main ]]; then
+    ${SUDO} -u postgres sed -i "s/local   all             all                                     peer/local   all             all                                     md5/g" ${pgsql_config_folder}/main/pg_hba.conf
   fi
   ${SUDO} $SYSTEM_CMD enable ${PGSQL_SERVICE}
   read_sleep 1
