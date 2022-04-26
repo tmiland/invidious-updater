@@ -78,7 +78,7 @@ $ ./invidious_update.sh
  ```
 
  ```shell
- $ curl -SsL https://deb.tmiland.com/debian/KEY.gpg | sudo apt-key add -
+ $ curl -SsL https://deb.tmiland.com/debian/KEY.gpg | gpg --dearmor | sudo tee /usr/share/keyrings/tmiland-archive-keyring.gpg >/dev/null
  ```
 
  ```shell
