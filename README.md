@@ -43,6 +43,8 @@
 
 ## Installation
 
+If you're looking for a quick way to install, check out [Invidious-Installer](https://github.com/tmiland/invidious-installer)
+
 #### Download and execute the script:
 
 For latest release
