@@ -105,13 +105,15 @@ PSSQLPASS_GEN=$(openssl rand -base64 32 | tr -dc 'a-zA-Z0-9' | fold -w 32 | head
 # Default dbpass (generated)
 PSQLPASS=${PSQLPASS:-$PSSQLPASS_GEN}
 # Default https only
-HTTPS_ONLY=false
+HTTPS_ONLY=${HTTPS_ONLY:-n}
 # Default external port
-EXTERNAL_PORT=
+EXTERNAL_PORT=${EXTERNAL_PORT:-}
 # Default admins
-ADMINS=
+ADMINS=${ADMINS:-}
 # Default Captcha Key
-CAPTCHA_KEY=
+CAPTCHA_KEY=${CAPTCHA_KEY:-}
+# Default Swap option
+SWAP_OPTIONS=${SWAP_OPTIONS:-n}
 # Docker compose repo name
 COMPOSE_REPO_NAME="docker/compose"
 # Docker compose version
@@ -179,7 +181,7 @@ if ! lsb_release -si >/dev/null 2>&1; then
   echo ""
   echo -e "${RED}${ERROR} Looks like ${LSB} is not installed!${NC}"
   echo ""
-  read -p "Do you want to download ${LSB}? [y/n]? " ANSWER
+  read -r -p "Do you want to download ${LSB}? [y/n]? " ANSWER
   echo ""
   case $ANSWER in
     [Yy]* )
@@ -197,6 +199,7 @@ if ! lsb_release -si >/dev/null 2>&1; then
 fi
 SUDO=""
 UPDATE=""
+UPGRADE=""
 INSTALL=""
 UNINSTALL=""
 PURGE=""
@@ -211,6 +214,8 @@ if [[ $DISTRO_GROUP == "Debian" ]]; then
   SUDO="sudo"
   # shellcheck disable=SC2140
   UPDATE="apt-get -o Dpkg::Progress-Fancy="1" update -qq"
+  # shellcheck disable=SC2140
+  UPGRADE="apt-get -o Dpkg::Progress-Fancy="1" upgrade -qq"
   # shellcheck disable=SC2140
   INSTALL="apt-get -o Dpkg::Progress-Fancy="1" install -qq"
   # shellcheck disable=SC2140
@@ -234,6 +239,7 @@ if [[ $DISTRO_GROUP == "Debian" ]]; then
 elif [[ $(lsb_release -si) == "CentOS" ]]; then
   SUDO="sudo"
   UPDATE="yum update -q"
+  UPGRADE="yum upgrade -q"
   INSTALL="yum install -y -q"
   UNINSTALL="yum remove -y -q"
   PURGE="yum purge -y -q"
@@ -254,6 +260,7 @@ elif [[ $(lsb_release -si) == "CentOS" ]]; then
 elif [[ $(lsb_release -si) == "Fedora" ]]; then
   SUDO="sudo"
   UPDATE="dnf update -q"
+  UPGRADE="dnf upgrade -q"
   INSTALL="dnf install -y -q"
   UNINSTALL="dnf remove -y -q"
   PURGE="dnf purge -y -q"
@@ -842,7 +849,7 @@ show_preinstall_banner() {
   echo ""
   echo ""
   echo ""
-  echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
+  echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/${REPO_NAME}${NC}\n"
 }
 
 # Install banner
@@ -861,7 +868,7 @@ show_install_banner() {
   echo ""
   echo ""
   echo ""
-  echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
+  echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/${REPO_NAME}${NC}\n"
 }
 
 # Maintenance banner
@@ -880,7 +887,7 @@ show_maintenance_banner() {
   echo ""
   echo ""
   echo ""
-  echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
+  echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/${REPO_NAME}${NC}\n"
 }
 
 # Banner
@@ -898,7 +905,7 @@ show_banner() {
   echo "  5) Run Database Maintenance  10) Exit                     "
   echo "${SHOW_STATUS} ${SHOW_DOCKER_STATUS}"
   echo ""
-  echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
+  echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/${REPO_NAME}${NC}\n"
 }
 
 # Exit Script
@@ -923,7 +930,7 @@ exit_script() {
    ${GREEN}${DONE}${NC} ${BBLUE}Paypal${NC} ${ARROW} ${ORANGE}https://paypal.me/milanddata${NC}
    ${GREEN}${DONE}${NC} ${BBLUE}BTC${NC}    ${ARROW} ${ORANGE}33mjmoPxqfXnWNsvy8gvMZrrcG3gEa3YDM${NC}
   "
-  echo -e "Documentation for this script is available here: ${ORANGE}\n${ARROW} https://github.com/tmiland/Invidious-Updater${NC}\n"
+  echo -e "Documentation for this script is available here: ${ORANGE}\n${ARROW} https://github.com/tmiland/${REPO_NAME}${NC}\n"
   echo -e "${ORANGE}${ARROW} Goodbye.${NC} ☺"
   echo ""
 }
@@ -1182,6 +1189,12 @@ UpdateMaster() {
     if [[ $(lsb_release -rs) == "16.04" ]]; then
       mv ${IN_CONFIG} /tmp
     fi
+      # Update the apt package index and upgrade packages:
+      if [[ $DISTRO_GROUP == "Arch" ]]; then
+        ${SUDO} ${UPDATE}
+      else
+        ${SUDO} ${UPDATE} && ${SUDO} ${UPGRADE}
+      fi
       currentVersion=$(git rev-list --max-count=1 --abbrev-commit HEAD)
       git pull
       for i in `git rev-list --abbrev-commit $currentVersion..HEAD` ; do file=${REPO_DIR}/config/migrate-scripts/migrate-db-$i.sh ; [ -f $file ] && $file ; done
