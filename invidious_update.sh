@@ -236,6 +236,8 @@ if [[ $DISTRO_GROUP == "Debian" ]]; then
   DOCKER_PKGS="docker-ce docker-ce-cli"
   # System cmd
   SYSTEM_CMD="systemctl"
+  # Postgresql config folder
+  pgsql_config_folder=$(find "/etc/postgresql/" -maxdepth 1 -type d -name "*" | sort -V | tail -1)
 elif [[ $(lsb_release -si) == "CentOS" ]]; then
   SUDO="sudo"
   UPDATE="yum update -q"
@@ -257,6 +259,8 @@ elif [[ $(lsb_release -si) == "CentOS" ]]; then
   DOCKER_PKGS="docker-ce docker-ce-cli"
   # System cmd
   SYSTEM_CMD="systemctl"
+  # Postgresql config folder
+  pgsql_config_folder=$(find "/etc/postgresql/" -maxdepth 1 -type d -name "*" | sort -V | tail -1)
 elif [[ $(lsb_release -si) == "Fedora" ]]; then
   SUDO="sudo"
   UPDATE="dnf update -q"
@@ -278,6 +282,8 @@ elif [[ $(lsb_release -si) == "Fedora" ]]; then
   DOCKER_PKGS="docker-ce docker-ce-cli"
   # System cmd
   SYSTEM_CMD="systemctl"
+  # Postgresql config folder
+  pgsql_config_folder=$(find "/etc/postgresql/" -maxdepth 1 -type d -name "*" | sort -V | tail -1)
 elif [[ $DISTRO_GROUP == "Arch" ]]; then
   SUDO="sudo"
   UPDATE="pacman -Syu"
@@ -298,6 +304,8 @@ elif [[ $DISTRO_GROUP == "Arch" ]]; then
   DOCKER_PKGS="docker"
   # System cmd
   SYSTEM_CMD="systemctl"
+  # Postgresql config folder
+  pgsql_config_folder="/var/lib/postgres/data"
 else
   echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
   exit 1;
@@ -1564,6 +1572,9 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
   fi
   if [[ $DISTRO_GROUP == "Arch" ]]; then
     if [[ ! -d /var/lib/postgres/data ]]; then
+      ${SUDO} mkdir ${pgsql_config_folder}
+    fi
+    if [[ -d ${pgsql_config_folder} ]]; then
       su - postgres -c "initdb --locale en_US.UTF-8 -D '/var/lib/postgres/data'"
     fi
   fi
