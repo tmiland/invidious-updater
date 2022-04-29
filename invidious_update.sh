@@ -105,7 +105,7 @@ PSSQLPASS_GEN=$(openssl rand -base64 32 | tr -dc 'a-zA-Z0-9' | fold -w 32 | head
 # Default dbpass (generated)
 PSQLPASS=${PSQLPASS:-$PSSQLPASS_GEN}
 # Default https only
-HTTPS_ONLY=${HTTPS_ONLY:-n}
+HTTPS_ONLY=${HTTPS_ONLY:-false}
 # Default external port
 EXTERNAL_PORT=${EXTERNAL_PORT:-}
 # Default admins
