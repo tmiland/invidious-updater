@@ -11,7 +11,7 @@
 ####                   Maintained by @tmiland                     ####
 ######################################################################
 
-VERSION='1.6.2' # Must stay on line 14 for updater to fetch the numbers
+VERSION='1.6.3' # Must stay on line 14 for updater to fetch the numbers
 
 #------------------------------------------------------------------------------#
 #
@@ -228,7 +228,6 @@ if [[ $DISTRO_GROUP == "Debian" ]]; then
   PRE_INSTALL_PKGS="apt-transport-https git curl sudo gnupg"
   # Install packages
   INSTALL_PKGS="crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-bin postgresql libsqlite3-dev zlib1g-dev libpcre3-dev libevent-dev"
-
   #Uninstall packages
   UNINSTALL_PKGS="crystal libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-bin libsqlite3-dev zlib1g-dev libpcre3-dev libevent-dev"
   # PostgreSQL Service
