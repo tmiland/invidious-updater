@@ -1600,9 +1600,8 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
   fi
   echo -e "${GREEN}${DONE} Finished Database section${NC}"
 
-  if [[ $DISTRO_GROUP == "Arch" ]]; then
-    git config --global --add safe.directory ${REPO_DIR}
-  fi
+  # Add invidious folder as safe directory
+  git config --global --add safe.directory ${REPO_DIR}
   update_config
   # Crystal complaining about permissions on CentOS and somewhat Debian
   # So before we build, make sure permissions are set.
