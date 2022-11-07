@@ -255,9 +255,7 @@ See [Changelog](https://github.com/tmiland/Invidious-Updater/blob/master/CHANGEL
 - [IRC Freenode: #InvidiousUpdater](irc://freenode.net/#InvidiousUpdater)
 
 ## Donations
-<a href="https://www.buymeacoffee.com/tmiland" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
-- [PayPal me](https://paypal.me/milanddata)
-- [BTC] : 33mjmoPxqfXnWNsvy8gvMZrrcG3gEa3YDM
+<a href="https://coindrop.to/tmiland" target="_blank"><img src="https://coindrop.to/embed-button.png" style="border-radius: 10px; height: 57px !important;width: 229px !important;" alt="Coindrop.to me"></img></a>
 
 ## Web Hosting
 
