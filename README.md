@@ -259,9 +259,9 @@ See [Changelog](https://github.com/tmiland/Invidious-Updater/blob/master/CHANGEL
 
 ## Web Hosting
 
-Sign up for web hosting using this link, and receive $100 in credit over 60 days.
+Sign up for web hosting using this link, and receive $200 in credit over 60 days.
 
-[DigitalOcean](https://m.do.co/c/f1f2b475fca0)
+<a href="https://www.digitalocean.com/?refcode=f1f2b475fca0&amp;utm_campaign=Referral_Invite&amp;utm_medium=Referral_Program&amp;utm_source=badge"><img src="https://web-platforms.sfo2.digitaloceanspaces.com/WWW/Badge%203.svg" alt="DigitalOcean Referral Badge"></a>
 
 #### Disclaimer 
 
