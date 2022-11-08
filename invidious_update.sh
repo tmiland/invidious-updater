@@ -1526,7 +1526,8 @@ install_invidious() {
   set_permissions
 
   cd - || exit
-
+  # Add invidious folder as safe directory
+  git config --global --add safe.directory ${REPO_DIR}
   if [[ $DISTRO_GROUP == "RHEL" ]]; then
     if ! ${PKGCHK} ${PGSQL_SERVICE} >/dev/null 2>&1; then
       if [[ $(lsb_release -si) == "CentOS" ]]; then
@@ -1600,8 +1601,6 @@ host    replication     all             ::1/128                 md5" | ${SUDO} t
   fi
   echo -e "${GREEN}${DONE} Finished Database section${NC}"
 
-  # Add invidious folder as safe directory
-  git config --global --add safe.directory ${REPO_DIR}
   update_config
   # Crystal complaining about permissions on CentOS and somewhat Debian
   # So before we build, make sure permissions are set.
