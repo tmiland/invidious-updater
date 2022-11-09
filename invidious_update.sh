@@ -933,8 +933,8 @@ exit_script() {
   echo -e "
    This script runs on coffee ☕
 
-   ${GREEN}${DONE}${NC} ${BBLUE}Paypal${NC} ${ARROW} ${ORANGE}https://paypal.me/milanddata${NC}
-   ${GREEN}${DONE}${NC} ${BBLUE}BTC${NC}    ${ARROW} ${ORANGE}33mjmoPxqfXnWNsvy8gvMZrrcG3gEa3YDM${NC}
+   ${GREEN}${CHECK}${NORMAL} ${BBLUE}GitHub${NORMAL} ${ARROW} ${YELLOW}https://github.com/sponsors/tmiland${NORMAL}
+   ${GREEN}${CHECK}${NORMAL} ${BBLUE}Coindrop${NORMAL} ${ARROW} ${YELLOW}https://coindrop.to/tmiland${NORMAL}
   "
   echo -e "Documentation for this script is available here: ${ORANGE}\n${ARROW} https://github.com/tmiland/${REPO_NAME}${NC}\n"
   echo -e "${ORANGE}${ARROW} Goodbye.${NC} ☺"
@@ -1480,146 +1480,17 @@ install_invidious() {
   read -n1 -r -p "Invidious is ready to be installed, press any key to continue..."
   echo ""
 
-  # Setup Dependencies
-  if ! ${PKGCHK} $PRE_INSTALL_PKGS >/dev/null 2>&1; then
-    ${UPDATE}
-    for i in $PRE_INSTALL_PKGS; do
-      ${INSTALL} $i 2> /dev/null # || exit 1
-    done
+  INSTALLER_URL=https://github.com/tmiland/invidious-installer/raw/main/invidious_installer.sh
+  if [[ $(command -v 'curl') ]]; then
+    # shellcheck source=$INSTALLER_URL
+    source <(curl -sSLf $INSTALLER_URL)
+  elif [[ $(command -v 'wget') ]]; then
+    # shellcheck source=$INSTALLER_URL
+    . <(wget -qO - $INSTALLER_URL)
+  else
+    echo -e "${RED} This script requires curl or wget.\nProcess aborted${NORMAL}"
+    exit 0
   fi
-
-  get_crystal
-
-  if ! ${PKGCHK} $INSTALL_PKGS >/dev/null 2>&1; then
-    ${SUDO} ${UPDATE}
-    for i in $INSTALL_PKGS; do
-      ${SUDO} ${INSTALL} $i 2> /dev/null # || exit 1 #--allow-unauthenticated
-    done
-  fi
-
-  # Setup Repository
-  # https://stackoverflow.com/a/51894266
-  grep $USER_NAME /etc/passwd >/dev/null 2>&1
-  if [ ! $? -eq 0 ] ; then
-    echo -e "${ORANGE}${ARROW} User $USER_NAME Not Found, adding user${NC}"
-    ${SUDO} useradd -m $USER_NAME
-  fi
-
-  # If directory is not created
-  if [[ ! -d $USER_DIR ]]; then
-    echo -e "${ORANGE}${ARROW} Folder Not Found, adding folder${NC}"
-    mkdir -p $USER_DIR
-  fi
-
-  set_permissions
-
-  echo -e "${ORANGE}${ARROW} Downloading Invidious from GitHub${NC}"
-  #sudo -i -u $USER_NAME
-  cd $USER_DIR || exit 1
-  sudo -i -u invidious \
-    git clone https://github.com/iv-org/invidious
-  repoexit
-  # Checkout
-  GetMaster
-
-  echo -e "${GREEN}${ARROW} Done${NC}"
-  set_permissions
-
-  cd - || exit
-  # Add invidious folder as safe directory
-  git config --global --add safe.directory ${REPO_DIR}
-  if [[ $DISTRO_GROUP == "RHEL" ]]; then
-    if ! ${PKGCHK} ${PGSQL_SERVICE} >/dev/null 2>&1; then
-      if [[ $(lsb_release -si) == "CentOS" ]]; then
-        ${SUDO} yum config-manager --set-enabled powertools
-        ${SUDO} dnf --enablerepo=powertools install libyaml-devel
-      fi
-
-      if [[ -d /var/lib/pgsql/data ]]; then
-        if [[ -d /var/lib/pgsql/data.bak ]]; then
-          ${SUDO} rm -rf /var/lib/pgsql/data.bak
-        fi
-          ${SUDO} mv -f /var/lib/pgsql/data /var/lib/pgsql/data.bak
-          ${SUDO} /usr/bin/postgresql-setup --initdb
-      else
-        ${SUDO} /usr/bin/postgresql-setup --initdb
-      fi
-      ${SUDO} chmod 775 /var/lib/pgsql/data/postgresql.conf
-      ${SUDO} chmod 775 /var/lib/pgsql/data/pg_hba.conf
-      read_sleep 1
-      ${SUDO} sed -i "s/#port = 5432/port = 5432/g" /var/lib/pgsql/data/postgresql.conf
-      cp -rp /var/lib/pgsql/data/pg_hba.conf /var/lib/pgsql/data/pg_hba.conf.bak
-      echo "# Database administrative login by Unix domain socket
-local   all             postgres                                peer
-
-# TYPE  DATABASE        USER            ADDRESS                 METHOD
-
-# local is for Unix domain socket connections only
-local   all             all                                     peer
-# IPv4 local connections:
-host    all             all             127.0.0.1/32            md5
-# IPv6 local connections:
-host    all             all             ::1/128                 md5
-# Allow replication connections from localhost, by a user with the
-# replication privilege.
-local   replication     all                                     peer
-host    replication     all             127.0.0.1/32            md5
-host    replication     all             ::1/128                 md5" | ${SUDO} tee /var/lib/pgsql/data/pg_hba.conf
-      ${SUDO} chmod 600 /var/lib/pgsql/data/postgresql.conf
-      ${SUDO} chmod 600 /var/lib/pgsql/data/pg_hba.conf
-    fi
-  fi
-  if [[ $DISTRO_GROUP == "Arch" ]]; then
-    if [[ ! -d /var/lib/postgres/data ]]; then
-      ${SUDO} mkdir ${pgsql_config_folder}
-    fi
-    if [[ -d ${pgsql_config_folder} ]]; then
-      su - postgres -c "initdb --locale en_US.UTF-8 -D '/var/lib/postgres/data'"
-    fi
-  fi
-
-  if [[ -d ${pgsql_config_folder}/main ]]; then
-    ${SUDO} -u postgres sed -i "s/local   all             all                                     peer/local   all             all                                     md5/g" ${pgsql_config_folder}/main/pg_hba.conf
-  fi
-  ${SUDO} $SYSTEM_CMD enable ${PGSQL_SERVICE}
-  read_sleep 1
-  ${SUDO} $SYSTEM_CMD restart ${PGSQL_SERVICE}
-  read_sleep 1
-  # Create users and set privileges
-  echo -e "${ORANGE}${ARROW} Creating user kemal with password $PSQLPASS ${NC}"
-  ${SUDO} -u postgres psql -c "CREATE USER kemal WITH PASSWORD '$PSQLPASS';"
-  echo -e "${ORANGE}${ARROW} Creating database $PSQLDB with owner kemal${NC}"
-  ${SUDO} -u postgres psql -c "CREATE DATABASE $PSQLDB WITH OWNER kemal;"
-  echo -e "${ORANGE}${ARROW} Grant all on database $PSQLDB to user kemal${NC}"
-  ${SUDO} -u postgres psql -c "GRANT ALL ON DATABASE $PSQLDB TO kemal;"
-  # Import db files
-  if [[ -d ${REPO_DIR}/config/sql ]]; then
-    for file in ${REPO_DIR}/config/sql/*; do
-      echo -e "${ORANGE}${ARROW} Running $file ${NC}"
-      ${SUDO} -i -u postgres PGPASSWORD="$PSQLPASS" psql -U kemal -d $PSQLDB -f $file
-    done
-  fi
-  echo -e "${GREEN}${DONE} Finished Database section${NC}"
-
-  update_config
-  # Crystal complaining about permissions on CentOS and somewhat Debian
-  # So before we build, make sure permissions are set.
-  set_permissions
-  repoexit
-  shards install --production
-  crystal build src/invidious.cr --release
-  check_exit_status
-  if [[ $DISTRO_GROUP == "RHEL" ]]; then
-    # Set SELinux to permissive on RHEL
-    ${SUDO} setenforce 0
-  fi
-  systemd_install
-  # Not figured out why yet, so let's set permissions after as well...
-  set_permissions
-  logrotate_install
-  show_install_banner
-  read_sleep 5
-  indexit
 }
 
 update_invidious() {
