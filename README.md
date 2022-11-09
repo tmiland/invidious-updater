@@ -44,6 +44,7 @@
 ## Installation
 
 If you're looking for a quick way to install, check out [Invidious-Installer](https://github.com/tmiland/invidious-installer)
+ ***This is now integrated into the update script***
 
 #### Download and execute the script:
 
