@@ -77,7 +77,7 @@ NC='\033[0m' # No Color
 # Script name
 SCRIPT_NAME="Invidious Update.sh"
 # Repo name
-REPO_NAME="tmiland/Invidious-Updater"
+REPO_NAME="tmiland/invidious-updater"
 # Set update check
 UPDATE_SCRIPT='no'
 # Set username
@@ -1511,9 +1511,9 @@ update_invidious() {
 
 download_docker_compose_file() {
   if [[ $(command -v 'curl') ]]; then
-    curl -fsSLk https://github.com/tmiland/Invidious-Updater/raw/master/docker-compose.yml > ${REPO_DIR}/docker-compose.yml
+    curl -fsSLk https://github.com/tmiland/invidious-updater/raw/master/docker-compose.yml > ${REPO_DIR}/docker-compose.yml
   elif [[ $(command -v 'wget') ]]; then
-    wget -q https://github.com/tmiland/Invidious-Updater/raw/master/docker-compose.yml -O ${REPO_DIR}/docker-compose.yml
+    wget -q https://github.com/tmiland/invidious-updater/raw/master/docker-compose.yml -O ${REPO_DIR}/docker-compose.yml
   else
     echo -e "${RED}${ERROR} This script requires curl or wget.\nProcess aborted${NC}"
     exit 0
