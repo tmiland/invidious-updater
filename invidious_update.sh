@@ -855,7 +855,7 @@ show_preinstall_banner() {
   echo ""
   echo ""
   echo ""
-  echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/${REPO_NAME}${NC}\n"
+  echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/${REPO_NAME}${NC}\n"
 }
 
 # Install banner
@@ -874,7 +874,7 @@ show_install_banner() {
   echo ""
   echo ""
   echo ""
-  echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/${REPO_NAME}${NC}\n"
+  echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/${REPO_NAME}${NC}\n"
 }
 
 # Maintenance banner
@@ -893,7 +893,7 @@ show_maintenance_banner() {
   echo ""
   echo ""
   echo ""
-  echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/${REPO_NAME}${NC}\n"
+  echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/${REPO_NAME}${NC}\n"
 }
 
 # Banner
@@ -911,7 +911,7 @@ show_banner() {
   echo "  5) Run Database Maintenance  10) Exit                     "
   echo "${SHOW_STATUS} ${SHOW_DOCKER_STATUS}"
   echo ""
-  echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/tmiland/${REPO_NAME}${NC}\n"
+  echo -e "Documentation for this script is available here: ${ORANGE}\n ${ARROW} https://github.com/${REPO_NAME}${NC}\n"
 }
 
 # Exit Script
@@ -936,7 +936,7 @@ exit_script() {
    ${GREEN}${CHECK}${NORMAL} ${BBLUE}GitHub${NORMAL} ${ARROW} ${YELLOW}https://github.com/sponsors/tmiland${NORMAL}
    ${GREEN}${CHECK}${NORMAL} ${BBLUE}Coindrop${NORMAL} ${ARROW} ${YELLOW}https://coindrop.to/tmiland${NORMAL}
   "
-  echo -e "Documentation for this script is available here: ${ORANGE}\n${ARROW} https://github.com/tmiland/${REPO_NAME}${NC}\n"
+  echo -e "Documentation for this script is available here: ${ORANGE}\n${ARROW} https://github.com/${REPO_NAME}${NC}\n"
   echo -e "${ORANGE}${ARROW} Goodbye.${NC} ☺"
   echo ""
 }
