@@ -1148,7 +1148,7 @@ rebuild() {
   printf "\n-- Rebuilding ${REPO_DIR}\n"
   repoexit
   shards install --production
-  crystal build src/invidious.cr --release
+  crystal build src/invidious.cr --release -Ddisable_quic
   #sudo chown -R 1000:$USER_NAME $USER_DIR
   cd - || exit
   printf "\n"
