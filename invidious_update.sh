@@ -913,7 +913,8 @@ show_banner() {
   echo "  2) Update Invidious           7) Uninstall Invidious      "
   echo "  3) Deploy with Docker         8) Set up PostgreSQL Backup "
   echo "  4) Add Swap Space             9) Install Nginx            "
-  echo "  5) Run Database Maintenance  10) Exit                     "
+  echo "  5) Run Database Maintenance   10) Install Inv sig helper  "
+  echo " 10) Exit                     "
   echo "${SHOW_STATUS} ${SHOW_DOCKER_STATUS}"
   echo ""
   doc_link
@@ -2052,6 +2053,55 @@ fi
   indexit
 }
 
+install_inv_sig_helper() {
+  if [[ -d $USER_DIR ]]
+  then
+  echo -e "${GREEN}${ARROW} Downloading Invidious sig helper service from GitHub${NC}"
+
+  cd $USER_DIR || exit 1
+  
+  git clone https://github.com/iv-org/inv_sig_helper.git
+  chown -R $USER_NAME:$USER_NAME inv_sig_helper
+  cd inv_sig_helper || exit 1
+  # Install cargo / rust
+  curl -fsSL sh.rustup.rs | sh
+  # Source cargo
+  . "$HOME/.cargo/env"
+  # Build release
+  cargo build --release
+  # Copy service file to systemd folder
+  cp -rp $USER_DIR/inv_sig_helper/inv_sig_helper.service /etc/systemd/system/
+  # Add socket to config
+  ${SUDO} echo "signature_server: /home/invidious/tmp/inv_sig_helper.sock" >> $USER_DIR/invidious/config/config.yml
+  if [[ ! -d /home/invidious/tmp ]]
+  then
+    ${SUDO} mkdir -p /home/invidious/tmp
+    chown -R $USER_NAME:$USER_NAME /home/invidious/tmp
+  fi
+  SERVICE_NAME=inv_sig_helper.service
+  # Enable invidious sig helper at boot
+  ${SUDO} $SYSTEM_CMD enable ${SERVICE_NAME}
+  # Reload Systemd
+  ${SUDO} $SYSTEM_CMD daemon-reload
+  # Start Invidious sig helper
+  ${SUDO} $SYSTEM_CMD start ${SERVICE_NAME}
+  if ( $SYSTEM_CMD -q is-active ${SERVICE_NAME})
+  then
+    echo -e "${GREEN}${DONE} Invidious sig helper service has been successfully installed!${NC}"
+    ${SUDO} $SYSTEM_CMD status ${SERVICE_NAME} --no-pager
+    echo -e "${GREEN}${DONE} Restarting Invidious for changes to take effect...${NC}"
+    ${SUDO} $SYSTEM_CMD restart invidious
+    read_sleep 5
+  else
+    echo -e "${RED}${ERROR} Invidious sig helper service installation failed...${NC}"
+    ${SUDO} journalctl -u ${SERVICE_NAME}
+    read_sleep 5
+  fi
+else
+  echo -e "${RED}${ERROR} Invidious is not installed...${NC}"
+fi
+}
+
 # Start Script
 chk_permissions
 show_banner
@@ -2065,8 +2115,9 @@ while [[ $OPTION != "1" &&
          $OPTION != "7" &&
          $OPTION != "8" &&
          $OPTION != "9" &&
-         $OPTION != "10" ]]; do
-  read -p "Select an option [1-10]: " OPTION
+         $OPTION != "10" &&
+         $OPTION != "11" ]]; do
+  read -p "Select an option [1-11]: " OPTION
 done
 
 case $OPTION in
@@ -2098,7 +2149,10 @@ case $OPTION in
   9) # Install Nginx
       install_nginx
     ;;
-  10) # Exit
+  10) # Install Invidious sig helper
+      install_inv_sig_helper
+    ;;
+  11) # Exit
       exit_script
       exit
     ;;
