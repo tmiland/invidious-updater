@@ -906,7 +906,6 @@ show_banner() {
   #clear
   header
   echo "Welcome to the ${SCRIPT_NAME} script."
-  echo ""
   echo "What do you want to do?"
   echo ""
   echo "  1) Install Invidious          6) Start, Stop or Restart   "
@@ -914,7 +913,7 @@ show_banner() {
   echo "  3) Deploy with Docker         8) Set up PostgreSQL Backup "
   echo "  4) Add Swap Space             9) Install Nginx            "
   echo "  5) Run Database Maintenance   10) Install Inv sig helper  "
-  echo " 10) Exit                     "
+  echo "  11) Install YouTube tsg.      12) Exit                    "
   echo "${SHOW_STATUS} ${SHOW_DOCKER_STATUS}"
   echo ""
   doc_link
@@ -1333,9 +1332,73 @@ database_maintenance_exit() {
   read_sleep 5
   indexit
 }
+
+install_youtube_trusted_session_generator() {
+  # Install packages
+  if [[ $DISTRO_GROUP == "Debian" ]]; then
+    YTSG_INSTALL_PKGS="chromium-driver python3 python3-pip python3-virtualenv"
+  elif [[ $DISTRO_GROUP == "CentOS" ]]; then
+    YTSG_INSTALL_PKGS="chromedriver python3 python3-pip python3-virtualenv"
+  elif [[ $DISTRO_GROUP == "Fedora" ]]; then
+    YTSG_INSTALL_PKGS="chromedriver python3 python3-pip python3-virtualenv"
+  elif [[ $DISTRO_GROUP == "Arch" ]]; then
+    YTSG_INSTALL_PKGS="chromedriver python python-pip python-virtualenv"
+  fi
+  YTSG_FOLDER=$USER_DIR/youtube-trusted-session-generator
+  if [[ -d $USER_DIR ]]
+  then
+    if [[ ! -d $YTSG_FOLDER ]]
+    then
+      echo -e "${GREEN}${ARROW} Downloading Invidious YouTube trusted session generator from GitHub${NC}"
+      cd $USER_DIR || exit 1
+      git clone https://github.com/iv-org/youtube-trusted-session-generator.git >/dev/null 2>&1
+      chown -R $USER_NAME:$USER_NAME youtube-trusted-session-generator
+      cd $YTSG_FOLDER || exit 1
+    fi
+  if ! ${PKGCHK} ${YTSG_INSTALL_PKGS} >/dev/null 2>&1; then
+    echo -e "${GREEN}${ARROW} Setting up Dependencies${NC}"
+    ${UPDATE}
+    for i in ${YTSG_INSTALL_PKGS}; do
+      ${INSTALL} $i 2> /dev/null
+    done
+  fi
+  echo -e "${GREEN}${ARROW} Regenerating YouTube trusted session data...${NC}"
+  ${SUDO} virtualenv $YTSG_FOLDER/venv >/dev/null 2>&1
+  chown -R $USER_NAME:$USER_NAME $YTSG_FOLDER/venv
+  chmod 755 $YTSG_FOLDER/venv
+  source $YTSG_FOLDER/venv/bin/activate >/dev/null 2>&1
+  #pip3 install nodriver
+  ${SUDO} $YTSG_FOLDER/venv/bin/pip3 install -r requirements.txt >/dev/null 2>&1
+  # Switch to headless
+  if grep -oq "headless=False" $YTSG_FOLDER/index.py
+  then
+    ${SUDO} sed -i "s|headless=False|headless=True, sandbox=False|g" $YTSG_FOLDER/index.py
+  fi
+  # Credit https://github.com/iv-org/invidious/issues/4947#issuecomment-2374336723
+  output=$(${SUDO} $YTSG_FOLDER/venv/bin/python3 $YTSG_FOLDER/index.py)
+  deactivate
+  visitor_data=$(echo "$output" | awk -F': ' '/visitor_data/ {print $2}')
+  po_token=$(echo "$output" | awk -F': ' '/po_token/ {print $2}')
+  if ! grep -oq "visitor_data: " $USER_DIR/invidious/config/config.yml
+  then
+    ${SUDO} echo "visitor_data: " >> $USER_DIR/invidious/config/config.yml
+    ${SUDO} echo "po_token: " >> $USER_DIR/invidious/config/config.yml
+  fi
+  echo -e "${GREEN}${ARROW} Updating config.yml...${NC}"
+  ${SUDO} sed -i "s/visitor_data: .*/visitor_data: $visitor_data/" $USER_DIR/invidious/config/config.yml
+  ${SUDO} sed -i "s/po_token: .*/po_token: $po_token/" $USER_DIR/invidious/config/config.yml
+  echo -e "${GREEN}${DONE} Done.${NC}"
+  echo -e "${GREEN}${DONE} Restarting Invidious for changes to take effect...${NC}"
+  ${SUDO} $SYSTEM_CMD restart invidious
+  else
+    echo -e "${RED}${ERROR} Invidious is not installed...${NC}"
+  fi
+  exit 0
+}
+
 # Ask user to update yes/no
 if [ $# != 0 ]; then
-  while getopts ":udcml" opt; do
+  while getopts ":udcmly" opt; do
     case $opt in
       u)
         UPDATE_SCRIPT='yes'
@@ -1351,6 +1414,9 @@ if [ $# != 0 ]; then
         ;;
       l)
         install_log
+        ;;
+      y)
+        install_youtube_trusted_session_generator
         ;;
       \?)
         echo -e "${RED}\n ${ERROR} Error! Invalid option: -$OPTARG${NC}" >&2
@@ -2116,8 +2182,9 @@ while [[ $OPTION != "1" &&
          $OPTION != "8" &&
          $OPTION != "9" &&
          $OPTION != "10" &&
-         $OPTION != "11" ]]; do
-  read -p "Select an option [1-11]: " OPTION
+         $OPTION != "11" &&
+         $OPTION != "12" ]]; do
+  read -p "Select an option [1-12]: " OPTION
 done
 
 case $OPTION in
@@ -2152,7 +2219,10 @@ case $OPTION in
   10) # Install Invidious sig helper
       install_inv_sig_helper
     ;;
-  11) # Exit
+  11) # Install YouTube trusted session generator
+      install_youtube_trusted_session_generator
+    ;;
+  12) # Exit
       exit_script
       exit
     ;;
