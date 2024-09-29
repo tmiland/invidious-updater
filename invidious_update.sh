@@ -912,8 +912,8 @@ show_banner() {
   echo "  2) Update Invidious           7) Uninstall Invidious      "
   echo "  3) Deploy with Docker         8) Set up PostgreSQL Backup "
   echo "  4) Add Swap Space             9) Install Nginx            "
-  echo "  5) Run Database Maintenance   10) Install Inv sig helper  "
-  echo "  11) Install YouTube tsg.      12) Exit                    "
+  echo "  5) Run Database Maintenance  10) Install Inv sig helper   "
+  echo " 11) Install YouTube tsg.      12) Exit                     "
   echo "${SHOW_STATUS} ${SHOW_DOCKER_STATUS}"
   echo ""
   doc_link
