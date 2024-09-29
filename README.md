@@ -1,6 +1,6 @@
 # Invidious-Updater (And Installer)
 
-```
+```bash
                   ╔═══════════════════════════════════════════════════════════════════╗
                   ║                        Invidious Update.sh                        ║
                   ║               Automatic update script for Invidious               ║
@@ -13,12 +13,13 @@
 
 ## Script to install and update [Invidious](https://github.com/iv-org/invidious)
 
-```
+```bash
 1) Install Invidious          6) Start, Stop or Restart   
 2) Update Invidious           7) Uninstall Invidious      
 3) Deploy with Docker         8) Set up PostgreSQL Backup 
 4) Add Swap Space             9) Install Nginx            
-5) Run Database Maintenance  10) Exit                     
+5) Run Database Maintenance  10) Install Inv sig helper   
+11) Install YouTube tsg.      12) Exit
 ```
 
 ## Screenshots
@@ -59,37 +60,37 @@ curl -s https://api.github.com/repos/tmiland/Invidious-Updater/releases/latest \
 ```
 
 ```bash
-$ chmod +x invidious_update.sh
-$ ./invidious_update.sh
+chmod +x invidious_update.sh
+./invidious_update.sh
 ```
 Or directly
 
 ```bash
-$ curl -sSL https://github.com/tmiland/Invidious-Updater/releases/latest/download/invidious_update.sh | bash
+curl -sSL https://github.com/tmiland/Invidious-Updater/releases/latest/download/invidious_update.sh | bash
 ```
 
 For master branch
 ```bash
-$ wget https://github.com/tmiland/Invidious-Updater/raw/master/invidious_update.sh
-$ chmod +x invidious_update.sh
-$ ./invidious_update.sh
+wget https://github.com/tmiland/Invidious-Updater/raw/master/invidious_update.sh
+chmod +x invidious_update.sh
+./invidious_update.sh
 ```
 ### Repository
 
  ```shell
- $ sudo curl -SsL -o /etc/apt/sources.list.d/tmiland.list https://deb.tmiland.com/debian/tmiland.list
+ sudo curl -SsL -o /etc/apt/sources.list.d/tmiland.list https://deb.tmiland.com/debian/tmiland.list
  ```
 
  ```shell
- $ curl -SsL https://deb.tmiland.com/debian/KEY.gpg | gpg --dearmor | sudo tee /usr/share/keyrings/tmiland-archive-keyring.gpg >/dev/null
+ curl -SsL https://deb.tmiland.com/debian/KEY.gpg | gpg --dearmor | sudo tee /usr/share/keyrings/tmiland-archive-keyring.gpg >/dev/null
  ```
 
  ```shell
- $ sudo apt update
+ sudo apt update
  ```
  
  ```shell
- $ sudo apt install invidious-updater
+ sudo apt install invidious-updater
  ```
  
 - Run script with ```invidious_update ```
@@ -100,7 +101,7 @@ $ ./invidious_update.sh
 
  ```bash
  
- $ ./invidious_update.sh -u
+ ./invidious_update.sh -u
  
  ```
  
@@ -110,12 +111,12 @@ $ ./invidious_update.sh
 
 ```bash
 
-$ /path/to/script/invidious_update.sh -c
+/path/to/script/invidious_update.sh -c
 
 ```
 Add job to cron:
 ```bash
-$ crontab -e
+crontab -e
 ```
 ```bash
 @daily bash /path/to/script/invidious_update.sh -c > /dev/null 2>&1 # Automated Invidious Update
@@ -129,6 +130,20 @@ If root password is not set, type:
 sudo passwd root
 ```
 
+#### Update YouTube trusted session generator
+
+```bash
+
+/path/to/script/invidious_update.sh -y
+
+```
+Add job to cron:
+```bash
+crontab -e
+```
+```bash
+@daily bash /path/to/script/invidious_update.sh -y > /dev/null 2>&1 # Automated YouTube trusted session generator update
+```
 
 ## Usage
 
@@ -168,7 +183,7 @@ sudo passwd root
    ***Also works with argument -m***
 
    ```bash
-   $ /path/to/script/invidious_update.sh -m
+   /path/to/script/invidious_update.sh -m
    ```
 
 
