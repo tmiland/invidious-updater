@@ -23,7 +23,7 @@
 ```
 
 ## Screenshots
-![screenshot](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/version_1.4.9.png)
+![screenshot](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/version_2.1.3.png)
 
 | Debian | Ubuntu |
 | ------ | ------ |
