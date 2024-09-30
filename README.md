@@ -264,7 +264,7 @@ See [Changelog](https://github.com/tmiland/Invidious-Updater/blob/master/CHANGEL
 * Ubuntu 16.04 and later
 * PureOS (Not tested)
 * CentOS 8
-* Fedora 33
+* Fedora 40
   * Docker support
     - [OS requirements](https://docs.docker.com/install/linux/docker-ce/fedora/)
 * Arch Linux
