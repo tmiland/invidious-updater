@@ -1333,6 +1333,55 @@ database_maintenance_exit() {
   indexit
 }
 
+install_inv_sig_helper() {
+  if [[ -d $USER_DIR ]]
+  then
+  echo -e "${GREEN}${ARROW} Downloading Invidious sig helper service from GitHub${NC}"
+
+  cd $USER_DIR || exit 1
+  
+  git clone https://github.com/iv-org/inv_sig_helper.git
+  chown -R $USER_NAME:$USER_NAME inv_sig_helper
+  cd inv_sig_helper || exit 1
+  # Install cargo / rust
+  curl -fsSL sh.rustup.rs | sh
+  # Source cargo
+  . "$HOME/.cargo/env"
+  # Build release
+  cargo build --release
+  # Copy service file to systemd folder
+  cp -rp $USER_DIR/inv_sig_helper/inv_sig_helper.service /etc/systemd/system/
+  # Add socket to config
+  ${SUDO} echo "signature_server: /home/invidious/tmp/inv_sig_helper.sock" >> $USER_DIR/invidious/config/config.yml
+  if [[ ! -d /home/invidious/tmp ]]
+  then
+    ${SUDO} mkdir -p /home/invidious/tmp
+    chown -R $USER_NAME:$USER_NAME /home/invidious/tmp
+  fi
+  SERVICE_NAME=inv_sig_helper.service
+  # Enable invidious sig helper at boot
+  ${SUDO} $SYSTEM_CMD enable ${SERVICE_NAME}
+  # Reload Systemd
+  ${SUDO} $SYSTEM_CMD daemon-reload
+  # Start Invidious sig helper
+  ${SUDO} $SYSTEM_CMD start ${SERVICE_NAME}
+  if ( $SYSTEM_CMD -q is-active ${SERVICE_NAME})
+  then
+    echo -e "${GREEN}${DONE} Invidious sig helper service has been successfully installed!${NC}"
+    ${SUDO} $SYSTEM_CMD status ${SERVICE_NAME} --no-pager
+    echo -e "${GREEN}${DONE} Restarting Invidious for changes to take effect...${NC}"
+    ${SUDO} $SYSTEM_CMD restart invidious
+    read_sleep 5
+  else
+    echo -e "${RED}${ERROR} Invidious sig helper service installation failed...${NC}"
+    ${SUDO} journalctl -u ${SERVICE_NAME}
+    read_sleep 5
+  fi
+else
+  echo -e "${RED}${ERROR} Invidious is not installed...${NC}"
+fi
+}
+
 install_youtube_trusted_session_generator() {
   # Install packages
   if [[ $DISTRO_GROUP == "Debian" ]]; then
@@ -1398,7 +1447,7 @@ install_youtube_trusted_session_generator() {
 
 # Ask user to update yes/no
 if [ $# != 0 ]; then
-  while getopts ":udcmly" opt; do
+  while getopts ":udcmliy" opt; do
     case $opt in
       u)
         UPDATE_SCRIPT='yes'
@@ -1414,6 +1463,9 @@ if [ $# != 0 ]; then
         ;;
       l)
         install_log
+        ;;
+      i)
+        install_inv_sig_helper
         ;;
       y)
         install_youtube_trusted_session_generator
@@ -2117,55 +2169,6 @@ fi
   echo ""
   read_sleep 3
   indexit
-}
-
-install_inv_sig_helper() {
-  if [[ -d $USER_DIR ]]
-  then
-  echo -e "${GREEN}${ARROW} Downloading Invidious sig helper service from GitHub${NC}"
-
-  cd $USER_DIR || exit 1
-  
-  git clone https://github.com/iv-org/inv_sig_helper.git
-  chown -R $USER_NAME:$USER_NAME inv_sig_helper
-  cd inv_sig_helper || exit 1
-  # Install cargo / rust
-  curl -fsSL sh.rustup.rs | sh
-  # Source cargo
-  . "$HOME/.cargo/env"
-  # Build release
-  cargo build --release
-  # Copy service file to systemd folder
-  cp -rp $USER_DIR/inv_sig_helper/inv_sig_helper.service /etc/systemd/system/
-  # Add socket to config
-  ${SUDO} echo "signature_server: /home/invidious/tmp/inv_sig_helper.sock" >> $USER_DIR/invidious/config/config.yml
-  if [[ ! -d /home/invidious/tmp ]]
-  then
-    ${SUDO} mkdir -p /home/invidious/tmp
-    chown -R $USER_NAME:$USER_NAME /home/invidious/tmp
-  fi
-  SERVICE_NAME=inv_sig_helper.service
-  # Enable invidious sig helper at boot
-  ${SUDO} $SYSTEM_CMD enable ${SERVICE_NAME}
-  # Reload Systemd
-  ${SUDO} $SYSTEM_CMD daemon-reload
-  # Start Invidious sig helper
-  ${SUDO} $SYSTEM_CMD start ${SERVICE_NAME}
-  if ( $SYSTEM_CMD -q is-active ${SERVICE_NAME})
-  then
-    echo -e "${GREEN}${DONE} Invidious sig helper service has been successfully installed!${NC}"
-    ${SUDO} $SYSTEM_CMD status ${SERVICE_NAME} --no-pager
-    echo -e "${GREEN}${DONE} Restarting Invidious for changes to take effect...${NC}"
-    ${SUDO} $SYSTEM_CMD restart invidious
-    read_sleep 5
-  else
-    echo -e "${RED}${ERROR} Invidious sig helper service installation failed...${NC}"
-    ${SUDO} journalctl -u ${SERVICE_NAME}
-    read_sleep 5
-  fi
-else
-  echo -e "${RED}${ERROR} Invidious is not installed...${NC}"
-fi
 }
 
 # Start Script
