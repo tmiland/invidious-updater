@@ -14,16 +14,16 @@
 ## Script to install and update [Invidious](https://github.com/iv-org/invidious)
 
 ```bash
-1) Install Invidious          6) Start, Stop or Restart   
-2) Update Invidious           7) Uninstall Invidious      
-3) Deploy with Docker         8) Set up PostgreSQL Backup 
-4) Add Swap Space             9) Install Nginx            
-5) Run Database Maintenance  10) Install Inv sig helper   
-11) Install YouTube tsg.      12) Exit
+1) Install Invidious           7) Uninstall Invidious
+2) Update Invidious            8) Set up PostgreSQL Backup
+3) Deploy with Docker          9) Install Nginx 
+4) Add Swap Space             10) Install Inv sig helper
+5) Run Database Maintenance   11) Install YouTube tsg.
+6) Start, Stop or Restart     12) Exit
 ```
 
 ## Screenshots
-![screenshot](https://github.com/tmiland/invidious-updater/blob/7f61ea27836b46212de2272919972cfb5c4de367/img/version_2.1.3.png?raw=true)
+![screenshot](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/version_2.2.1.png)
 
 | Debian | Ubuntu |
 | ------ | ------ |
@@ -130,14 +130,22 @@ If root password is not set, type:
 sudo passwd root
 ```
 
-#### Update YouTube trusted session generator
+#### Install inv sig helper
+This option will install [inv_sig_helper](https://github.com/iv-org/inv_sig_helper)
+```bash
 
+/path/to/script/invidious_update.sh -i
+
+```
+
+#### Update YouTube trusted session generator
+This option will install [YouTube trusted session generator](https://github.com/iv-org/youtube-trusted-session-generator)
 ```bash
 
 /path/to/script/invidious_update.sh -y
 
 ```
-Add job to cron:
+Add job to cron to periodically update po_token and visitor_data:
 ```bash
 crontab -e
 ```
@@ -199,7 +207,11 @@ crontab -e
 
 9. Install Nginx
 
-10. Exit
+10. Install Inv sig helper
+
+11. Install YouTube trusted session generator
+
+12. Exit
 
    * Exits the script
 
@@ -213,7 +225,7 @@ Tested and working on:
 | ------ | ------ | ------ | ------ | ------ | ------ |
 | [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/os_icons/debian.svg?sanitize=true" height="128" width="128">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/os_icons/debian.svg?sanitize=true) | [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/os_icons/ubuntu.svg?sanitize=true" height="128" width="128">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/os_icons/ubuntu.svg?sanitize=true) | [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/os_icons/cent-os.svg?sanitize=true" height="128" width="128">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/os_icons/cent-os.svg?sanitize=true) | [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/os_icons/fedora.svg?sanitize=true" height="128" width="128">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/os_icons/fedora.svg?sanitize=true) | [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/os_icons/arch.svg?sanitize=true" height="128" width="128">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/os_icons/arch.svg?sanitize=true) | [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/os_icons/pureos.svg?sanitize=true" height="128" width="128">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/os_icons/pureos.svg?sanitize=true)
 
-- [X] Tested extensively on Debian 9/10/11
+- [X] Tested extensively on Debian 9/10/11/12
   - [X] Docker option tested and working
 - [X] Tested on Ubuntu 16.04
   - [X] Docker option tested, not working
@@ -260,6 +272,8 @@ See [Changelog](https://github.com/tmiland/Invidious-Updater/blob/master/CHANGEL
 ## Credits
 - Code is mixed and customized from these sources:
   * [Invidious](https://github.com/omarroth/invidious#linux)
+  * [inv_sig_helper](https://github.com/iv-org/inv_sig_helper)
+  * [YouTube trusted session generator](https://github.com/iv-org/youtube-trusted-session-generator)
   * [nginx-autoinstall](https://github.com/angristan/nginx-autoinstall)
   * [Git-Repo-Update](https://github.com/KillianKemps/Git-Repo-Update)
   * [ghacks user.js updater.sh](https://github.com/ghacksuserjs/ghacks-user.js/blob/master/updater.sh)
