@@ -1346,7 +1346,7 @@ install_inv_sig_helper() {
   chown -R $USER_NAME:$USER_NAME inv_sig_helper
   cd inv_sig_helper || exit 1
   # Install cargo / rust
-  curl -fsSL sh.rustup.rs | sh
+  curl -fsSL sh.rustup.rs | sh -s -- -y
   # Source cargo
   . "$HOME/.cargo/env"
   # Build release
