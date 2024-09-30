@@ -1379,9 +1379,10 @@ install_inv_sig_helper() {
     ${SUDO} journalctl -u ${SERVICE_NAME}
     read_sleep 5
   fi
-else
-  echo -e "${RED}${ERROR} Invidious is not installed...${NC}"
-fi
+  else
+    echo -e "${RED}${ERROR} Invidious is not installed...${NC}"
+  fi
+  exit 0
 }
 
 install_youtube_trusted_session_generator() {
