@@ -114,10 +114,6 @@ ADMINS=${ADMINS:-}
 CAPTCHA_KEY=${CAPTCHA_KEY:-}
 # Default Swap option
 SWAP_OPTIONS=${SWAP_OPTIONS:-n}
-# Docker compose repo name
-# COMPOSE_REPO_NAME="docker/compose"
-# Docker compose version
-DOCKER_COMPOSE_VER=1.25.0
 # Logfile
 LOGFILE=invidious_update.log
 
@@ -640,14 +636,6 @@ open_file() { #expects one argument: file_path
   fi
 }
 
-# Get latest Docker compose release tag from GitHub
-# get_compose_release_tag() {
-#   curl --silent "https://api.github.com/repos/$1/releases/latest" |
-#   grep '"tag_name":' |
-#   sed -n 's/[^0-9.]*\([0-9.]*\).*/\1/p'
-# }
-# DOCKER_COMPOSE_VER=$(get_compose_release_tag ${COMPOSE_REPO_NAME})
-
 get_release_info() {
   # Get latest release tag from GitHub
   get_latest_release_tag() {
@@ -734,7 +722,7 @@ show_docker_status() {
 
   declare -a container=(
     "invidious_invidious_1"
-    "invidious_postgres_1"
+    "invidious_invidious-db_1"
   )
   declare -a containerName=(
     "Invidious"
@@ -963,6 +951,118 @@ chk_git_repo() {
   fi
 }
 
+update_invidious_docker() {
+  repoexit
+  docker-compose pull
+  docker-compose up -d
+  docker image prune -f
+  read_sleep 5
+  indexit
+}
+
+install_docker() {
+  DOCKER_VER=stable
+  echo ""
+  echo "This will install Docker CE."
+  echo ""
+
+  echo ""
+  read -n1 -r -p "Docker is ready to be installed, press any key to continue..."
+  echo ""
+  # Update the apt package index:
+  ${SUDO} ${UPDATE}
+  shopt -s nocasematch
+  if [[ $(lsb_release -si) == "Debian" ||
+        $(lsb_release -si) == "Ubuntu" ||
+        $(lsb_release -si) == "PureOS" ]]; then
+    #Install packages to allow apt to use a repository over HTTPS:
+    ${SUDO} ${INSTALL} \
+      apt-transport-https \
+      ca-certificates \
+      curl \
+      gnupg2 \
+      software-properties-common
+    # Add Docker’s official GPG key:
+    curl -fsSLk https://download.docker.com/linux/debian/gpg |
+    ${SUDO} gpg --dearmor -o /usr/share/keyrings/docker.gpg >/dev/null
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" |
+    ${SUDO} tee /etc/apt/sources.list.d/docker.list > /dev/null
+    # Update the apt package index:
+    ${SUDO} ${UPDATE}
+    # Install the latest version of Docker CE, containerd and docker-compose
+    ${SUDO} ${INSTALL} docker-ce docker-ce-cli containerd.io docker-compose
+    # Verify that Docker CE is installed correctly by running the hello-world image.
+    ${SUDO} docker run hello-world
+  shopt -s nocasematch
+  elif [[ $(lsb_release -si) == "LinuxMint" ]]; then
+    #Install packages to allow apt to use a repository over HTTPS:
+    ${SUDO} ${INSTALL} \
+      apt-transport-https \
+      ca-certificates \
+      curl \
+      gnupg2 \
+      software-properties-common
+    # Add Docker’s official GPG key:
+    curl -fsSLk https://download.docker.com/linux/ubuntu/gpg |
+    ${SUDO} gpg --dearmor -o /usr/share/keyrings/docker.gpg >/dev/null
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" |
+    ${SUDO} tee /etc/apt/sources.list.d/docker.list > /dev/null
+    # Update the apt package index:
+    ${SUDO} ${UPDATE}
+    # Install the latest version of Docker CE, containerd and docker-compose
+    ${SUDO} ${INSTALL} docker-ce docker-ce-cli containerd.io docker-compose
+    # Verify that Docker CE is installed correctly by running the hello-world image.
+    ${SUDO} docker run hello-world
+  elif [[ $(lsb_release -si) == "CentOS" ]]; then
+    # Install required packages.
+    ${SUDO} ${INSTALL} yum-utils \
+      device-mapper-persistent-data \
+      lvm2
+    # Set up the repository.
+    ${SUDO} yum-config-manager \
+      --add-repo \
+      https://download.docker.com/linux/centos/docker-ce.repo
+    # Enable the repository.
+    ${SUDO} yum-config-manager --enable docker-ce-${DOCKER_VER}
+    # Update the apt package index:
+    ${SUDO} ${UPDATE}
+    # Install the latest version of Docker CE, containerd and docker-compose
+    ${SUDO} ${INSTALL} docker-ce docker-ce-cli containerd.io docker-compose
+    # Start Docker.
+    ${SUDO} $SYSTEM_CMD start docker
+    # Verify that Docker CE is installed correctly by running the hello-world image.
+    ${SUDO} docker run hello-world
+  elif [[ $(lsb_release -si) == "Fedora" ]]; then
+    # Install required packages.
+    ${SUDO} ${INSTALL} dnf-plugins-core
+    # Set up the repository.
+    ${SUDO} dnf config-manager \
+      --add-repo \
+      https://download.docker.com/linux/fedora/docker-ce.repo
+    # Enable the repository.
+    ${SUDO} dnf config-manager --set-enabled docker-ce-${DOCKER_VER}
+    # Update the apt package index:
+    ${SUDO} ${UPDATE}
+    # Install the latest version of Docker CE, containerd and docker-compose
+    ${SUDO} ${INSTALL} docker-ce docker-ce-cli containerd.io docker-compose
+    # Start Docker.
+    ${SUDO} $SYSTEM_CMD start docker
+    # Verify that Docker CE is installed correctly by running the hello-world image.
+    ${SUDO} docker run hello-world
+  elif [[ $DISTRO_GROUP == "Arch" ]]; then
+    ${SUDO} ${INSTALL} docker
+    # Enable Docker.
+    ${SUDO} $SYSTEM_CMD enable docker
+    # Start Docker.
+    ${SUDO} $SYSTEM_CMD start docker
+  else
+    echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
+    exit 1;
+  fi
+
+  echo -e "${GREEN}${DONE} Docker Installation done.${NC}"
+}
+
 docker_repo_chk() {
   # Check if the folder is a git repo
   if [[ ! -d "${REPO_DIR}/.git" ]]; then
@@ -982,15 +1082,10 @@ docker_repo_chk() {
             ${INSTALL} $i 2> /dev/null # || exit 1
           done
         fi
-
         mkdir -p $USER_DIR
-
         echo -e "${GREEN}${ARROW} Downloading Invidious from GitHub${NC}"
-
         cd $USER_DIR || exit 1
-
         git clone https://github.com/iv-org/invidious
-
         repoexit
         # Checkout
         GetMaster
@@ -1520,7 +1615,7 @@ install_invidious() {
     echo -e "${ORANGE}Advice: Free memory: $free MB is less than recommended to build Invidious${NC}"
     # Let the user enter swap options:
     while [[ $SWAP_OPTIONS != "y" && $SWAP_OPTIONS != "n" ]]; do
-      read -p "Do you want to add swap space? [y/n]: " SWAP_OPTIONS
+      read -p "Do you want to add swap space? [y/n]: " -e SWAP_OPTIONS
     done
 
     while true; do
@@ -1647,6 +1742,14 @@ download_docker_compose_file() {
     exit 0
   fi
 }
+youtube_trusted_session_generator() {
+  # Credit: https://github.com/iv-org/invidious/issues/4947#issuecomment-2375558757
+  output=$(docker run quay.io/invidious/youtube-trusted-session-generator)
+  visitor_data=$(echo "$output" | awk -F': ' '/visitor_data/ {print $2}')
+  po_token=$(echo "$output" | awk -F': ' '/po_token/ {print $2}')
+  sed -i "s/visitor_data:.*/visitor_data: $visitor_data/" ${REPO_DIR}/docker-compose.yml
+  sed -i "s/po_token:.*/po_token: $po_token/" ${REPO_DIR}/docker-compose.yml
+}
 
 deploy_with_docker() {
   docker_repo_chk
@@ -1660,7 +1763,7 @@ deploy_with_docker() {
   echo "   2) Start, Stop or Restart cluster"
   echo "   3) Rebuild cluster"
   echo "   4) Delete data and rebuild"
-  echo "   5) Install Docker CE"
+  echo "   5) Update cluster"
   echo "   6) Run database maintenance"
   echo ""
 
@@ -1671,43 +1774,86 @@ deploy_with_docker() {
   case $DOCKER_OPTION in
 
     1) # Build and start cluster
-      # chk_permissions
       while [[ $BUILD_DOCKER !=  "y" && $BUILD_DOCKER != "n" ]]; do
         read -p "   Build and start cluster? [y/n]: " -e BUILD_DOCKER
       done
-
+      shift
       docker_repo_chk
-      download_docker_compose_file
+      echo ""
+      echo "Let's go through some configuration options."
+      echo ""
+      SWAP_OPTIONS=""
+      free=$(free -mt | grep Total | awk '{print $4}')
+      if [[ "$free" -le 2048  ]]; then
+        echo -e "${ORANGE}Advice: Free memory: $free MB is less than recommended to build Invidious${NC}"
+        # Let the user enter swap options:
+        while [[ $SWAP_OPTIONS != "y" && $SWAP_OPTIONS != "n" ]]; do
+          read -p "Do you want to add swap space? [y/n]: " -e SWAP_OPTIONS
+        done
+        while true; do
+          case $SWAP_OPTIONS in
+            [Yy]* )
+              add_swap
+              break
+              ;;
+            [Nn]* )
+              break
+              ;;
+          esac
+        done
+      fi
+      shift
       # If Docker pkgs is installed
       if ${PKGCHK} ${DOCKER_PKGS} >/dev/null 2>&1; then
-
+        
         if [[ $BUILD_DOCKER = "y" ]]; then
-            # Let the user enter custom port:
+          download_docker_compose_file
+          # Let the user enter reverse proxy
+          while [[ $REVERSE_PROXY != "y" && $REVERSE_PROXY != "n" ]]; do
+            read -p "Are you running behind a reverse proxy? [y/n]: " REVERSE_PROXY
+          done
+          if [[ ! $REVERSE_PROXY = "y" ]]; then
+            ${SUDO} sed -i "s/127.0.0.1:3000:3000/3000:3000/g" ${REPO_DIR}/docker-compose.yml
+          fi
+            # Let the user enter custom port
             while [[ $CUSTOM_DOCKER_PORT != "y" && $CUSTOM_DOCKER_PORT != "n" ]]; do
               read -p "Do you want to use a custom port? [y/n]: " CUSTOM_DOCKER_PORT
             done
             if [[ $CUSTOM_DOCKER_PORT = "y" ]]; then
               read -p "       Enter the desired port number:" DOCKER_PORT
               ${SUDO} sed -i "s/127.0.0.1:3000:3000/127.0.0.1:$DOCKER_PORT:3000/g" ${REPO_DIR}/docker-compose.yml
-              repoexit
-              docker-compose up -d
-              echo -e "${GREEN}${DONE} Deployment done with custom port $DOCKER_PORT.${NC}"
-              read_sleep 5
-              indexit
             else
               repoexit
+              youtube_trusted_session_generator
+              # hmac key
+              if [[ $(command -v 'openssl') ]]; then
+                hmac_key=$(openssl rand -base64 20 | tr -dc 'a-zA-Z0-9' | fold -w 20 | head -n 1)
+              elif [[ $(command -v 'pwgen') ]]; then
+                hmac_key=$(pwgen 20 1)
+              fi
+              sed -i "s/hmac_key:.*/hmac_key: $hmac_key/" ${REPO_DIR}/docker-compose.yml
               docker-compose up -d
-              echo -e "${GREEN}${DONE} Deployment done.${NC}"
+              if [[ $CUSTOM_DOCKER_PORT = "y" ]]; then
+                echo -e "${GREEN}${DONE} Deployment done with custom port $DOCKER_PORT.${NC}"
+              else
+                echo -e "${GREEN}${DONE} Deployment done.${NC}"
+              fi
               read_sleep 5
               indexit
           fi
         fi
-
         if [[ $BUILD_DOCKER = "n" ]]; then
           indexit
         fi
       else
-        echo -e "${RED}${ERROR} Docker is not installed, please choose option 5)${NC}"
+        while [[ $INSTALL_DOCKER !=  "y" && $INSTALL_DOCKER != "n" ]]; do
+          read -p "   ${YELLOW}${ERROR} Docker is not installed, install Docker? [y/n]: " -e INSTALL_DOCKER
+        done
+        if [[ ! $INSTALL_DOCKER = "n" ]]; then
+          install_docker
+        else
+          echo -e "${RED}${ERROR} Docker is not installed, please choose option 5)${NC}"
+        fi
       fi
       read_sleep 5
       indexit
@@ -1754,7 +1900,7 @@ deploy_with_docker() {
       if ${PKGCHK} ${DOCKER_PKGS} >/dev/null 2>&1; then
         if [[ $REBUILD_DOCKER = "y" ]]; then
           repoexit
-          #docker-compose build
+          youtube_trusted_session_generator
           docker-compose up -d --build
           echo -e "${GREEN}${DONE} Rebuild done.${NC}"
           read_sleep 5
@@ -1780,6 +1926,7 @@ deploy_with_docker() {
           docker-compose down
           docker volume rm invidious_postgresdata
           read_sleep 5
+          youtube_trusted_session_generator
           docker-compose build
           echo -e "${GREEN}${DONE} Data deleted and Rebuild done.${NC}"
           read_sleep 5
@@ -1793,137 +1940,14 @@ deploy_with_docker() {
       fi
       exit
       ;;
-    5) # Install Docker CE
-      DOCKER_VER=stable
-      echo ""
-      echo "This will install Docker CE."
-      echo ""
-
-      echo ""
-      read -n1 -r -p "Docker is ready to be installed, press any key to continue..."
-      echo ""
-      # Update the apt package index:
-      ${SUDO} ${UPDATE}
-      shopt -s nocasematch
-      if [[ $(lsb_release -si) == "Debian" ||
-            $(lsb_release -si) == "Ubuntu" ||
-            $(lsb_release -si) == "PureOS" ]]; then
-        #Install packages to allow apt to use a repository over HTTPS:
-        ${SUDO} ${INSTALL} \
-          apt-transport-https \
-          ca-certificates \
-          curl \
-          gnupg2 \
-          software-properties-common
-        # Add Docker’s official GPG key:
-        curl -fsSLk https://download.docker.com/linux/debian/gpg | ${SUDO} apt-key add -
-        # Verify that you now have the key with the fingerprint 9DC8 5822 9FC7 DD38 854A E2D8 8D81 803C 0EBF CD88, by searching for the last 8 characters of the fingerprint.
-        ${SUDO} apt-key fingerprint 0EBFCD88
-
-        ${SUDO} add-apt-repository \
-          "deb [arch=amd64] https://download.docker.com/linux/debian \
-          $(lsb_release -cs) \
-          ${DOCKER_VER}"
-        # Update the apt package index:
-        ${SUDO} ${UPDATE}
-        # Install the latest version of Docker CE and containerd
-        ${SUDO} ${INSTALL} docker-ce docker-ce-cli containerd.io
-        # Verify that Docker CE is installed correctly by running the hello-world image.
-        ${SUDO} docker run hello-world
-      shopt -s nocasematch
-      elif [[ $(lsb_release -si) == "LinuxMint" ]]; then
-        #Install packages to allow apt to use a repository over HTTPS:
-        ${SUDO} ${INSTALL} \
-          apt-transport-https \
-          ca-certificates \
-          curl \
-          gnupg2 \
-          software-properties-common
-        # Add Docker’s official GPG key:
-        curl -fsSLk https://download.docker.com/linux/ubuntu/gpg | ${SUDO} apt-key add -
-        # Verify that you now have the key with the fingerprint 9DC8 5822 9FC7 DD38 854A E2D8 8D81 803C 0EBF CD88, by searching for the last 8 characters of the fingerprint.
-        ${SUDO} apt-key fingerprint 0EBFCD88
-        # install docker docker-compose
-        ${SUDO} add-apt-repository \
-          "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
-          $(. /etc/os-release; echo "$UBUNTU_CODENAME") stable"
-        # Update the apt package index:
-        ${SUDO} ${UPDATE}
-        # Install the latest version of Docker CE and containerd
-        ${SUDO} ${INSTALL} docker-ce docker-ce-cli containerd.io
-        # Verify that Docker CE is installed correctly by running the hello-world image.
-        ${SUDO} docker run hello-world
-      elif [[ $(lsb_release -si) == "CentOS" ]]; then
-        # Install required packages.
-        ${SUDO} ${INSTALL} yum-utils \
-          device-mapper-persistent-data \
-          lvm2
-        # Set up the repository.
-        ${SUDO} yum-config-manager \
-          --add-repo \
-          https://download.docker.com/linux/centos/docker-ce.repo
-        # Enable the repository.
-        ${SUDO} yum-config-manager --enable docker-ce-${DOCKER_VER}
-        # Update the apt package index:
-        ${SUDO} ${UPDATE}
-        # Install the latest version of Docker CE and containerd
-        ${SUDO} ${INSTALL} docker-ce docker-ce-cli containerd.io
-        # Start Docker.
-        ${SUDO} $SYSTEM_CMD start docker
-        # Verify that Docker CE is installed correctly by running the hello-world image.
-        ${SUDO} docker run hello-world
-      elif [[ $(lsb_release -si) == "Fedora" ]]; then
-        # Install required packages.
-        ${SUDO} ${INSTALL} dnf-plugins-core
-        # Set up the repository.
-        ${SUDO} dnf config-manager \
-          --add-repo \
-          https://download.docker.com/linux/fedora/docker-ce.repo
-        # Enable the repository.
-        ${SUDO} dnf config-manager --set-enabled docker-ce-${DOCKER_VER}
-        # Update the apt package index:
-        ${SUDO} ${UPDATE}
-        # Install the latest version of Docker CE and containerd
-        ${SUDO} ${INSTALL} docker-ce docker-ce-cli containerd.io
-        # Start Docker.
-        ${SUDO} $SYSTEM_CMD start docker
-        # Verify that Docker CE is installed correctly by running the hello-world image.
-        ${SUDO} docker run hello-world
-      elif [[ $DISTRO_GROUP == "Arch" ]]; then
-        ${SUDO} ${INSTALL} docker
-        # Enable Docker.
-        ${SUDO} $SYSTEM_CMD enable docker
-        # Start Docker.
-        ${SUDO} $SYSTEM_CMD start docker
-      else
-        echo -e "${RED}${ERROR} Error: Sorry, your OS is not supported.${NC}"
-        exit 1;
-      fi
-
-      # We're almost done !
-      echo -e "${GREEN}${DONE} Docker Installation done.${NC}"
-
-      while [[ $DOCKER_COMPOSE !=  "y" && $DOCKER_COMPOSE != "n" ]]; do
-        read -p "       Install Docker Compose ? [y/n]: " -e DOCKER_COMPOSE
-      done
-
-      if [[ "$DOCKER_COMPOSE" = 'y' ]]; then
-        # download the latest version of Docker Compose:
-        ${SUDO} curl -Lk "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VER}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-        read_sleep 5
-        # Apply executable permissions to the binary:
-        ${SUDO} chmod +x /usr/local/bin/docker-compose
-        # Create a symbolic link to /usr/bin
-        ${SUDO} ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
-      fi
-      # We're done !
-      echo -e "${GREEN}${DONE}  Docker Installation done.${NC}"
+    5) # Update Invidious Docker
+      update_invidious_docker
       ;;
     6) # Database Maintenance
       read -p "Are you sure you want to run Database Maintenance? Enter [y/n]: " ANSWER
       if [[ "$ANSWER" = 'y' ]]; then
-        docker exec -u postgres -it invidious_postgres_1 bash -c "psql -U kemal invidious -c \"DELETE FROM nonces * WHERE expire < current_timestamp\" > /dev/null"
-        docker exec -u postgres -it invidious_postgres_1 bash -c "psql -U kemal invidious -c \"TRUNCATE TABLE videos\" > /dev/null"
+        docker exec -u postgres -it invidious_invidious-db_1 bash -c "psql -U kemal invidious -c \"DELETE FROM nonces * WHERE expire < current_timestamp\" > /dev/null"
+        docker exec -u postgres -it invidious_invidious-db_1 bash -c "psql -U kemal invidious -c \"TRUNCATE TABLE videos\" > /dev/null"
         echo ""
         echo -e "${GREEN}${DONE} Database Maintenance done.${NC}"
         read_sleep 5
