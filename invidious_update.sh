@@ -235,7 +235,7 @@ if [[ $DISTRO_GROUP == "Debian" ]]; then
   # System cmd
   SYSTEM_CMD="systemctl"
   # Postgresql config folder
-  pgsql_config_folder=$(find "/etc/postgresql/" -maxdepth 1 -type d -name "*" | sort -V | tail -1)
+  pgsql_config_folder=$(if [[ -d "/etc/postgresql/" ]]; then find "/etc/postgresql/" -maxdepth 1 -type d -name "*" | sort -V | tail -1; fi)
 elif [[ $(lsb_release -si) == "CentOS" ]]; then
   SUDO="sudo"
   UPDATE="yum update -q"
@@ -258,7 +258,7 @@ elif [[ $(lsb_release -si) == "CentOS" ]]; then
   # System cmd
   SYSTEM_CMD="systemctl"
   # Postgresql config folder
-  pgsql_config_folder=$(find "/etc/postgresql/" -maxdepth 1 -type d -name "*" | sort -V | tail -1)
+  pgsql_config_folder=$(if [[ -d "/etc/postgresql/" ]]; then find "/etc/postgresql/" -maxdepth 1 -type d -name "*" | sort -V | tail -1; fi)
 elif [[ $(lsb_release -si) == "Fedora" ]]; then
   SUDO="sudo"
   UPDATE="dnf update -q"
@@ -281,7 +281,7 @@ elif [[ $(lsb_release -si) == "Fedora" ]]; then
   # System cmd
   SYSTEM_CMD="systemctl"
   # Postgresql config folder
-  pgsql_config_folder=$(find "/etc/postgresql/" -maxdepth 1 -type d -name "*" | sort -V | tail -1)
+  pgsql_config_folder=$(if [[ -d "/etc/postgresql/" ]]; then find "/etc/postgresql/" -maxdepth 1 -type d -name "*" | sort -V | tail -1; fi)
 elif [[ $DISTRO_GROUP == "Arch" ]]; then
   SUDO="sudo"
   UPDATE="pacman -Syu"
