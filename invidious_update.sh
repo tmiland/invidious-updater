@@ -227,7 +227,7 @@ if [[ $DISTRO_GROUP == "Debian" ]]; then
   # PostgreSQL Service
   PGSQL_SERVICE="postgresql"
   # Docker pkgs
-  DOCKER_PKGS="docker-ce docker-ce-cli"
+  DOCKER_PKGS="docker-ce docker-ce-cli containerd.io docker-compose-plugin"
   # System cmd
   SYSTEM_CMD="systemctl"
   # Postgresql config folder
@@ -250,7 +250,7 @@ elif [[ $(lsb_release -si) == "CentOS" ]]; then
 # PostgreSQL Service
   PGSQL_SERVICE="postgresql"
   # Docker pkgs
-  DOCKER_PKGS="docker-ce docker-ce-cli"
+  DOCKER_PKGS="docker-ce docker-ce-cli containerd.io docker-compose-plugin"
   # System cmd
   SYSTEM_CMD="systemctl"
   # Postgresql config folder
@@ -273,7 +273,7 @@ elif [[ $(lsb_release -si) == "Fedora" ]]; then
   # PostgreSQL Service
   PGSQL_SERVICE="postgresql"
   # Docker pkgs
-  DOCKER_PKGS="docker-ce docker-ce-cli"
+  DOCKER_PKGS="docker-ce docker-ce-cli containerd.io docker-compose-plugin"
   # System cmd
   SYSTEM_CMD="systemctl"
   # Postgresql config folder
@@ -319,8 +319,11 @@ usage() {
   echo "   [-c] Update Invidious with cron"
   echo "   [-m] Database Maintenance"
   echo "   [-l] Activate logging"
+  echo "   [-iish] Install Inv-sig-helper"
+  echo "   [-iytsg] Install YouTube trusted session generator"
+  echo "   [-uytsgd] Update YouTube trusted session tokens for Docker"
 }
-
+  
 # Make sure that the script runs with root permissions
 chk_permissions() {
   if [[ "$EUID" != 0 ]]; then
@@ -721,11 +724,13 @@ fi
 show_docker_status() {
 
   declare -a container=(
-    "invidious_invidious_1"
-    "invidious_invidious-db_1"
+    "invidious-invidious-1"
+    "invidious-inv_sig_helper-1"
+    "invidious-invidious-db-1"
   )
   declare -a containerName=(
     "Invidious"
+    "Inv-sig-helper"
     "PostgreSQL"
   )
   declare -a status=()
@@ -895,15 +900,13 @@ show_banner() {
   header
   echo "Welcome to the ${SCRIPT_NAME} script."
   echo "What do you want to do?"
-  echo ""
   echo "
  1) Install Invidious           7) Uninstall Invidious
  2) Update Invidious            8) Set up PostgreSQL Backup
  3) Deploy with Docker          9) Install Nginx 
  4) Add Swap Space             10) Install Inv sig helper
  5) Run Database Maintenance   11) Install YouTube tsg.
- 6) Start, Stop or Restart     12) Exit
- "
+ 6) Start, Stop or Restart     12) Exit"
   echo "${SHOW_STATUS} ${SHOW_DOCKER_STATUS}"
   echo ""
   doc_link
@@ -953,8 +956,8 @@ chk_git_repo() {
 
 update_invidious_docker() {
   repoexit
-  docker-compose pull
-  docker-compose up -d
+  docker compose pull
+  docker compose up -d
   docker image prune -f
   read_sleep 5
   indexit
@@ -990,7 +993,7 @@ install_docker() {
     # Update the apt package index:
     ${SUDO} ${UPDATE}
     # Install the latest version of Docker CE, containerd and docker-compose
-    ${SUDO} ${INSTALL} docker-ce docker-ce-cli containerd.io docker-compose
+    ${SUDO} ${INSTALL} ${DOCKER_PKGS}
     # Verify that Docker CE is installed correctly by running the hello-world image.
     ${SUDO} docker run hello-world
   shopt -s nocasematch
@@ -1010,7 +1013,7 @@ install_docker() {
     # Update the apt package index:
     ${SUDO} ${UPDATE}
     # Install the latest version of Docker CE, containerd and docker-compose
-    ${SUDO} ${INSTALL} docker-ce docker-ce-cli containerd.io docker-compose
+    ${SUDO} ${INSTALL} ${DOCKER_PKGS}
     # Verify that Docker CE is installed correctly by running the hello-world image.
     ${SUDO} docker run hello-world
   elif [[ $(lsb_release -si) == "CentOS" ]]; then
@@ -1027,7 +1030,7 @@ install_docker() {
     # Update the apt package index:
     ${SUDO} ${UPDATE}
     # Install the latest version of Docker CE, containerd and docker-compose
-    ${SUDO} ${INSTALL} docker-ce docker-ce-cli containerd.io docker-compose
+    ${SUDO} ${INSTALL} ${DOCKER_PKGS}
     # Start Docker.
     ${SUDO} $SYSTEM_CMD start docker
     # Verify that Docker CE is installed correctly by running the hello-world image.
@@ -1044,7 +1047,7 @@ install_docker() {
     # Update the apt package index:
     ${SUDO} ${UPDATE}
     # Install the latest version of Docker CE, containerd and docker-compose
-    ${SUDO} ${INSTALL} docker-ce docker-ce-cli containerd.io docker-compose
+    ${SUDO} ${INSTALL} ${DOCKER_PKGS}
     # Start Docker.
     ${SUDO} $SYSTEM_CMD start docker
     # Verify that Docker CE is installed correctly by running the hello-world image.
@@ -1543,41 +1546,76 @@ install_youtube_trusted_session_generator() {
   exit 0
 }
 
+update_y_t_s_g_docker() {
+  echo -e " ${GREEN}${ARROW}${NC} Updating youtube trusted session tokens..."
+  # Credit: https://github.com/iv-org/invidious/issues/4947#issuecomment-2375558757
+  if [[ ! -d $USER_DIR/invidious/tmp ]]
+  then
+    mkdir -p $USER_DIR/invidious/tmp
+  fi
+  output_file=$USER_DIR/invidious/tmp/youtube-trusted-session-generator.tmp
+  output=$(docker run quay.io/invidious/youtube-trusted-session-generator > $output_file)
+  visitor_data=$(cat "$output_file" | awk -F': ' '/visitor_data/ {print $2}')
+  po_token=$(cat "$output_file" | awk -F': ' '/po_token/ {print $2}')
+  sed -i "s/visitor_data:.*/visitor_data: $visitor_data/" ${REPO_DIR}/docker-compose.yml
+  sed -i "s/po_token:.*/po_token: $po_token/" ${REPO_DIR}/docker-compose.yml
+  docker compose up -d invidious
+  if [ $? -eq 0 ]; then
+    echo -e " ${GREEN}${DONE}${NC} youtube trusted session tokens has been updated."
+  else
+    echo -e " ${RED}${ERROR}${NC} youtube trusted session tokens update failed!"
+  fi
+}
+
 # Ask user to update yes/no
 if [ $# != 0 ]; then
-  while getopts ":udcmliy" opt; do
-    case $opt in
-      u)
+  ARGS=()
+  while [[ $# -gt 0 ]]
+  do
+    case $1 in
+      -u)
         UPDATE_SCRIPT='yes'
         ;;
-      d)
+      -d)
         UPDATE_SCRIPT='no'
         ;;
-      c)
+      -c)
         update_invidious_cron
         ;;
-      m)
+      -m)
         database_maintenance
         ;;
-      l)
+      -l)
         install_log
         ;;
-      i)
+      -iish)
         install_inv_sig_helper
         ;;
-      y)
+      -iytsg)
         install_youtube_trusted_session_generator
         ;;
-      \?)
-        echo -e "${RED}\n ${ERROR} Error! Invalid option: -$OPTARG${NC}" >&2
-        usage
+      --ytsg-docker | -uytsgd)
+      # Update YouTube trusted session tokens
+        docker_repo_chk
+        repoexit
+        update_y_t_s_g_docker
+        read_sleep 5
+        exit 0
         ;;
-      :)
-        echo -e "${RED}${ERROR} Error! Option -$OPTARG requires an argument.${NC}" >&2
+      -*|--*)
+        echo -e "${RED}\n ${ERROR} Error! Invalid option: -$1${NC}" >&2
+        usage
         exit 1
+        ;;
+      *)
+        ARGS+=("$1")
+        shift
         ;;
     esac
   done
+
+  set -- "${ARGS[@]}"
+
 fi
 
 update_updater "$@"
@@ -1742,14 +1780,6 @@ download_docker_compose_file() {
     exit 0
   fi
 }
-youtube_trusted_session_generator() {
-  # Credit: https://github.com/iv-org/invidious/issues/4947#issuecomment-2375558757
-  output=$(docker run quay.io/invidious/youtube-trusted-session-generator)
-  visitor_data=$(echo "$output" | awk -F': ' '/visitor_data/ {print $2}')
-  po_token=$(echo "$output" | awk -F': ' '/po_token/ {print $2}')
-  sed -i "s/visitor_data:.*/visitor_data: $visitor_data/" ${REPO_DIR}/docker-compose.yml
-  sed -i "s/po_token:.*/po_token: $po_token/" ${REPO_DIR}/docker-compose.yml
-}
 
 deploy_with_docker() {
   docker_repo_chk
@@ -1761,7 +1791,7 @@ deploy_with_docker() {
   echo "What do you want to do?"
   echo "   1) Build and start cluster"
   echo "   2) Start, Stop or Restart cluster"
-  echo "   3) Rebuild cluster"
+  echo "   3) Update YouTube trusted session tokens"
   echo "   4) Delete data and rebuild"
   echo "   5) Update cluster"
   echo "   6) Run database maintenance"
@@ -1805,8 +1835,12 @@ deploy_with_docker() {
       shift
       # If Docker pkgs is installed
       if ${PKGCHK} ${DOCKER_PKGS} >/dev/null 2>&1; then
-        
         if [[ $BUILD_DOCKER = "y" ]]; then
+          # Remove version from docker-compose.yml (to remove warning in docker)
+          if grep -q 'version: "3"' ${REPO_DIR}/docker-compose.yml
+          then
+            ${SUDO} sed -i '1d' ${REPO_DIR}/docker-compose.yml
+          fi
           download_docker_compose_file
           # Let the user enter reverse proxy
           while [[ $REVERSE_PROXY != "y" && $REVERSE_PROXY != "n" ]]; do
@@ -1824,7 +1858,7 @@ deploy_with_docker() {
               ${SUDO} sed -i "s/127.0.0.1:3000:3000/127.0.0.1:$DOCKER_PORT:3000/g" ${REPO_DIR}/docker-compose.yml
             else
               repoexit
-              youtube_trusted_session_generator
+              update_y_t_s_g_docker
               # hmac key
               if [[ $(command -v 'openssl') ]]; then
                 hmac_key=$(openssl rand -base64 20 | tr -dc 'a-zA-Z0-9' | fold -w 20 | head -n 1)
@@ -1832,7 +1866,7 @@ deploy_with_docker() {
                 hmac_key=$(pwgen 20 1)
               fi
               sed -i "s/hmac_key:.*/hmac_key: $hmac_key/" ${REPO_DIR}/docker-compose.yml
-              docker-compose up -d
+              docker compose up -d
               if [[ $CUSTOM_DOCKER_PORT = "y" ]]; then
                 echo -e "${GREEN}${DONE} Deployment done with custom port $DOCKER_PORT.${NC}"
               else
@@ -1885,35 +1919,18 @@ deploy_with_docker() {
 
       while true; do
         repoexit
-        docker-compose ${DOCKER_SERVICE}
+        docker compose ${DOCKER_SERVICE}
         read_sleep 5
         indexit
       done
       exit
       ;;
-    3) # Rebuild cluster
-      # chk_permissions
-      while [[ $REBUILD_DOCKER !=  "y" && $REBUILD_DOCKER != "n" ]]; do
-        read -p "       Rebuild cluster ? [y/n]: " -e REBUILD_DOCKER
-      done
+    3) # Update YouTube trusted session tokens
       docker_repo_chk
-      if ${PKGCHK} ${DOCKER_PKGS} >/dev/null 2>&1; then
-        if [[ $REBUILD_DOCKER = "y" ]]; then
-          repoexit
-          youtube_trusted_session_generator
-          docker-compose up -d --build
-          echo -e "${GREEN}${DONE} Rebuild done.${NC}"
-          read_sleep 5
-          indexit
-        fi
-
-        if [[ $REBUILD_DOCKER = "n" ]]; then
-          indexit
-        fi
-      else
-        echo -e "${RED}${ERROR} Docker is not installed, please choose option 5)${NC}"
-      fi
-      exit
+      repoexit
+      update_y_t_s_g_docker
+      read_sleep 5
+      indexit
       ;;
     4) # Delete data and rebuild
       while [[ $DEL_REBUILD_DOCKER !=  "y" && $DEL_REBUILD_DOCKER != "n" ]]; do
@@ -1923,11 +1940,10 @@ deploy_with_docker() {
       if ${PKGCHK} ${DOCKER_PKGS} >/dev/null 2>&1; then
         if [[ $DEL_REBUILD_DOCKER = "y" ]]; then
           repoexit
-          docker-compose down
-          docker volume rm invidious_postgresdata
+          docker compose down -v
+          docker image prune
           read_sleep 5
-          youtube_trusted_session_generator
-          docker-compose build
+          docker compose up -d
           echo -e "${GREEN}${DONE} Data deleted and Rebuild done.${NC}"
           read_sleep 5
           indexit
@@ -1935,8 +1951,6 @@ deploy_with_docker() {
         if [[ $DEL_REBUILD_DOCKER = "n" ]]; then
           indexit
         fi
-      else
-        echo -e "${RED}${ERROR} Docker is not installed, please choose option 5)${NC}"
       fi
       exit
       ;;
@@ -1946,8 +1960,9 @@ deploy_with_docker() {
     6) # Database Maintenance
       read -p "Are you sure you want to run Database Maintenance? Enter [y/n]: " ANSWER
       if [[ "$ANSWER" = 'y' ]]; then
-        docker exec -u postgres -it invidious_invidious-db_1 bash -c "psql -U kemal invidious -c \"DELETE FROM nonces * WHERE expire < current_timestamp\" > /dev/null"
-        docker exec -u postgres -it invidious_invidious-db_1 bash -c "psql -U kemal invidious -c \"TRUNCATE TABLE videos\" > /dev/null"
+        echo -e "${GREEN}${ARROW} Starting Database Maintenance...${NC}"
+        docker exec -u postgres -it invidious-invidious-db-1 bash -c "psql -U kemal invidious -c \"DELETE FROM nonces * WHERE expire < current_timestamp\" > /dev/null"
+        docker exec -u postgres -it invidious-invidious-db-1 bash -c "psql -U kemal invidious -c \"TRUNCATE TABLE videos\" > /dev/null"
         echo ""
         echo -e "${GREEN}${DONE} Database Maintenance done.${NC}"
         read_sleep 5
