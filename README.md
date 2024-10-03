@@ -21,6 +21,7 @@
 5) Run Database Maintenance   11) Install YouTube tsg.
 6) Start, Stop or Restart     12) Exit
 ```
+![invidious_update](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/invidious_update.gif)
 
 ## Screenshots
 ![screenshot](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/version_2.2.1.png)
