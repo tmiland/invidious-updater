@@ -42,6 +42,10 @@ If you're looking for a quick way to install, check out [Invidious-Installer](ht
 | ------ | ------ |
 | [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Arch.png" height="140" width="280">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Arch.png) | [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/PureOS.png" height="140" width="280">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/PureOS.png)
 
+| Linux Mint |
+| ------ |
+| [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Mint_22.png" height="140" width="280">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Mint_22.png)
+
 ## Recommendation
 
 ***It is recommended to use this script on a fresh installation to avoid unwanted complications.***
