@@ -140,6 +140,9 @@ if [ ! ${ARCH_CHK} == 'x86_64' ]; then
   exit 1;
 fi
 shopt -s nocasematch
+if lsb_release -si >/dev/null 2>&1; then
+  DISTRO=$(lsb_release -si)
+else
   if [[ -f /etc/debian_version ]]; then
     DISTRO=$(cat /etc/issue.net)
   elif [[ -f /etc/redhat-release ]]; then
@@ -147,6 +150,7 @@ shopt -s nocasematch
   elif [[ -f /etc/os-release ]]; then
     DISTRO=$(cat /etc/os-release | grep "PRETTY_NAME" | sed 's/PRETTY_NAME=//g' | sed 's/["]//g' | awk '{print $1}')
   fi
+fi
 case "$DISTRO" in
   Debian*|Ubuntu*|LinuxMint*|PureOS*|Pop*|Devuan*)
     # shellcheck disable=SC2140
