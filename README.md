@@ -25,7 +25,6 @@
 See [Install.md](./INSTALL.md)
 
 If you're looking for a quick way to install, check out [Invidious-Installer](https://github.com/tmiland/invidious-installer)
- ***This is now integrated into the update script***
 
 ![invidious_update](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/invidious_update.gif)
 
