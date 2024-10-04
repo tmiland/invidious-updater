@@ -72,7 +72,8 @@ Tested and working on:
 - [X] On Bash on Debian on Windows (in Gnome-Boxes)
   - [X] Systemd not working
   - [X] Docker option not working
-- [X] Tested on Linux Mint.
+- [X] Tested on Linux Mint 22
+  - [X] Docker option tested and working
   - See [#15](https://github.com/tmiland/Invidious-Updater/issues/15)
 - [X] Tested on Arch Linux
   - [X] Docker option tested and working
@@ -94,24 +95,25 @@ See [Changelog](https://github.com/tmiland/Invidious-Updater/blob/master/CHANGEL
 
 ## Compatibility and Requirements
 
-* Debian 8 and later
-* Ubuntu 16.04 and later
-* PureOS (Not tested)
-* CentOS 8
-* Fedora 40
-  * Docker support
+- Debian 8 and later
+- Ubuntu 16.04 and later
+- Linux Mint 22
+- PureOS (Not tested)
+- CentOS 8
+- Fedora 40
+  - Docker support
     - [OS requirements](https://docs.docker.com/install/linux/docker-ce/fedora/)
-* Arch Linux
+- Arch Linux
 
 ## Credits
 - Code is mixed and customized from these sources:
-  * [Invidious](https://github.com/omarroth/invidious#linux)
-  * [inv_sig_helper](https://github.com/iv-org/inv_sig_helper)
-  * [YouTube trusted session generator](https://github.com/iv-org/youtube-trusted-session-generator)
-  * [nginx-autoinstall](https://github.com/angristan/nginx-autoinstall)
-  * [Git-Repo-Update](https://github.com/KillianKemps/Git-Repo-Update)
-  * [ghacks user.js updater.sh](https://github.com/ghacksuserjs/ghacks-user.js/blob/master/updater.sh)
-  * Plus many more.
+  - [Invidious](https://github.com/omarroth/invidious#linux)
+  - [inv_sig_helper](https://github.com/iv-org/inv_sig_helper)
+  - [YouTube trusted session generator](https://github.com/iv-org/youtube-trusted-session-generator)
+  - [nginx-autoinstall](https://github.com/angristan/nginx-autoinstall)
+  - [Git-Repo-Update](https://github.com/KillianKemps/Git-Repo-Update)
+  - [ghacks user.js updater.sh](https://github.com/ghacksuserjs/ghacks-user.js/blob/master/updater.sh)
+  - Plus many more.
 
 ## Feature request and bug reports
 - [Bug report](https://github.com/tmiland/Invidious-Updater/issues/new?assignees=tmiland&labels=bug&template=bug_report.md&title=Bug-report:)
