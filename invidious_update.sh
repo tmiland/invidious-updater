@@ -1002,6 +1002,21 @@ install_docker() {
     ${SUDO} docker run hello-world
   shopt -s nocasematch
   elif [[ $(lsb_release -si) == "LinuxMint" ]]; then
+    OS_CODENAME=$(lsb_release -cs)
+    case $OS_CODENAME in
+      wilma )
+        OS_CODENAME=noble
+        ;;
+      virginia|victoria|vera|Vanessa )
+        OS_CODENAME=jammy
+        ;;
+      uma|ulyssa|ulyana )
+        OS_CODENAME=focal
+        ;;
+      faye )
+        OS_CODENAME=bookworm
+        ;;
+    esac
     #Install packages to allow apt to use a repository over HTTPS:
     ${SUDO} ${INSTALL} \
       apt-transport-https \
@@ -1012,7 +1027,7 @@ install_docker() {
     # Add Docker’s official GPG key:
     curl -fsSLk https://download.docker.com/linux/ubuntu/gpg |
     ${SUDO} gpg --dearmor -o /usr/share/keyrings/docker.gpg >/dev/null
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" |
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $OS_CODENAME stable" |
     ${SUDO} tee /etc/apt/sources.list.d/docker.list > /dev/null
     # Update the apt package index:
     ${SUDO} ${UPDATE}
