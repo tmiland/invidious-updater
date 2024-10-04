@@ -32,7 +32,7 @@ If you're looking for a quick way to install, check out [Invidious-Installer](ht
 
 | Debian | Ubuntu |
 | ------ | ------ |
-| [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Debian_12.png" height="140" width="280">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Debian_12.png) | [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Ubuntu.png" height="140" width="280">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Ubuntu.png) 
+| [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Debian_12.png" height="140" width="280">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Debian_12.png) | [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Ubuntu_24.png" height="140" width="280">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Ubuntu_24.png) 
 
 | CentOS | Fedora |
 | ------ | ------ |
@@ -61,10 +61,8 @@ Tested and working on:
 
 - [X] Tested extensively on Debian 9/10/11/12
   - [X] Docker option tested and working
-- [X] Tested on Ubuntu 16.04
+- [X] Tested on Ubuntu 16.04/18.10/24
   - [X] Docker option tested, not working
-- [X] Tested on Ubuntu 18.10
-  - [X] Docker option tested and working
 - [X] Tested on CentOS 8
   - [ ] Docker option tested and working
 - [X] Tested on Fedora 40

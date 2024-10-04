@@ -982,6 +982,9 @@ install_docker() {
   if [[ $(lsb_release -si) == "Debian" ||
         $(lsb_release -si) == "Ubuntu" ||
         $(lsb_release -si) == "PureOS" ]]; then
+    CODENAME=$(lsb_release -cs)
+    DISTRO=$(lsb_release -si)
+    DISTRO_TO_LOWER="${DISTRO,}"
     #Install packages to allow apt to use a repository over HTTPS:
     ${SUDO} ${INSTALL} \
       apt-transport-https \
@@ -992,7 +995,7 @@ install_docker() {
     # Add Docker’s official GPG key:
     curl -fsSLk https://download.docker.com/linux/debian/gpg |
     ${SUDO} gpg --dearmor -o /usr/share/keyrings/docker.gpg >/dev/null
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" |
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker.gpg] https://download.docker.com/linux/$DISTRO_TO_LOWER $CODENAME stable" |
     ${SUDO} tee /etc/apt/sources.list.d/docker.list > /dev/null
     # Update the apt package index:
     ${SUDO} ${UPDATE}
@@ -1002,19 +1005,19 @@ install_docker() {
     ${SUDO} docker run hello-world
   shopt -s nocasematch
   elif [[ $(lsb_release -si) == "LinuxMint" ]]; then
-    OS_CODENAME=$(lsb_release -cs)
-    case $OS_CODENAME in
+    CODENAME=$(lsb_release -cs)
+    case $CODENAME in
       wilma )
-        OS_CODENAME=noble
+        CODENAME=noble
         ;;
       virginia|victoria|vera|Vanessa )
-        OS_CODENAME=jammy
+        CODENAME=jammy
         ;;
       uma|ulyssa|ulyana )
-        OS_CODENAME=focal
+        CODENAME=focal
         ;;
       faye )
-        OS_CODENAME=bookworm
+        CODENAME=bookworm
         ;;
     esac
     #Install packages to allow apt to use a repository over HTTPS:
@@ -1027,7 +1030,7 @@ install_docker() {
     # Add Docker’s official GPG key:
     curl -fsSLk https://download.docker.com/linux/ubuntu/gpg |
     ${SUDO} gpg --dearmor -o /usr/share/keyrings/docker.gpg >/dev/null
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $OS_CODENAME stable" |
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $CODENAME stable" |
     ${SUDO} tee /etc/apt/sources.list.d/docker.list > /dev/null
     # Update the apt package index:
     ${SUDO} ${UPDATE}
