@@ -38,11 +38,14 @@ VERSION='2.2.2' # Must stay on line 14 for updater to fetch the numbers
 # SOFTWARE.
 #
 #------------------------------------------------------------------------------#
-## Uncomment for debugging purpose
-#set -o errexit
-#set -o pipefail
-#set -o nounset
-#set -o xtrace
+## Take 'debug' as argument for debugging purpose
+if [[ $* =~ "debug" ]]
+then
+  set -o errexit
+  set -o pipefail
+  set -o nounset
+  set -o xtrace
+fi
 #timestamp
 # time_stamp=$(date)
 # Detect absolute and full path as well as filename of this script
@@ -65,7 +68,7 @@ BBLUE='\033[1;34m'
 GREEN='\033[0;32m'
 ORANGE='\033[0;33m'
 # DARKORANGE="\033[38;5;208m"
-# CYAN='\033[0;36m'
+CYAN='\033[0;36m'
 # DARKGREY="\033[48;5;236m"
 NC='\033[0m' # No Color
 # Text formatting used for printing
@@ -79,7 +82,7 @@ SCRIPT_NAME="Invidious Update.sh"
 # Repo name
 REPO_NAME="tmiland/invidious-updater"
 # Set update check
-UPDATE_SCRIPT='no'
+UPDATE_SCRIPT=${UPDATE_SCRIPT:-'yes'}
 # Set username
 USER_NAME=invidious
 # Set userdir
@@ -127,6 +130,7 @@ read_sleep() {
 
 indexit() {
   cd "${CURRDIR}" || exit
+  UPDATE_SCRIPT='no' \
   ./"${SCRIPT_FILENAME}"
 }
 
@@ -317,15 +321,20 @@ if [[ $(lsb_release -si) == "Devuan" ]]; then
 fi
 
 usage() {
-  echo "script usage: $SCRIPT_FILENAME [-u] [-d] [-c] [-m] [-l]"
-  echo "   [-u] Check for script update"
-  echo "   [-d] Do not check for script update (Default)"
-  echo "   [-c] Update Invidious with cron"
-  echo "   [-m] Database Maintenance"
-  echo "   [-l] Activate logging"
-  echo "   [-iish] Install Inv-sig-helper"
-  echo "   [-iytsg] Install YouTube trusted session generator"
-  echo "   [-uytsgd] Update YouTube trusted session tokens for Docker"
+  # shellcheck disable=SC2046
+  printf "Usage: %s %s [options]\\n" "" $(basename "$0")
+  echo
+  echo "  If called without arguments, installs Invidious."
+  echo
+  printf "  ${ORANGE}--help                   |-h${NC}      Display this help and exit\\n"
+  printf "  ${ORANGE}--install-invidious      |-i${NC}      Install Invidious\\n"
+  printf "  ${ORANGE}--cron-update            |-c${NC}      Update Invidious with cron\\n"
+  printf "  ${ORANGE}--database-maintenance   |-m${NC}      Database Maintenance\\n"
+  printf "  ${ORANGE}--install-log            |-l${NC}      Activate logging\\n"
+  printf "  ${ORANGE}--install-inv-sig-helper |-iish${NC}   Install Inv-sig-helper\\n"
+  printf "  ${ORANGE}--install-ytsg           |-iytsg${NC}  Install YouTube trusted session generator\\n"
+  printf "  ${ORANGE}--ytsg-docker            |-uytsgd${NC} Update YouTube ts tokens for Docker\\n"
+  echo
 }
   
 # Make sure that the script runs with root permissions
@@ -1385,6 +1394,9 @@ update_updater() {
     return 0 # No update available
   fi
 }
+
+update_updater "$@"
+cd "$CURRDIR" || exit
 # Add option to update the Invidious Repo from Cron
 update_invidious_cron() {
   repoexit
@@ -1588,60 +1600,6 @@ update_y_t_s_g_docker() {
     echo -e " ${RED}${ERROR}${NC} youtube trusted session tokens update failed!"
   fi
 }
-
-# Ask user to update yes/no
-if [ $# != 0 ]; then
-  ARGS=()
-  while [[ $# -gt 0 ]]
-  do
-    case $1 in
-      -u)
-        UPDATE_SCRIPT='yes'
-        ;;
-      -d)
-        UPDATE_SCRIPT='no'
-        ;;
-      -c)
-        update_invidious_cron
-        ;;
-      -m)
-        database_maintenance
-        ;;
-      -l)
-        install_log
-        ;;
-      -iish)
-        install_inv_sig_helper
-        ;;
-      -iytsg)
-        install_youtube_trusted_session_generator
-        ;;
-      --ytsg-docker | -uytsgd)
-      # Update YouTube trusted session tokens
-        docker_repo_chk
-        repoexit
-        update_y_t_s_g_docker
-        read_sleep 5
-        exit 0
-        ;;
-      -*|--*)
-        echo -e "${RED}\n ${ERROR} Error! Invalid option: -$1${NC}" >&2
-        usage
-        exit 1
-        ;;
-      *)
-        ARGS+=("$1")
-        shift
-        ;;
-    esac
-  done
-
-  set -- "${ARGS[@]}"
-
-fi
-
-update_updater "$@"
-cd "$CURRDIR" || exit
 
 check_exit_status() {
   if [ $? -eq 0 ]
@@ -2024,26 +1982,26 @@ start_stop_restart_invidious() {
       ;;
   esac
 
-  if [[ -d $REPO_DIR ]]; then
-    if [[ $SERVICE_INPUT = "1" || $SERVICE_INPUT = "2" || $SERVICE_INPUT = "3" ]]; then
-      repoexit
-      # Restart Invidious
-      echo -e "${ORANGE}${ARROW} ${SERVICE_ACTION} Invidious...${NC}"
-      ${SUDO} $SYSTEM_CMD ${SERVICE_ACTION} ${SERVICE_NAME}
-      echo -e "${GREEN}${DONE} done.${NC}"
-      ${SUDO} $SYSTEM_CMD status ${SERVICE_NAME} --no-pager
-      read_sleep 5
-      indexit
+    if [[ -d $REPO_DIR ]]; then
+      if [[ $SERVICE_INPUT = "1" || $SERVICE_INPUT = "2" || $SERVICE_INPUT = "3" ]]; then
+        repoexit
+        # Restart Invidious
+        echo -e "${ORANGE}${ARROW} ${SERVICE_ACTION} Invidious...${NC}"
+        ${SUDO} $SYSTEM_CMD ${SERVICE_ACTION} ${SERVICE_NAME}
+        echo -e "${GREEN}${DONE} done.${NC}"
+        ${SUDO} $SYSTEM_CMD status ${SERVICE_NAME} --no-pager
+        read_sleep 5
+        indexit
+      fi
+      if  [[ $SERVICE_INPUT = "4" ]]; then
+        rebuild
+        read_sleep 3
+        indexit
+      fi
+      else
+        echo -e "${RED}${WARNING} (( Invidious is not installed! ))${NC}"
+        exit 1
     fi
-    if  [[ $SERVICE_INPUT = "4" ]]; then
-      rebuild
-      read_sleep 3
-      indexit
-    fi
-    else
-      echo -e "${RED}${WARNING} (( Invidious is not installed! ))${NC}"
-      exit 1
-  fi
 }
 
 uninstall_invidious() {
@@ -2232,6 +2190,58 @@ fi
   read_sleep 3
   indexit
 }
+
+# Ask user to update yes/no
+if [ $# != 0 ]; then
+  ARGS=()
+  while [[ $# -gt 0 ]]
+  do
+    case $1 in
+      --help | -h)
+        usage
+        exit 0
+        ;;
+      --install-invidious | -i)
+        install_invidious
+        ;;
+      --cron-update | -c)
+        update_invidious_cron
+        ;;
+      --database-maintenance | -m)
+        database_maintenance
+        ;;
+      --install-log | -l)
+        install_log
+        ;;
+      --install-inv-sig-helper | -iish)
+        install_inv_sig_helper
+        ;;
+      --install-ytsg | -iytsg)
+        install_youtube_trusted_session_generator
+        ;;
+      --ytsg-docker | -uytsgd)
+      # Update YouTube trusted session tokens
+        docker_repo_chk
+        repoexit
+        update_y_t_s_g_docker
+        read_sleep 5
+        exit 0
+        ;;
+      -*|--*)
+        echo -e "${RED}\n ${ERROR} Error! Invalid option: -$1${NC}" >&2
+        usage
+        exit 1
+        ;;
+      *)
+        ARGS+=("$1")
+        shift
+        ;;
+    esac
+  done
+
+  set -- "${ARGS[@]}"
+
+fi
 
 # Start Script
 chk_permissions
