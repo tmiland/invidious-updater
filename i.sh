@@ -11,9 +11,9 @@ if [[ $1 == "release" ]]
 then
   curl -sSL https://github.com/tmiland/Invidious-Updater/releases/latest/download/invidious_update.sh > "${SCRIPT_DIR}/${SCRIPT_FILENAME}" && \
   chmod +x "${SCRIPT_DIR}/${SCRIPT_FILENAME}"
-  . "${SCRIPT_DIR}/${SCRIPT_FILENAME}" -i
+  "${SCRIPT_DIR}/${SCRIPT_FILENAME}" -i
 else
   curl -sSL https://github.com/tmiland/Invidious-Updater/raw/master/invidious_update.sh > "${SCRIPT_DIR}/${SCRIPT_FILENAME}" && \
   chmod +x "${SCRIPT_DIR}/${SCRIPT_FILENAME}"
-  . "${SCRIPT_DIR}/${SCRIPT_FILENAME}" -i
+  "${SCRIPT_DIR}/${SCRIPT_FILENAME}" -i
 fi
