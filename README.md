@@ -1,15 +1,6 @@
 # Invidious-Updater (And Installer)
 
-```bash
-                  ╔═══════════════════════════════════════════════════════════════════╗
-                  ║                        Invidious Update.sh                        ║
-                  ║               Automatic update script for Invidious               ║
-                  ║                      Maintained by @tmiland                       ║
-                  ╚═══════════════════════════════════════════════════════════════════╝
-```
-[![GitHub release](https://img.shields.io/github/release/tmiland/Invidious-Updater.svg?style=for-the-badge)](https://github.com/tmiland/Invidious-Updater/releases)
-[![licence](https://img.shields.io/github/license/tmiland/Invidious-Updater.svg?style=for-the-badge)](https://tmiland.github.io/invidious-updater/LICENSE)
-![Bash](https://img.shields.io/badge/Language-SH-4EAA25.svg?style=for-the-badge)
+[![GitHub release](https://img.shields.io/github/release/tmiland/Invidious-Updater.svg?style=for-the-badge)](https://github.com/tmiland/Invidious-Updater/releases) [![licence](https://img.shields.io/github/license/tmiland/Invidious-Updater.svg?style=for-the-badge)](https://tmiland.github.io/invidious-updater/LICENSE) ![Bash](https://img.shields.io/badge/Language-SH-4EAA25.svg?style=for-the-badge)
 
 ## Script to install and update [Invidious](https://github.com/iv-org/invidious)
 
