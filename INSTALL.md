@@ -15,11 +15,19 @@ su root
 To install this script:
 - Latest release
   ```bash
-  curl -sSL https://tmiland.github.io/invidious-updater/install.sh | bash release 
+  mkdir -p /opt/invidious_update && \
+    curl -sSL https://github.com/tmiland/Invidious-Updater/releases/latest/download/invidious_update.sh > /opt/invidious_update/invidious_update.sh && \
+    chmod +x /opt/invidious_update/invidious_update.sh && \
+    ln -s /opt/invidious_update/invidious_update.sh /usr/local/bin/invidious_update && \
+    invidious_update
   ```
 - Master
   ```bash
-  curl -sSL https://tmiland.github.io/invidious-updater/install.sh | bash
+  mkdir -p /opt/invidious_update && \
+    curl -sSL https://tmiland.github.io/invidious-updater/invidious_update.sh > /opt/invidious_update/invidious_update.sh && \
+    chmod +x /opt/invidious_update/invidious_update.sh && \
+    ln -s /opt/invidious_update/invidious_update.sh /usr/local/bin/invidious_update && \
+    invidious_update
   ```
 
 ### Repository
