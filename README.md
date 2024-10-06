@@ -21,10 +21,37 @@
 5) Run Database Maintenance   11) Install YouTube tsg.
 6) Start, Stop or Restart     12) Exit
 ```
-### Installation
-See [Install.md](./INSTALL.md)
 
-If you're looking for a quick way to install, check out [Invidious-Installer](https://github.com/tmiland/invidious-installer)
+## Usage
+```bash
+Usage:  invidious_update.sh [options]
+
+  If called without arguments, installs Invidious.
+
+  --help                   |-h      Display this help and exit
+  --install-invidious      |-i      Install Invidious
+  --cron-update            |-c      Update Invidious with cron
+  --database-maintenance   |-m      Database Maintenance
+  --install-log            |-l      Activate logging
+  --install-inv-sig-helper |-iish   Install Inv-sig-helper
+  --install-ytsg           |-iytsg  Install YouTube trusted session generator
+  --ytsg-docker            |-uytsgd Update YouTube ts tokens for Docker
+```
+### Installation
+To install Invidious:
+- Latest release
+  ```bash
+  curl -sSL https://github.com/tmiland/Invidious-Updater/releases/latest/download/invidious_update.sh | bash -s -- -i
+  ```
+- Master
+  ```bash
+  curl -sSL https://github.com/tmiland/Invidious-Updater/raw/master/invidious_update.sh | bash -s -- -i
+  ```
+
+[Invidious-Installer](https://github.com/tmiland/invidious-installer) is sourced in the install option.
+
+To install this script:
+See [Install.md](./INSTALL.md)
 
 ![invidious_update](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/invidious_update.gif)
 
