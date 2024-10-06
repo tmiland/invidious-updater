@@ -2024,28 +2024,26 @@ start_stop_restart_invidious() {
       ;;
   esac
 
-  while true; do
-    if [[ -d $REPO_DIR ]]; then
-      if [[ $SERVICE_INPUT = "1" || $SERVICE_INPUT = "2" || $SERVICE_INPUT = "3" ]]; then
-        repoexit
-        # Restart Invidious
-        echo -e "${ORANGE}${ARROW} ${SERVICE_ACTION} Invidious...${NC}"
-        ${SUDO} $SYSTEM_CMD ${SERVICE_ACTION} ${SERVICE_NAME}
-        echo -e "${GREEN}${DONE} done.${NC}"
-        ${SUDO} $SYSTEM_CMD status ${SERVICE_NAME} --no-pager
-        read_sleep 5
-        indexit
-      fi
-      if  [[ $SERVICE_INPUT = "4" ]]; then
-        rebuild
-        read_sleep 3
-        indexit
-      fi
-      else
-        echo -e "${RED}${WARNING} (( Invidious is not installed! ))${NC}"
-        exit 1
+  if [[ -d $REPO_DIR ]]; then
+    if [[ $SERVICE_INPUT = "1" || $SERVICE_INPUT = "2" || $SERVICE_INPUT = "3" ]]; then
+      repoexit
+      # Restart Invidious
+      echo -e "${ORANGE}${ARROW} ${SERVICE_ACTION} Invidious...${NC}"
+      ${SUDO} $SYSTEM_CMD ${SERVICE_ACTION} ${SERVICE_NAME}
+      echo -e "${GREEN}${DONE} done.${NC}"
+      ${SUDO} $SYSTEM_CMD status ${SERVICE_NAME} --no-pager
+      read_sleep 5
+      indexit
     fi
-  done
+    if  [[ $SERVICE_INPUT = "4" ]]; then
+      rebuild
+      read_sleep 3
+      indexit
+    fi
+    else
+      echo -e "${RED}${WARNING} (( Invidious is not installed! ))${NC}"
+      exit 1
+  fi
 }
 
 uninstall_invidious() {
