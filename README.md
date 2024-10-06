@@ -41,11 +41,11 @@ Usage:  invidious_update.sh [options]
 To install Invidious:
 - Latest release
   ```bash
-  curl -sSL https://github.com/tmiland/Invidious-Updater/raw/master/i.sh | bash release 
+  curl -sSL https://tmiland.github.io/invidious-updater/i.sh | bash release 
   ```
 - Master
   ```bash
-  curl -sSL https://github.com/tmiland/Invidious-Updater/raw/master/i.sh
+  curl -sSL https://tmiland.github.io/invidious-updater/i.sh | bash
   ```
 
 [Invidious-Installer](https://github.com/tmiland/invidious-installer) is sourced in the install option.
