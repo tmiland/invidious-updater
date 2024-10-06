@@ -39,6 +39,17 @@ Usage:  invidious_update.sh [options]
 ```
 ### Installation
 To install Invidious:
+***Note: you will be prompted to enter root password***
+
+If root password is not set, type:
+
+```bash
+sudo passwd root
+```
+Log in as root
+```bash
+su root
+```
 - Latest release
   ```bash
   curl -sSL https://github.com/tmiland/Invidious-Updater/releases/latest/download/invidious_update.sh > invidious_update.sh && \
