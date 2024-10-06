@@ -68,7 +68,7 @@ BBLUE='\033[1;34m'
 GREEN='\033[0;32m'
 ORANGE='\033[0;33m'
 # DARKORANGE="\033[38;5;208m"
-CYAN='\033[0;36m'
+# CYAN='\033[0;36m'
 # DARKGREY="\033[48;5;236m"
 NC='\033[0m' # No Color
 # Text formatting used for printing
@@ -1394,9 +1394,11 @@ update_updater() {
     return 0 # No update available
   fi
 }
-
-update_updater "$@"
-cd "$CURRDIR" || exit
+# Do not check for update if launched directly
+if [[ -f "${SCRIPT_DIR}/$SCRIPT_FILENAME" ]]; then
+  update_updater "$@"
+  cd "$CURRDIR" || exit
+fi
 # Add option to update the Invidious Repo from Cron
 update_invidious_cron() {
   repoexit
