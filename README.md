@@ -8,7 +8,7 @@
                   ╚═══════════════════════════════════════════════════════════════════╝
 ```
 [![GitHub release](https://img.shields.io/github/release/tmiland/Invidious-Updater.svg?style=for-the-badge)](https://github.com/tmiland/Invidious-Updater/releases)
-[![licence](https://img.shields.io/github/license/tmiland/Invidious-Updater.svg?style=for-the-badge)](https://github.com/tmiland/Invidious-Updater/blob/master/LICENSE)
+[![licence](https://img.shields.io/github/license/tmiland/Invidious-Updater.svg?style=for-the-badge)](https://tmiland.github.io/invidious-updater/LICENSE)
 ![Bash](https://img.shields.io/badge/Language-SH-4EAA25.svg?style=for-the-badge)
 
 ## Script to install and update [Invidious](https://github.com/iv-org/invidious)
@@ -41,11 +41,15 @@ Usage:  invidious_update.sh [options]
 To install Invidious:
 - Latest release
   ```bash
-  curl -sSL https://tmiland.github.io/invidious-updater/i.sh | bash release 
+  curl -sSL https://github.com/tmiland/Invidious-Updater/releases/latest/download/invidious_update.sh > invidious_update.sh && \
+  chmod +x invidious_update.sh && \
+  ./invidious_update.sh -i
   ```
 - Master
   ```bash
-  curl -sSL https://tmiland.github.io/invidious-updater/i.sh | bash
+  curl -sSL https://tmiland.github.io/invidious-updater/invidious_update.sh > invidious_update.sh && \
+  chmod +x invidious_update.sh && \
+  ./invidious_update.sh -i
   ```
 
 [Invidious-Installer](https://github.com/tmiland/invidious-installer) is sourced in the install option.
@@ -53,25 +57,25 @@ To install Invidious:
 To install this script:
 See [Install.md](./INSTALL.md)
 
-![invidious_update](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/invidious_update.gif)
+![invidious_update](https://tmiland.github.io/invidious-updater/img/invidious_update.gif)
 
 ### Tested on
 
 | Debian | Ubuntu |
 | ------ | ------ |
-| [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Debian_12.png" height="140" width="280">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Debian_12.png) | [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Ubuntu_24.png" height="140" width="280">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Ubuntu_24.png) 
+| [<img src="https://tmiland.github.io/invidious-updater/img/Debian_12.png" height="140" width="280">](https://tmiland.github.io/invidious-updater/img/Debian_12.png) | [<img src="https://tmiland.github.io/invidious-updater/img/Ubuntu_24.png" height="140" width="280">](https://tmiland.github.io/invidious-updater/img/Ubuntu_24.png) 
 
 | CentOS | Fedora |
 | ------ | ------ |
-| [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/CentOS.png" height="140" width="280">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/CentOS.png) | [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Fedora_40.png" height="140" width="280">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Fedora_40.png)
+| [<img src="https://tmiland.github.io/invidious-updater/img/CentOS.png" height="140" width="280">](https://tmiland.github.io/invidious-updater/img/CentOS.png) | [<img src="https://tmiland.github.io/invidious-updater/img/Fedora_40.png" height="140" width="280">](https://tmiland.github.io/invidious-updater/img/Fedora_40.png)
 
 | Arch | PureOS |
 | ------ | ------ |
-| [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Arch.png" height="140" width="280">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Arch.png) | [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/PureOS.png" height="140" width="280">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/PureOS.png)
+| [<img src="https://tmiland.github.io/invidious-updater/img/Arch.png" height="140" width="280">](https://tmiland.github.io/invidious-updater/img/Arch.png) | [<img src="https://tmiland.github.io/invidious-updater/img/PureOS.png" height="140" width="280">](https://tmiland.github.io/invidious-updater/img/PureOS.png)
 
 | Linux Mint |
 | ------ |
-| [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Mint_22.png" height="140" width="280">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/Mint_22.png)
+| [<img src="https://tmiland.github.io/invidious-updater/img/Mint_22.png" height="140" width="280">](https://tmiland.github.io/invidious-updater/img/Mint_22.png)
 
 ## Recommendation
 
@@ -84,7 +88,7 @@ Tested and working on:
 
 | Debian | Ubuntu | CentOS | Fedora | Arch | PureOS |
 | ------ | ------ | ------ | ------ | ------ | ------ |
-| [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/os_icons/debian.svg?sanitize=true" height="128" width="128">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/os_icons/debian.svg?sanitize=true) | [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/os_icons/ubuntu.svg?sanitize=true" height="128" width="128">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/os_icons/ubuntu.svg?sanitize=true) | [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/os_icons/cent-os.svg?sanitize=true" height="128" width="128">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/os_icons/cent-os.svg?sanitize=true) | [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/os_icons/fedora.svg?sanitize=true" height="128" width="128">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/os_icons/fedora.svg?sanitize=true) | [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/os_icons/arch.svg?sanitize=true" height="128" width="128">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/os_icons/arch.svg?sanitize=true) | [<img src="https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/os_icons/pureos.svg?sanitize=true" height="128" width="128">](https://raw.githubusercontent.com/tmiland/Invidious-Updater/master/img/os_icons/pureos.svg?sanitize=true)
+| [<img src="https://tmiland.github.io/invidious-updater/img/os_icons/debian.svg?sanitize=true" height="128" width="128">](https://tmiland.github.io/invidious-updater/img/os_icons/debian.svg?sanitize=true) | [<img src="https://tmiland.github.io/invidious-updater/img/os_icons/ubuntu.svg?sanitize=true" height="128" width="128">](https://tmiland.github.io/invidious-updater/img/os_icons/ubuntu.svg?sanitize=true) | [<img src="https://tmiland.github.io/invidious-updater/img/os_icons/cent-os.svg?sanitize=true" height="128" width="128">](https://tmiland.github.io/invidious-updater/img/os_icons/cent-os.svg?sanitize=true) | [<img src="https://tmiland.github.io/invidious-updater/img/os_icons/fedora.svg?sanitize=true" height="128" width="128">](https://tmiland.github.io/invidious-updater/img/os_icons/fedora.svg?sanitize=true) | [<img src="https://tmiland.github.io/invidious-updater/img/os_icons/arch.svg?sanitize=true" height="128" width="128">](https://tmiland.github.io/invidious-updater/img/os_icons/arch.svg?sanitize=true) | [<img src="https://tmiland.github.io/invidious-updater/img/os_icons/pureos.svg?sanitize=true" height="128" width="128">](https://tmiland.github.io/invidious-updater/img/os_icons/pureos.svg?sanitize=true)
 
 - [X] Tested extensively on Debian 9/10/11/12
   - [X] Docker option tested and working
@@ -112,11 +116,11 @@ Tested and working on:
   
 #### Latest install log - version: 1.4.4
 
-[install log Debian 10](https://github.com/tmiland/Invidious-Updater/blob/master/log/install_log_debian.log)
+[install log Debian 10](https://tmiland.github.io/invidious-updater/log/install_log_debian.log)
 
 ## Changelog
 
-See [Changelog](https://github.com/tmiland/Invidious-Updater/blob/master/CHANGELOG.md)
+See [Changelog](https://tmiland.github.io/invidious-updater/CHANGELOG.md)
 
 ## Compatibility and Requirements
 
@@ -160,6 +164,6 @@ Sign up for web hosting using this link, and receive $200 in credit over 60 days
 
 ### License
 
-[![MIT License Image](https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/MIT_logo.svg/220px-MIT_logo.svg.png)](https://github.com/tmiland/Invidious-Updater/blob/master/LICENSE)
+[![MIT License Image](https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/MIT_logo.svg/220px-MIT_logo.svg.png)](https://tmiland.github.io/invidious-updater/LICENSE)
 
-[MIT License](https://github.com/tmiland/Invidious-Updater/blob/master/LICENSE)
+[MIT License](https://tmiland.github.io/invidious-updater/LICENSE)
