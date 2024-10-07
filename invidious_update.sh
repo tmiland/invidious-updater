@@ -2250,7 +2250,7 @@ fi
 # Start Script
 chk_permissions
 show_banner
-
+OPTION=""
 while [[ $OPTION != "1" &&
          $OPTION != "2" &&
          $OPTION != "3" &&
