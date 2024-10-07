@@ -210,6 +210,7 @@ PKGCHK=""
 PGSQL_SERVICE=""
 DOCKER_PKGS=""
 SYSTEM_CMD=""
+SHOW_STATUS=""
 shopt -s nocasematch
 if [[ $DISTRO_GROUP == "Debian" ]]; then
   export DEBIAN_FRONTEND=noninteractive
