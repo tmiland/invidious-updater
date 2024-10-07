@@ -1653,6 +1653,7 @@ install_invidious() {
     done
   fi
   #shift
+  ADVANCED_OPTIONS=""
   # Let the user enter advanced options:
   while [[ $ADVANCED_OPTIONS != "y" && $ADVANCED_OPTIONS != "n" ]]; do
     read -p "Do you want to enter advanced options? [y/n]: " ADVANCED_OPTIONS
