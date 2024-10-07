@@ -116,7 +116,7 @@ ADMINS=${ADMINS:-}
 # Default Captcha Key
 CAPTCHA_KEY=${CAPTCHA_KEY:-}
 # Default Swap option
-SWAP_OPTIONS=${SWAP_OPTIONS:-n}
+SWAP_OPTIONS=${SWAP_OPTIONS:-}
 # Logfile
 LOGFILE=invidious_update.log
 
@@ -1637,7 +1637,7 @@ install_invidious() {
     echo -e "${ORANGE}Advice: Free memory: $free MB is less than recommended to build Invidious${NC}"
     # Let the user enter swap options:
     while [[ $SWAP_OPTIONS != "y" && $SWAP_OPTIONS != "n" ]]; do
-      read -p "Do you want to add swap space? [y/n]: " -e SWAP_OPTIONS
+      read -rp "Do you want to add swap space? [y/n]: " -e SWAP_OPTIONS
     done
 
     while true; do
