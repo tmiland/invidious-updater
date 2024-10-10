@@ -1478,14 +1478,15 @@ install_inv_sig_helper() {
 
   cd $USER_DIR || exit 1
   
-  git clone https://github.com/iv-org/inv_sig_helper.git
+  git clone https://github.com/iv-org/inv_sig_helper.git >/dev/null 2>&1
   chown -R $USER_NAME:$USER_NAME inv_sig_helper
   cd inv_sig_helper || exit 1
   # Install cargo / rust
-  curl -fsSL sh.rustup.rs | sh -s -- -y
+  curl -fsSL sh.rustup.rs | sh -s -- -y >/dev/null 2>&1
   # Source cargo
-  . "$HOME/.cargo/env"
+  . "$HOME/.cargo/env" >/dev/null 2>&1
   # Build release
+  RUSTFLAGS=-Awarnings \
   cargo build --release
   # Copy service file to systemd folder
   cp -rp $USER_DIR/inv_sig_helper/inv_sig_helper.service /etc/systemd/system/
