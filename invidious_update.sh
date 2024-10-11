@@ -1491,7 +1491,11 @@ install_inv_sig_helper() {
   # Copy service file to systemd folder
   cp -rp $USER_DIR/inv_sig_helper/inv_sig_helper.service /etc/systemd/system/
   # Add socket to config
-  ${SUDO} echo "signature_server: /home/invidious/tmp/inv_sig_helper.sock" >> $USER_DIR/invidious/config/config.yml
+  if ! grep -oq "signature_server:" $USER_DIR/invidious/config/config.yml
+  then
+    ${SUDO} echo "signature_server:" >> $USER_DIR/invidious/config/config.yml
+  fi
+  ${SUDO} sed -i "s/signature_server: .*/signature_server: \/home\/invidious\/tmp\/inv_sig_helper\.sock/" $USER_DIR/invidious/config/config.yml
   if [[ ! -d /home/invidious/tmp ]]
   then
     ${SUDO} mkdir -p /home/invidious/tmp
