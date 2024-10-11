@@ -1556,7 +1556,7 @@ install_youtube_trusted_session_generator() {
     done
   fi
   echo -e "${GREEN}${ARROW} Regenerating YouTube trusted session data...${NC}"
-  ${SUDO} virtualenv $YTSG_FOLDER/venv >/dev/null 2>&1
+  ${SUDO} virtualenv --python=python3 $YTSG_FOLDER/venv >/dev/null 2>&1
   chown -R $USER_NAME:$USER_NAME $YTSG_FOLDER/venv
   chmod 755 $YTSG_FOLDER/venv
   source $YTSG_FOLDER/venv/bin/activate >/dev/null 2>&1
