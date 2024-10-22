@@ -1542,20 +1542,20 @@ install_youtube_trusted_session_generator() {
   then
     if [[ ! -d $YTSG_FOLDER ]]
     then
-      echo -e "${GREEN}${ARROW} Downloading Invidious YouTube trusted session generator from GitHub${NC}"
+      echo -e "${GREEN}${ARROW}${NC} Downloading Invidious YouTube trusted session generator from GitHub"
       cd $USER_DIR || exit 1
       git clone https://github.com/iv-org/youtube-trusted-session-generator.git >/dev/null 2>&1
       chown -R $USER_NAME:$USER_NAME youtube-trusted-session-generator
       cd $YTSG_FOLDER || exit 1
     fi
   if ! ${PKGCHK} ${YTSG_INSTALL_PKGS} >/dev/null 2>&1; then
-    echo -e "${GREEN}${ARROW} Setting up Dependencies${NC}"
+    echo -e "${GREEN}${ARROW}${NC} Setting up Dependencies"
     ${UPDATE}
     for i in ${YTSG_INSTALL_PKGS}; do
       ${INSTALL} $i 2> /dev/null
     done
   fi
-  echo -e "${GREEN}${ARROW} Regenerating YouTube trusted session data...${NC}"
+  echo -e "${GREEN}${ARROW}${NC} Regenerating YouTube trusted session data..."
   ${SUDO} virtualenv --python=python3 $YTSG_FOLDER/venv >/dev/null 2>&1
   chown -R $USER_NAME:$USER_NAME $YTSG_FOLDER/venv
   chmod 755 $YTSG_FOLDER/venv
@@ -1577,14 +1577,19 @@ install_youtube_trusted_session_generator() {
     ${SUDO} echo "visitor_data: " >> $USER_DIR/invidious/config/config.yml
     ${SUDO} echo "po_token: " >> $USER_DIR/invidious/config/config.yml
   fi
-  echo -e "${GREEN}${ARROW} Updating config.yml...${NC}"
+  if [ $? -eq 0 ]; then
+    echo -e "${GREEN}${ARROW}${NC} Updating config.yml..."
+  else
+    echo -e "${RED}${ERROR}${NC} Something went wrong..."
+    exit 1
+  fi
   ${SUDO} sed -i "s/visitor_data: .*/visitor_data: $visitor_data/" $USER_DIR/invidious/config/config.yml
   ${SUDO} sed -i "s/po_token: .*/po_token: $po_token/" $USER_DIR/invidious/config/config.yml
-  echo -e "${GREEN}${DONE} Done.${NC}"
-  echo -e "${GREEN}${DONE} Restarting Invidious for changes to take effect...${NC}"
+  echo -e "${GREEN}${DONE}${NC} Done."
+  echo -e "${GREEN}${DONE}${NC} Restarting Invidious for changes to take effect..."
   ${SUDO} $SYSTEM_CMD restart invidious
   else
-    echo -e "${RED}${ERROR} Invidious is not installed...${NC}"
+    echo -e "${RED}${ERROR}${NC} Invidious is not installed..."
   fi
   exit 0
 }
