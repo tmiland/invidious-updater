@@ -665,7 +665,7 @@ get_release_info() {
   # Get latest release download url
   get_latest_release() {
     curl --silent "https://api.github.com/repos/$1/releases/latest" |
-    grep '"browser_download_url":' |
+    grep 'browser_download_url.*\.sh' |
     sed -n 's#.*\(https*://[^"]*\).*#\1#;p'
   }
   LATEST_RELEASE=$(get_latest_release ${REPO_NAME})
