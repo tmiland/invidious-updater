@@ -1563,12 +1563,12 @@ install_youtube_trusted_session_generator() {
   #pip3 install nodriver
   ${SUDO} $YTSG_FOLDER/venv/bin/pip3 install -r requirements.txt >/dev/null 2>&1
   # Switch to headless
-  if grep -oq "headless=False" $YTSG_FOLDER/index.py
+  if grep -oq "headless=False" $YTSG_FOLDER/potoken-generator.py
   then
-    ${SUDO} sed -i "s|headless=False|headless=True, sandbox=False|g" $YTSG_FOLDER/index.py
+    ${SUDO} sed -i "s|headless=False|headless=True, sandbox=False|g" $YTSG_FOLDER/potoken-generator.py
   fi
   # Credit https://github.com/iv-org/invidious/issues/4947#issuecomment-2374336723
-  output=$(${SUDO} $YTSG_FOLDER/venv/bin/python3 $YTSG_FOLDER/index.py)
+  output=$(${SUDO} $YTSG_FOLDER/venv/bin/python3 $YTSG_FOLDER/potoken-generator.py)
   deactivate
   visitor_data=$(echo "$output" | awk -F': ' '/visitor_data/ {print $2}')
   po_token=$(echo "$output" | awk -F': ' '/po_token/ {print $2}')
