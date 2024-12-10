@@ -1605,11 +1605,12 @@ update_y_t_s_g_docker() {
   output=$(docker run quay.io/invidious/youtube-trusted-session-generator > $output_file)
   visitor_data=$(cat "$output_file" | awk -F': ' '/visitor_data/ {print $2}')
   po_token=$(cat "$output_file" | awk -F': ' '/po_token/ {print $2}')
-  sed -i "s/visitor_data:.*/visitor_data: $visitor_data/" ${REPO_DIR}/docker-compose.yml
-  sed -i "s/po_token:.*/po_token: $po_token/" ${REPO_DIR}/docker-compose.yml
-  docker compose up -d invidious
+  sed -i "s/visitor_data:.*/visitor_data: $visitor_data/" ${IN_CONFIG}
+  sed -i "s/po_token:.*/po_token: $po_token/" ${IN_CONFIG}
+  # docker compose up -d invidious
   if [ $? -eq 0 ]; then
     echo -e " ${GREEN}${DONE}${NC} youtube trusted session tokens has been updated."
+    echo -e " ${ORANGE} Please restart Invidious manually.${NC}"
   else
     echo -e " ${RED}${ERROR}${NC} youtube trusted session tokens update failed!"
   fi
