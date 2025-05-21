@@ -1481,26 +1481,34 @@ install_invidious_companion() {
     git clone https://github.com/iv-org/invidious-companion.git >/dev/null 2>&1
     chown -R $USER_NAME:$USER_NAME invidious-companion
     cd invidious-companion || exit 1
-    # Install deno
-    curl -fsSL https://deno.land/install.sh | sh
+    if ! command -v deno --version &> /dev/null
+    then
+      # Install deno
+      curl -fsSL https://deno.land/install.sh | sh
+    fi
     # Compile
     deno task compile
-    
+
+    if ! command -v pwgen &> /dev/null
+    then
+      $SUDO $INSTALL pwgen
+    fi
+
     domain=$(sed -n 's/.*domain *: *\([^ ]*.*\)/\1/p' "${IN_CONFIG}")
     host_binding=$(sed -n 's/.*host_binding *: *\([^ ]*.*\)/\1/p' "${IN_CONFIG}")
     invidious_companion_key=$(pwgen 16 1)
     config_companion_key=$(sed -n 's/.*invidious_companion_key *: *\([^ ]*.*\)/\1/p' "${IN_CONFIG}")
+    if [ -z $config_companion_key ]
+    then 
     # Add companion settings to config.yml
 echo "invidious_companion:
-  # URL used for the internal communication between invidious and invidious companion
   - private_url: http://localhost:8282
-  # (public) URL used for the communication between your browser and invidious companion
-  # IF you are using a reverse proxy OR accessing invidious from an external IP then you NEED to change this value
-  # Please consult for more doc: https://github.com/unixfox/invidious/blob/invidious-companion/config/config.example.yml#L57-L88
     public_url: http://localhost:8282
-invidious_companion_key: $invidious_companion_key" | ${SUDO} tee ${IN_CONFIG}
-  # Check if domain is present in config, 
-  if [ -n "$domain" ]; then
+invidious_companion_key: $invidious_companion_key" | ${SUDO} tee -a ${IN_CONFIG}
+  fi
+  # Check if domain is present in config.yml
+  if [ -n "$domain" ]
+  then
       echo "domain is not empty, adding domain to companion public_url..."
       ${SUDO} sed -i "s/- private_url: .*/- private_url: http://$host_binding:8282" ${IN_CONFIG}
       ${SUDO} sed -i "s/public_url: .*/public_url: https://$domain" ${IN_CONFIG}
@@ -1511,23 +1519,26 @@ invidious_companion_key: $invidious_companion_key" | ${SUDO} tee ${IN_CONFIG}
   fi
   # Check if signature server is present in config
   signature_server=$(sed -n 's/.*signature_server *: *\([^ ]*.*\)/\1/p' "${IN_CONFIG}")
-  if [ -n "$signature_server" ]; then
+  if [ -n "$signature_server" ]
+  then
     echo "signature_server was found in config, removing..."
-    sed -i '/signature_server/d' ./infile
+    sed -i '/signature_server/d' "${IN_CONFIG}"
   else
     echo "signature_server was not found in config, nothing to do..."
   fi
   # Remove inv_sig_helper folder if found
-  if [[ -d $USER_DIR/inv_sig_helper ]]; then
+  if [[ -d $USER_DIR/inv_sig_helper ]]
+  then
     echo "inv_sig_helper folder found, deleting..."
     ${SUDO} rm -rf $USER_DIR/inv_sig_helper
   fi
   # Remove tmp folder if found
-  if [[ -d /home/invidious/tmp ]]; then
+  if [[ -d /home/invidious/tmp ]]
+  then
     echo "inv_sig_helper tmp folder found, deleting..."
     ${SUDO} rm -rf /home/invidious/tmp
   fi
-  SERVICE_NAME=invidious_companion.service
+  SERVICE_NAME=invidious-companion.service
   # Add service file to systemd
   # (Temporary service file, since none was provided in the installation guide)
   # https://github.com/iv-org/invidious-companion/issues/3
@@ -1602,19 +1613,20 @@ invidious_companion_key: $invidious_companion_key" | ${SUDO} tee ${IN_CONFIG}
   SystemCallFilter=~@cpu-emulation
   SystemCallFilter=~@obsolete
 
-  BindReadOnlyPaths=/home/invidious/invidious_companion
-  BindPaths=/home/invidious/tmp
+  BindReadOnlyPaths=/home/invidious/invidious-companion
+  BindPaths=/home/invidious/invidious-companion
 
-  WorkingDirectory=/home/invidious/invidious_companion
-  ExecStart=SERVER_SECRET_KEY=$config_companion_key /home/invidious/invidious_companion/invidious-companion
+  WorkingDirectory=/home/invidious/invidious-companion
+  ExecStart=SERVER_SECRET_KEY=\"$config_companion_key\" /home/invidious/invidious-companion/invidious-companion
 
   Restart=always
 
   [Install]
-  WantedBy=multi-user.target" | tee /etc/systemd/system/$SERVICE_NAME
+  WantedBy=multi-user.target" | ${SUDO} tee /etc/systemd/system/$SERVICE_NAME >/dev/null 2>&1
 
   # Remove inv_sig_helper if found
-  if [[ -f /etc/systemd/system/inv_sig_helper.service ]]; then
+  if [[ -f /etc/systemd/system/inv_sig_helper.service ]]
+  then
     # Stop Invidious sig helper
     ${SUDO} $SYSTEM_CMD stop inv_sig_helper.service
     ${SUDO} $SYSTEM_CMD disable inv_sig_helper.service
