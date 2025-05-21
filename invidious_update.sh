@@ -1612,6 +1612,16 @@ invidious_companion_key: $invidious_companion_key" | ${SUDO} tee ${IN_CONFIG}
 
   [Install]
   WantedBy=multi-user.target" | tee /etc/systemd/system/$SERVICE_NAME
+
+  # Remove inv_sig_helper if found
+  if [[ -f /etc/systemd/system/inv_sig_helper.service ]]; then
+    # Stop Invidious sig helper
+    ${SUDO} $SYSTEM_CMD stop inv_sig_helper.service
+    ${SUDO} $SYSTEM_CMD disable inv_sig_helper.service
+    rm /etc/systemd/system/inv_sig_helper.service
+    # Reload Systemd
+    ${SUDO} $SYSTEM_CMD daemon-reload
+  fi
   
     # Enable invidious invidious-companion at boot
     ${SUDO} $SYSTEM_CMD enable ${SERVICE_NAME}
