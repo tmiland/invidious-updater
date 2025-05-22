@@ -9,8 +9,8 @@
 2) Update Invidious           7) Uninstall Invidious
 3) Deploy with Docker         8) Set up PostgreSQL Backup
 4) Add Swap Space             9) Install Nginx
-5) Run Database Maintenance   10) Install Invidious Companion
-                              11) Exit"
+5) Run Database Maintenance  10) Install Invidious Companion
+                             11) Exit"
 ```
 
 ## Usage
