@@ -333,7 +333,7 @@ usage() {
   printf "  ${ORANGE}--cron-update            |-c${NC}      Update Invidious with cron\\n"
   printf "  ${ORANGE}--database-maintenance   |-m${NC}      Database Maintenance\\n"
   printf "  ${ORANGE}--install-log            |-l${NC}      Activate logging\\n"
-  printf "  ${ORANGE}--install-inv-sig-helper |-iish${NC}   Install Inv-sig-helper\\n"
+  printf "  ${ORANGE}--install-inv-companion  |-iic${NC}    Install Invidious Companion\\n"
   printf "  ${ORANGE}--install-ytsg           |-iytsg${NC}  Install YouTube trusted session generator\\n"
   printf "  ${ORANGE}--ytsg-docker            |-uytsgd${NC} Update YouTube ts tokens for Docker\\n"
   echo
@@ -701,11 +701,13 @@ show_status() {
 #   else
     declare -a services=(
       "invidious"
+      "invidious-companion"
       "postgresql"
       )
   #fi
   declare -a serviceName=(
     "Invidious"
+    "Companion"
     "PostgreSQL"
   )
   declare -a serviceStatus=()
@@ -919,7 +921,7 @@ show_banner() {
  1) Install Invidious           7) Uninstall Invidious
  2) Update Invidious            8) Set up PostgreSQL Backup
  3) Deploy with Docker          9) Install Nginx 
- 4) Add Swap Space             10) Install Inv sig helper
+ 4) Add Swap Space             10) Install Invidious Companion
  5) Run Database Maintenance   11) Install YouTube tsg.
  6) Start, Stop or Restart     12) Exit"
   echo "${SHOW_STATUS} ${SHOW_DOCKER_STATUS}"
@@ -1471,55 +1473,136 @@ database_maintenance_exit() {
   indexit
 }
 
-install_inv_sig_helper() {
-  if [[ -d $USER_DIR ]]
-  then
-  echo -e "${GREEN}${ARROW} Downloading Invidious sig helper service from GitHub${NC}"
+install_invidious_companion() {
+    if [[ -d $USER_DIR ]]
+    then  
+    cd $USER_DIR || exit 1
+    if [[ ! -d $USER_DIR/invidious-companion ]]
+    then
+      echo -e "${GREEN}${ARROW} Downloading Invidious companion from GitHub${NC}"
+      git clone https://github.com/iv-org/invidious-companion.git >/dev/null 2>&1
+      chown -R $USER_NAME:$USER_NAME invidious-companion
+    fi
+    cd invidious-companion || exit 1
+    if [[ $(command -v 'deno') ]]; then
+      echo "deno is installed"
+    else
+      echo "deno is not installed, installing..."
+      # Install deno
+      curl -fsSL https://deno.land/install.sh | sh
+      source "/root/.deno/env"
+      echo "done."
+    fi
+    # Compile
+    echo "Compiling with deno..."
+    deno task compile >/dev/null 2>&1
+    echo "done."
 
-  cd $USER_DIR || exit 1
-  
-  git clone https://github.com/iv-org/inv_sig_helper.git >/dev/null 2>&1
-  chown -R $USER_NAME:$USER_NAME inv_sig_helper
-  cd inv_sig_helper || exit 1
-  # Install cargo / rust
-  curl -fsSL sh.rustup.rs | sh -s -- -y >/dev/null 2>&1
-  # Source cargo
-  . "$HOME/.cargo/env" >/dev/null 2>&1
-  # Build release
-  RUSTFLAGS=-Awarnings \
-  cargo build --release
-  # Copy service file to systemd folder
-  cp -rp $USER_DIR/inv_sig_helper/inv_sig_helper.service /etc/systemd/system/
-  # Add socket to config
-  if ! grep -oq "signature_server:" $USER_DIR/invidious/config/config.yml
-  then
-    ${SUDO} echo "signature_server:" >> $USER_DIR/invidious/config/config.yml
+    if ! command -v pwgen &> /dev/null
+    then
+      $SUDO $INSTALL pwgen
+    fi
+    domain=$(sed -n 's/.*domain *: *\([^ ]*.*\)/\1/p' "${IN_CONFIG}")
+    host_binding=$(sed -n 's/.*host_binding *: *\([^ ]*.*\)/\1/p' "${IN_CONFIG}")
+    invidious_companion_key=$(pwgen 16 1)
+    config_companion_key=$(sed -n 's/.*invidious_companion_key *: *\([^ ]*.*\)/\1/p' "${IN_CONFIG}")
+    if [ -z $config_companion_key ]
+    then 
+    # Add companion settings to config.yml
+echo "invidious_companion:
+  - private_url: http://localhost:8282
+    public_url: http://localhost:8282
+invidious_companion_key: $invidious_companion_key" | ${SUDO} tee -a ${IN_CONFIG}
   fi
-  ${SUDO} sed -i "s/signature_server: .*/signature_server: \/home\/invidious\/tmp\/inv_sig_helper\.sock/" $USER_DIR/invidious/config/config.yml
-  if [[ ! -d /home/invidious/tmp ]]
+  # Check if domain is present in config.yml
+  if [ -n "$domain" ]
   then
-    ${SUDO} mkdir -p /home/invidious/tmp
-    chown -R $USER_NAME:$USER_NAME /home/invidious/tmp
-  fi
-  SERVICE_NAME=inv_sig_helper.service
-  # Enable invidious sig helper at boot
-  ${SUDO} $SYSTEM_CMD enable ${SERVICE_NAME}
-  # Reload Systemd
-  ${SUDO} $SYSTEM_CMD daemon-reload
-  # Start Invidious sig helper
-  ${SUDO} $SYSTEM_CMD start ${SERVICE_NAME}
-  if ( $SYSTEM_CMD -q is-active ${SERVICE_NAME})
-  then
-    echo -e "${GREEN}${DONE} Invidious sig helper service has been successfully installed!${NC}"
-    ${SUDO} $SYSTEM_CMD status ${SERVICE_NAME} --no-pager
-    echo -e "${GREEN}${DONE} Restarting Invidious for changes to take effect...${NC}"
-    ${SUDO} $SYSTEM_CMD restart invidious
-    read_sleep 5
+      echo "domain is not empty, adding domain to companion public_url..."    
+      ${SUDO} sed -i "s/private_url: .*/private_url: http:\/\/$host_binding:8282/" ${IN_CONFIG}
+      ${SUDO} sed -i "s/public_url: .*/public_url: https:\/\/$domain/" ${IN_CONFIG}
   else
-    echo -e "${RED}${ERROR} Invidious sig helper service installation failed...${NC}"
-    ${SUDO} journalctl -u ${SERVICE_NAME}
-    read_sleep 5
+      echo "domain is empty, updating config for private_url..."
+      ${SUDO} sed -i "s/private_url: .*/private_url: http:\/\/$host_binding:8282/" ${IN_CONFIG}
+      ${SUDO} sed -i "s/public_url: .*/public_url: http:\/\/$host_binding:8282/" ${IN_CONFIG}
   fi
+  # Check if signature server is present in config
+  signature_server=$(sed -n 's/.*signature_server *: *\([^ ]*.*\)/\1/p' "${IN_CONFIG}")
+  if [ -n "$signature_server" ]
+  then
+    echo "signature_server was found in config, removing..."
+    sed -i '/signature_server/d' "${IN_CONFIG}"
+  else
+    echo "signature_server was not found in config, nothing to do..."
+  fi
+  # Remove inv_sig_helper folder if found
+  if [[ -d $USER_DIR/inv_sig_helper ]]
+  then
+    echo "inv_sig_helper folder found, deleting..."
+    ${SUDO} rm -rf $USER_DIR/inv_sig_helper
+  fi
+  # Remove tmp folder if found
+  if [[ -d /home/invidious/tmp ]]
+  then
+    echo "inv_sig_helper tmp folder found, deleting..."
+    ${SUDO} rm -rf /home/invidious/tmp
+  fi
+  SERVICE_NAME=invidious-companion.service
+  # Add service file to systemd
+  # (Temporary service file, since none was provided in the installation guide)
+  # https://github.com/iv-org/invidious-companion/issues/3
+  echo "
+  [Unit]
+  Description=invidious_companion (Companion for Invidious which handle all the video stream retrieval from YouTube servers.)
+  After=syslog.target
+  After=network.target
+
+  [Service]
+  RestartSec=2s
+  Type=simple
+  Environment="SERVER_SECRET_KEY=\"$config_companion_key\""
+
+  User=invidious
+  Group=invidious
+
+  BindReadOnlyPaths=/home/invidious/invidious-companion
+  BindPaths=/home/invidious/invidious-companion
+
+  WorkingDirectory=/home/invidious/invidious-companion
+  ExecStart=/home/invidious/invidious-companion/invidious_companion
+
+  Restart=always
+
+  [Install]
+  WantedBy=multi-user.target" | ${SUDO} tee /etc/systemd/system/$SERVICE_NAME >/dev/null 2>&1
+
+  # Remove inv_sig_helper if found
+  if [[ -f /etc/systemd/system/inv_sig_helper.service ]]
+  then
+    # Stop Invidious sig helper
+    ${SUDO} $SYSTEM_CMD stop inv_sig_helper.service
+    ${SUDO} $SYSTEM_CMD disable inv_sig_helper.service
+    rm /etc/systemd/system/inv_sig_helper.service
+    # Reload Systemd
+    ${SUDO} $SYSTEM_CMD daemon-reload
+  fi
+    # Enable invidious invidious-companion at boot
+    ${SUDO} $SYSTEM_CMD enable ${SERVICE_NAME}
+    # Reload Systemd
+    ${SUDO} $SYSTEM_CMD daemon-reload
+    # Start Invidious invidious-companion
+    ${SUDO} $SYSTEM_CMD start ${SERVICE_NAME}
+    if ( $SYSTEM_CMD -q is-active ${SERVICE_NAME})
+    then
+      echo -e "${GREEN}${DONE} Invidious invidious-companion service has been successfully installed!${NC}"
+      ${SUDO} $SYSTEM_CMD status ${SERVICE_NAME} --no-pager
+      echo -e "${GREEN}${DONE} Restarting Invidious for changes to take effect...${NC}"
+      ${SUDO} $SYSTEM_CMD restart invidious
+      read_sleep 5
+    else
+      echo -e "${RED}${ERROR} Invidious invidious-companion service installation failed...${NC}"
+      ${SUDO} journalctl -u ${SERVICE_NAME}
+      read_sleep 5
+    fi
   else
     echo -e "${RED}${ERROR} Invidious is not installed...${NC}"
   fi
@@ -2229,8 +2312,8 @@ if [ $# != 0 ]; then
       --install-log | -l)
         install_log
         ;;
-      --install-inv-sig-helper | -iish)
-        install_inv_sig_helper
+      --install-inv-companion | -iic)
+        install_invidious_companion
         ;;
       --install-ytsg | -iytsg)
         install_youtube_trusted_session_generator
@@ -2307,8 +2390,8 @@ case $OPTION in
   9) # Install Nginx
       install_nginx
     ;;
-  10) # Install Invidious sig helper
-      install_inv_sig_helper
+  10) # Install Invidious companion
+      install_invidious_companion
     ;;
   11) # Install YouTube trusted session generator
       install_youtube_trusted_session_generator
