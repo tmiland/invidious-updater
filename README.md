@@ -5,12 +5,12 @@
 ## Script to install and update [Invidious](https://github.com/iv-org/invidious)
 
 ```bash
-1) Install Invidious           7) Uninstall Invidious
-2) Update Invidious            8) Set up PostgreSQL Backup
-3) Deploy with Docker          9) Install Nginx 
-4) Add Swap Space             10) Install Invidious Companion
-5) Run Database Maintenance   11) Install YouTube tsg.
-6) Start, Stop or Restart     12) Exit
+1) Install Invidious          6) Start, Stop or Restart
+2) Update Invidious           7) Uninstall Invidious
+3) Deploy with Docker         8) Set up PostgreSQL Backup
+4) Add Swap Space             9) Install Nginx
+5) Run Database Maintenance   10) Install Invidious Companion
+                              11) Exit"
 ```
 
 ## Usage
@@ -25,8 +25,6 @@ Usage:  invidious_update.sh [options]
   --database-maintenance   |-m      Database Maintenance
   --install-log            |-l      Activate logging
   --install-inv-companion  |-iic    Install Invidious Companion
-  --install-ytsg           |-iytsg  Install YouTube trusted session generator
-  --ytsg-docker            |-uytsgd Update YouTube ts tokens for Docker
 ```
 ### Installation
 To install Invidious:
@@ -139,8 +137,7 @@ See [Changelog](https://tmiland.github.io/invidious-updater/CHANGELOG.md)
 ## Credits
 - Code is mixed and customized from these sources:
   - [Invidious](https://github.com/omarroth/invidious#linux)
-  - [inv_sig_helper](https://github.com/iv-org/inv_sig_helper)
-  - [YouTube trusted session generator](https://github.com/iv-org/youtube-trusted-session-generator)
+  - [Invidious companion](https://github.com/iv-org/invidious-companion)
   - [nginx-autoinstall](https://github.com/angristan/nginx-autoinstall)
   - [Git-Repo-Update](https://github.com/KillianKemps/Git-Repo-Update)
   - [ghacks user.js updater.sh](https://github.com/ghacksuserjs/ghacks-user.js/blob/master/updater.sh)

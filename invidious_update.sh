@@ -334,8 +334,6 @@ usage() {
   printf "  ${ORANGE}--database-maintenance   |-m${NC}      Database Maintenance\\n"
   printf "  ${ORANGE}--install-log            |-l${NC}      Activate logging\\n"
   printf "  ${ORANGE}--install-inv-companion  |-iic${NC}    Install Invidious Companion\\n"
-  printf "  ${ORANGE}--install-ytsg           |-iytsg${NC}  Install YouTube trusted session generator\\n"
-  printf "  ${ORANGE}--ytsg-docker            |-uytsgd${NC} Update YouTube ts tokens for Docker\\n"
   echo
 }
   
@@ -918,12 +916,12 @@ show_banner() {
   echo "Welcome to the ${SCRIPT_NAME} script."
   echo "What do you want to do?"
   echo "
- 1) Install Invidious           7) Uninstall Invidious
- 2) Update Invidious            8) Set up PostgreSQL Backup
- 3) Deploy with Docker          9) Install Nginx 
- 4) Add Swap Space             10) Install Invidious Companion
- 5) Run Database Maintenance   11) Install YouTube tsg.
- 6) Start, Stop or Restart     12) Exit"
+ 1) Install Invidious          6) Start, Stop or Restart
+ 2) Update Invidious           7) Uninstall Invidious
+ 3) Deploy with Docker         8) Set up PostgreSQL Backup
+ 4) Add Swap Space             9) Install Nginx
+ 5) Run Database Maintenance  10) Install Invidious Companion
+                              11) Exit"
   echo "${SHOW_STATUS} ${SHOW_DOCKER_STATUS}"
   echo ""
   doc_link
@@ -1870,10 +1868,10 @@ deploy_with_docker() {
   echo "What do you want to do?"
   echo "   1) Build and start cluster"
   echo "   2) Start, Stop or Restart cluster"
-  echo "   3) Update YouTube trusted session tokens"
-  echo "   4) Delete data and rebuild"
-  echo "   5) Update cluster"
-  echo "   6) Run database maintenance"
+  echo "   3) Delete data and rebuild"
+  echo "   4) Update cluster"
+  echo "   5) Run database maintenance"
+  echo "   6) Exit"
   echo ""
 
   while [[ $DOCKER_OPTION !=  "1" && $DOCKER_OPTION != "2" && $DOCKER_OPTION != "3" && $DOCKER_OPTION != "4" && $DOCKER_OPTION != "5" && $DOCKER_OPTION != "6" ]]; do
@@ -2004,14 +2002,7 @@ deploy_with_docker() {
       done
       exit
       ;;
-    3) # Update YouTube trusted session tokens
-      docker_repo_chk
-      repoexit
-      update_y_t_s_g_docker
-      read_sleep 5
-      indexit
-      ;;
-    4) # Delete data and rebuild
+    3) # Delete data and rebuild
       while [[ $DEL_REBUILD_DOCKER !=  "y" && $DEL_REBUILD_DOCKER != "n" ]]; do
         read -p "       Delete data and rebuild Docker? [y/n]: " -e DEL_REBUILD_DOCKER
       done
@@ -2033,10 +2024,10 @@ deploy_with_docker() {
       fi
       exit
       ;;
-    5) # Update Invidious Docker
+    4) # Update Invidious Docker
       update_invidious_docker
       ;;
-    6) # Database Maintenance
+    5) # Database Maintenance
       read -p "Are you sure you want to run Database Maintenance? Enter [y/n]: " ANSWER
       if [[ "$ANSWER" = 'y' ]]; then
         echo -e "${GREEN}${ARROW} Starting Database Maintenance...${NC}"
@@ -2047,6 +2038,11 @@ deploy_with_docker() {
         read_sleep 5
         indexit
       fi
+      ;;
+    6) # Exit
+        exit_script
+        exit
+      ;;
   esac
   read_sleep 5
   indexit
@@ -2315,17 +2311,6 @@ if [ $# != 0 ]; then
       --install-inv-companion | -iic)
         install_invidious_companion
         ;;
-      --install-ytsg | -iytsg)
-        install_youtube_trusted_session_generator
-        ;;
-      --ytsg-docker | -uytsgd)
-      # Update YouTube trusted session tokens
-        docker_repo_chk
-        repoexit
-        update_y_t_s_g_docker
-        read_sleep 5
-        exit 0
-        ;;
       -*|--*)
         echo -e "${RED}\n ${ERROR} Error! Invalid option: -$1${NC}" >&2
         usage
@@ -2356,9 +2341,8 @@ while [[ $OPTION != "1" &&
          $OPTION != "8" &&
          $OPTION != "9" &&
          $OPTION != "10" &&
-         $OPTION != "11" &&
-         $OPTION != "12" ]]; do
-  read -p "Select an option [1-12]: " OPTION
+         $OPTION != "11" ]]; do
+  read -p "Select an option [1-11]: " OPTION
 done
 
 case $OPTION in
@@ -2393,10 +2377,7 @@ case $OPTION in
   10) # Install Invidious companion
       install_invidious_companion
     ;;
-  11) # Install YouTube trusted session generator
-      install_youtube_trusted_session_generator
-    ;;
-  12) # Exit
+  11) # Exit
       exit_script
       exit
     ;;
