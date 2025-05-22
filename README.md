@@ -8,7 +8,7 @@
 1) Install Invidious           7) Uninstall Invidious
 2) Update Invidious            8) Set up PostgreSQL Backup
 3) Deploy with Docker          9) Install Nginx 
-4) Add Swap Space             10) Install Inv sig helper
+4) Add Swap Space             10) Install Invidious Companion
 5) Run Database Maintenance   11) Install YouTube tsg.
 6) Start, Stop or Restart     12) Exit
 ```
@@ -24,7 +24,7 @@ Usage:  invidious_update.sh [options]
   --cron-update            |-c      Update Invidious with cron
   --database-maintenance   |-m      Database Maintenance
   --install-log            |-l      Activate logging
-  --install-inv-sig-helper |-iish   Install Inv-sig-helper
+  --install-inv-companion  |-iic    Install Invidious Companion
   --install-ytsg           |-iytsg  Install YouTube trusted session generator
   --ytsg-docker            |-uytsgd Update YouTube ts tokens for Docker
 ```
