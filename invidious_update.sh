@@ -1480,6 +1480,11 @@ install_invidious_companion() {
       echo -e "${GREEN}${ARROW} Downloading Invidious companion from GitHub${NC}"
       git clone https://github.com/iv-org/invidious-companion.git >/dev/null 2>&1
       chown -R $USER_NAME:$USER_NAME invidious-companion
+    else
+      echo -e "${GREEN}${ARROW} Updating Invidious companion from GitHub${NC}"
+      cd $USER_DIR/invidious-companion || exit 1
+      git pull
+      cd -
     fi
     cd invidious-companion || exit 1
     if [[ $(command -v 'deno') ]]; then
