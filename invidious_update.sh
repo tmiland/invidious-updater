@@ -1479,11 +1479,12 @@ install_invidious_companion() {
     then
       echo -e "${GREEN}${ARROW} Downloading Invidious companion from GitHub${NC}"
       git clone https://github.com/iv-org/invidious-companion.git >/dev/null 2>&1
-      chown -R $USER_NAME:$USER_NAME invidious-companion
+      ${SUDO} chown -R invidious:invidious /home/invidious/invidious-companion
     else
       echo -e "${GREEN}${ARROW} Updating Invidious companion from GitHub${NC}"
       cd $USER_DIR/invidious-companion || exit 1
       git pull
+      ${SUDO} chown -R invidious:invidious /home/invidious/invidious-companion
       cd -
     fi
     cd invidious-companion || exit 1
@@ -1500,7 +1501,7 @@ install_invidious_companion() {
     echo "Compiling with deno..."
     deno task compile >/dev/null 2>&1
     echo "done."
-
+    ${SUDO} chown -R invidious:invidious /home/invidious/invidious-companion/invidious_companion
     if ! command -v pwgen &> /dev/null
     then
       $SUDO $INSTALL pwgen
