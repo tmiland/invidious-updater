@@ -1613,96 +1613,6 @@ invidious_companion_key: $invidious_companion_key" | ${SUDO} tee -a ${IN_CONFIG}
   exit 0
 }
 
-install_youtube_trusted_session_generator() {
-  # Install packages
-  if [[ $DISTRO_GROUP == "Debian" ]]; then
-    YTSG_INSTALL_PKGS="chromium-driver python3 python3-pip python3-virtualenv"
-  elif [[ $DISTRO_GROUP == "CentOS" ]]; then
-    YTSG_INSTALL_PKGS="chromedriver python3 python3-pip python3-virtualenv"
-  elif [[ $DISTRO_GROUP == "Fedora" ]]; then
-    YTSG_INSTALL_PKGS="chromedriver python3 python3-pip python3-virtualenv"
-  elif [[ $DISTRO_GROUP == "Arch" ]]; then
-    YTSG_INSTALL_PKGS="chromedriver python python-pip python-virtualenv"
-  fi
-  YTSG_FOLDER=$USER_DIR/youtube-trusted-session-generator
-  if [[ -d $USER_DIR ]]
-  then
-    if [[ ! -d $YTSG_FOLDER ]]
-    then
-      echo -e "${GREEN}${ARROW}${NC} Downloading Invidious YouTube trusted session generator from GitHub"
-      cd $USER_DIR || exit 1
-      git clone https://github.com/iv-org/youtube-trusted-session-generator.git >/dev/null 2>&1
-      chown -R $USER_NAME:$USER_NAME youtube-trusted-session-generator
-      cd $YTSG_FOLDER || exit 1
-    fi
-  if ! ${PKGCHK} ${YTSG_INSTALL_PKGS} >/dev/null 2>&1; then
-    echo -e "${GREEN}${ARROW}${NC} Setting up Dependencies"
-    ${UPDATE}
-    for i in ${YTSG_INSTALL_PKGS}; do
-      ${INSTALL} $i 2> /dev/null
-    done
-  fi
-  echo -e "${GREEN}${ARROW}${NC} Regenerating YouTube trusted session data..."
-  ${SUDO} virtualenv --python=python3 $YTSG_FOLDER/venv >/dev/null 2>&1
-  chown -R $USER_NAME:$USER_NAME $YTSG_FOLDER/venv
-  chmod 755 $YTSG_FOLDER/venv
-  source $YTSG_FOLDER/venv/bin/activate >/dev/null 2>&1
-  #pip3 install nodriver
-  ${SUDO} $YTSG_FOLDER/venv/bin/pip3 install -r requirements.txt >/dev/null 2>&1
-  # Switch to headless
-  if grep -oq "headless=False" $YTSG_FOLDER/potoken-generator.py
-  then
-    ${SUDO} sed -i "s|headless=False|headless=True, sandbox=False|g" $YTSG_FOLDER/potoken-generator.py
-  fi
-  # Credit https://github.com/iv-org/invidious/issues/4947#issuecomment-2374336723
-  output=$(${SUDO} $YTSG_FOLDER/venv/bin/python3 $YTSG_FOLDER/potoken-generator.py)
-  deactivate
-  visitor_data=$(echo "$output" | awk -F': ' '/visitor_data/ {print $2}')
-  po_token=$(echo "$output" | awk -F': ' '/po_token/ {print $2}')
-  if ! grep -oq "visitor_data: " $USER_DIR/invidious/config/config.yml
-  then
-    ${SUDO} echo "visitor_data: " >> $USER_DIR/invidious/config/config.yml
-    ${SUDO} echo "po_token: " >> $USER_DIR/invidious/config/config.yml
-  fi
-  if [ $? -eq 0 ]; then
-    echo -e "${GREEN}${ARROW}${NC} Updating config.yml..."
-  else
-    echo -e "${RED}${ERROR}${NC} Something went wrong..."
-    exit 1
-  fi
-  ${SUDO} sed -i "s/visitor_data: .*/visitor_data: $visitor_data/" $USER_DIR/invidious/config/config.yml
-  ${SUDO} sed -i "s/po_token: .*/po_token: $po_token/" $USER_DIR/invidious/config/config.yml
-  echo -e "${GREEN}${DONE}${NC} Done."
-  echo -e "${GREEN}${DONE}${NC} Restarting Invidious for changes to take effect..."
-  ${SUDO} $SYSTEM_CMD restart invidious
-  else
-    echo -e "${RED}${ERROR}${NC} Invidious is not installed..."
-  fi
-  exit 0
-}
-
-update_y_t_s_g_docker() {
-  echo -e " ${GREEN}${ARROW}${NC} Updating youtube trusted session tokens..."
-  # Credit: https://github.com/iv-org/invidious/issues/4947#issuecomment-2375558757
-  if [[ ! -d $USER_DIR/invidious/tmp ]]
-  then
-    mkdir -p $USER_DIR/invidious/tmp
-  fi
-  output_file=$USER_DIR/invidious/tmp/youtube-trusted-session-generator.tmp
-  output=$(docker run quay.io/invidious/youtube-trusted-session-generator > $output_file)
-  visitor_data=$(cat "$output_file" | awk -F': ' '/visitor_data/ {print $2}')
-  po_token=$(cat "$output_file" | awk -F': ' '/po_token/ {print $2}')
-  sed -i "s/visitor_data:.*/visitor_data: $visitor_data/" ${IN_CONFIG}
-  sed -i "s/po_token:.*/po_token: $po_token/" ${IN_CONFIG}
-  # docker compose up -d invidious
-  if [ $? -eq 0 ]; then
-    echo -e " ${GREEN}${DONE}${NC} youtube trusted session tokens has been updated."
-    echo -e " ${ORANGE} Please restart Invidious manually.${NC}"
-  else
-    echo -e " ${RED}${ERROR}${NC} youtube trusted session tokens update failed!"
-  fi
-}
-
 check_exit_status() {
   if [ $? -eq 0 ]
   then
@@ -1941,7 +1851,6 @@ deploy_with_docker() {
               ${SUDO} sed -i "s/127.0.0.1:3000:3000/127.0.0.1:$DOCKER_PORT:3000/g" ${REPO_DIR}/docker-compose.yml
             else
               repoexit
-              update_y_t_s_g_docker
               # hmac key
               if [[ $(command -v 'openssl') ]]; then
                 hmac_key=$(openssl rand -base64 20 | tr -dc 'a-zA-Z0-9' | fold -w 20 | head -n 1)
