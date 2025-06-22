@@ -2,7 +2,7 @@ version: "3"
 services:
 
   invidious:
-    image: quay.io/invidious/invidious:latest
+    image: quay.io/invidious/invidious:master
     # image: quay.io/invidious/invidious:latest-arm64 # ARM64/AArch64 devices
     restart: unless-stopped
     ports:
@@ -19,13 +19,28 @@ services:
           host: invidious-db
           port: 5432
         check_tables: true
-        signature_server: inv_sig_helper:12999
-        visitor_data: CHANGE_ME
-        po_token: CHANGE_ME
+      invidious_companion:
+        # URL used for the internal communication between invidious and invidious companion
+        # There is no need to change that except if Invidious companion does not run on the same docker compose file.
+        - private_url: "http://companion:8282"
+        # (public) URL used for the communication between your browser and invidious companion
+        # IF you are using a reverse proxy OR accessing invidious from an external IP then you NEED to change this value
+        # Please consult for more doc: https://github.com/unixfox/invidious/blob/invidious-companion/config/config.example.yml#L57-L88
+        # And make sure to add the routes from the post install when using a reverse proxy!
+        public_url: "http://localhost:8282"
+        # IT is NOT recommended to use the same key as HMAC KEY. Generate a new key!
+        # Use the key generated in the 2nd step
+        invidious_companion_key: "CHANGE_ME!!"
         # external_port:
         # domain:
         # https_only: false
         # statistics_enabled: false
+        # admins: [""]
+        # captcha_enabled: true
+        # login_enabled: true
+        # registration_enabled: true
+        # statistics_enabled: false
+        # Use the key generated in the 2nd step
         hmac_key: "CHANGE_ME!!"
     healthcheck:
       test: wget -nv --tries=1 --spider http://127.0.0.1:3000/api/v1/trending || exit 1
@@ -38,19 +53,6 @@ services:
         max-file: "4"
     depends_on:
       - invidious-db
-
-  inv_sig_helper:
-    image: quay.io/invidious/inv-sig-helper:latest
-    init: true
-    command: ["--tcp", "0.0.0.0:12999"]
-    environment:
-      - RUST_LOG=info
-    restart: unless-stopped
-    cap_drop:
-      - ALL
-    read_only: true
-    security_opt:
-      - no-new-privileges:true
 
   invidious-db:
     image: docker.io/library/postgres:14
@@ -68,3 +70,4 @@ services:
 
 volumes:
   postgresdata:
+  companioncache:
