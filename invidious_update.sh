@@ -740,12 +740,12 @@ show_docker_status() {
 
   declare -a container=(
     "invidious-invidious-1"
-    "invidious-inv_sig_helper-1"
+    "invidious-companion-1"
     "invidious-invidious-db-1"
   )
   declare -a containerName=(
     "Invidious"
-    "Inv-sig-helper"
+    "Companion"
     "PostgreSQL"
   )
   declare -a status=()
@@ -1829,44 +1829,174 @@ deploy_with_docker() {
       # If Docker pkgs is installed
       if ${PKGCHK} ${DOCKER_PKGS} >/dev/null 2>&1; then
         if [[ $BUILD_DOCKER = "y" ]]; then
+          # Set userdir
+          USER_DIR="/home/invidious"
+          # Set repo Dir
+          REPO_DIR=$USER_DIR/invidious
+          # Default branch
+          DOCKER_IN_BRANCH=master
+          # Default domain
+          DOCKER_DOMAIN=${DOCKER_DOMAIN:-}
+          # Default ip
+          DOCKER_IP=${DOCKER_IP:-localhost}
+          # Default port
+          DOCKER_PORT=${DOCKER_PORT:-3000}
+          # Default dbname
+          DOCKER_PSQLDB=${DOCKER_PSQLDB:-invidious}
+          # Generate db password
+          DOCKER_PSSQLPASS_GEN=$(openssl rand -base64 32 | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
+          # Default dbpass (generated)
+          DOCKER_PSQLPASS=${DOCKER_PSQLPASS:-$DOCKER_PSSQLPASS_GEN}
+          # Default https only
+          DOCKER_HTTPS_ONLY=${DOCKER_HTTPS_ONLY:-false}
+          # Default external port
+          EXTERNAL_PORT=${EXTERNAL_PORT:-}
+          # Default admins
+          DOCKER_ADMINS=${DOCKER_ADMINS:-}
+          # Default Captcha Key
+          DOCKER_CAPTCHA=${DOCKER_CAPTCHA:-n}
+          DOCKER_LOGIN=${DOCKER_LOGIN:-y}
+          DOCKER_REGISTRATION=${DOCKER_REGISTRATION:-y}
+          DOCKER_STATISTICS=${DOCKER_STATISTICS:-n}
+          DOCKER_ADVANCED_OPTIONS=""
+          # Let the user enter advanced options:
+          while [[ $DOCKER_ADVANCED_OPTIONS != "y" && $DOCKER_ADVANCED_OPTIONS != "n" ]]; do
+            read -p "Do you want to enter advanced options? [y/n]: " DOCKER_ADVANCED_OPTIONS
+          done
+
+          while :;
+          do
+            case $DOCKER_ADVANCED_OPTIONS in
+              [Yy]* )
+              echo -e "${ORANGE}Advice: Add domain name, or blank if not using one${NC}"
+                read -e -i "$DOCKER_DOMAIN" -p "       Enter the desired domain name: " DOCKER_DOMAIN
+              echo -e "${ORANGE}Advice: Add local or public ip you want to bind to (Default: localhost)${NC}"
+                read -e -i "$DOCKER_IP" -p "       Enter the desired ip address: " DOCKER_IP
+              echo -e "${ORANGE}Advice: Add port number (Default: 3000)${NC}"
+                read -e -i "$DOCKER_PORT" -p "       Enter the desired port number: " DOCKER_PORT
+              echo -e "${ORANGE}Advice: Add database name (Default: Invidious)${NC}"
+                read -e -i "$DOCKER_PSQLDB" -p "       Select database name: " DOCKER_PSQLDB
+              echo -e "${ORANGE}Advice: Add database password (Default: kemal)${NC}"
+                read -e -i "$DOCKER_PSQLPASS" -p "       Select database password: " DOCKER_PSQLPASS
+              echo -e "${ORANGE}Advice: Enter Admin account user name (Leave blank to disable)${NC}"
+                read -p "       Enter Admin Username: " DOCKER_ADMINS
+              echo -e "${ORANGE}Advice: Enable/Disable the captcha challenge on the login page${NC}"
+               read -p "        Enable Captcha [y/n]: " DOCKER_CAPTCHA
+              echo -e "${ORANGE}Advice: Allow/Forbid users to log-in${NC}"
+                read -p "       Enable Login? [y/n]: " DOCKER_LOGIN
+              echo -e "${ORANGE}Advice: Allow/Forbid Invidious (local) account creation${NC}"
+                read -p "       Enable Registration? [y/n] " DOCKER_REGISTRATION
+              echo -e "${ORANGE}Advice: Enable/Disable statstics (available at /api/v1/stats)${NC}"
+                read -p "       Enable Statstics? [y/n] " DOCKER_STATISTICS
+                ;;
+              [Nn]* ) break ;;
+            esac
+            shift
+
+            while [[ $DOCKER_HTTPS_ONLY != "y" && $DOCKER_HTTPS_ONLY != "n" ]]; do
+              echo -e "${ORANGE}Advice: If you're going to serve Invidious via port 80, choose no, otherwise yes for 443 (HTTPS)"
+              echo -e "                 HTTPS is typically used with a reverse proxy like Nginx${NC}"
+                read -p "Are you going to use https only? [y/n]: " DOCKER_HTTPS_ONLY
+            done
+
+            case $DOCKER_HTTPS_ONLY in
+              [Yy]* )
+                DOCKER_HTTPS_ONLY=true
+                DOCKER_EXTERNAL_PORT=443
+                break ;;
+              [Nn]* )
+                DOCKER_HTTPS_ONLY=false
+                DOCKER_EXTERNAL_PORT=
+                break ;;
+            esac
+          done
+
+          PSQLDB=$(printf '%s\n' $PSQLDB | LC_ALL=C tr '[:upper:]' '[:lower:]')
+
+          echo -e "${GREEN}\n"
+          echo -e "You entered: \n"
+          echo -e " ${DONE} branch        : $DOCKER_IN_BRANCH"
+          echo -e " ${DONE} domain        : $DOCKER_DOMAIN"
+          echo -e " ${DONE} ip address    : $DOCKER_IP"
+          echo -e " ${DONE} port          : $DOCKER_PORT"
+          if [ ! -z "$DOCKER_EXTERNAL_PORT" ]; then
+            echo -e " ${DONE} external port : $DOCKER_EXTERNAL_PORT"
+          fi
+          echo -e " ${DONE} dbname        : $DOCKER_PSQLDB"
+          echo -e " ${DONE} dbpass        : $DOCKER_PSQLPASS"
+          echo -e " ${DONE} https only    : $DOCKER_HTTPS_ONLY"
+          if [ ! -z "$DOCKER_ADMINS" ]; then
+            echo -e " ${DONE} admins        : $DOCKER_ADMINS"
+          fi
+          if [ ! -z "$DOCKER_CAPTCHA" ]; then
+            echo -e " ${DONE} captcha       : $DOCKER_CAPTCHA"
+          fi
+          if [ ! -z "$DOCKER_LOGIN" ]; then
+            echo -e " ${DONE} login         : $DOCKER_LOGIN"
+          fi
+          if [ ! -z "$DOCKER_REGISTRATION" ]; then
+            echo -e " ${DONE} registration  : $DOCKER_REGISTRATION"
+          fi
+          if [ ! -z "$DOCKER_STATISTICS" ]; then
+            echo -e " ${DONE} statistics    : $DOCKER_STATISTICS"
+          fi
+          echo -e " ${NC}"
+          echo ""
+          echo ""
+          read -n1 -r -p "Invidious is ready to be installed, press any key to continue..."
+          echo ""
+          download_docker_compose_file
           # Remove version from docker-compose.yml (to remove warning in docker)
           if grep -q 'version: "3"' ${REPO_DIR}/docker-compose.yml
           then
             ${SUDO} sed -i '1d' ${REPO_DIR}/docker-compose.yml
           fi
-          download_docker_compose_file
-          # Let the user enter reverse proxy
-          while [[ $REVERSE_PROXY != "y" && $REVERSE_PROXY != "n" ]]; do
-            read -p "Are you running behind a reverse proxy? [y/n]: " REVERSE_PROXY
-          done
-          if [[ ! $REVERSE_PROXY = "y" ]]; then
-            ${SUDO} sed -i "s/127.0.0.1:3000:3000/3000:3000/g" ${REPO_DIR}/docker-compose.yml
+          # Add options to docker-compose.yml
+          ${SUDO} sed -i "s/image: quay.io\/invidious\/invidious:master/image: quay.io\/invidious\/invidious:$DOCKER_IN_BRANCH/" ${REPO_DIR}/docker-compose.yml
+          ${SUDO} sed -i "s/dbname: invidious/dbname: $DOCKER_PSQLDB/" ${REPO_DIR}/docker-compose.yml
+          ${SUDO} sed -i "s/password: kemal/password: $DOCKER_PSQLPASS/" ${REPO_DIR}/docker-compose.yml
+          ${SUDO} sed -i "s/POSTGRES_DB:.*/POSTGRES_DB: $DOCKER_PSQLDB/" ${REPO_DIR}/docker-compose.yml
+          ${SUDO} sed -i "s/POSTGRES_PASSWORD:.*/POSTGRES_PASSWORD: $DOCKER_PSQLPASS/" ${REPO_DIR}/docker-compose.yml
+          ${SUDO} sed -i "s/# external_port:/external_port: $DOCKER_EXTERNAL_PORT/" ${REPO_DIR}/docker-compose.yml
+          ${SUDO} sed -i "s/# domain:/domain: $DOCKER_DOMAIN/" ${REPO_DIR}/docker-compose.yml
+          ${SUDO} sed -i "s/# admins: \[\"\"\]/admins: \[\"$DOCKER_ADMINS\"\]/" ${REPO_DIR}/docker-compose.yml
+          if [[ $DOCKER_CAPTCHA = "y" ]]; then
+            ${SUDO} sed -i "s/# captcha_enabled: true/captcha_enabled: true/" ${REPO_DIR}/docker-compose.yml
           fi
-            # Let the user enter custom port
-            while [[ $CUSTOM_DOCKER_PORT != "y" && $CUSTOM_DOCKER_PORT != "n" ]]; do
-              read -p "Do you want to use a custom port? [y/n]: " CUSTOM_DOCKER_PORT
-            done
-            if [[ $CUSTOM_DOCKER_PORT = "y" ]]; then
-              read -p "       Enter the desired port number:" DOCKER_PORT
-              ${SUDO} sed -i "s/127.0.0.1:3000:3000/127.0.0.1:$DOCKER_PORT:3000/g" ${REPO_DIR}/docker-compose.yml
-            else
-              repoexit
-              # hmac key
-              if [[ $(command -v 'openssl') ]]; then
-                hmac_key=$(openssl rand -base64 20 | tr -dc 'a-zA-Z0-9' | fold -w 20 | head -n 1)
-              elif [[ $(command -v 'pwgen') ]]; then
-                hmac_key=$(pwgen 20 1)
-              fi
-              sed -i "s/hmac_key:.*/hmac_key: $hmac_key/" ${REPO_DIR}/docker-compose.yml
-              docker compose up -d
-              if [[ $CUSTOM_DOCKER_PORT = "y" ]]; then
-                echo -e "${GREEN}${DONE} Deployment done with custom port $DOCKER_PORT.${NC}"
-              else
-                echo -e "${GREEN}${DONE} Deployment done.${NC}"
-              fi
-              read_sleep 5
-              indexit
+          if [[ $DOCKER_LOGIN = "y" ]]; then
+            ${SUDO} sed -i "s/# login_enabled: true/login_enabled: true/" ${REPO_DIR}/docker-compose.yml
           fi
+          if [[ $DOCKER_REGISTRATION = "y" ]]; then
+            ${SUDO} sed -i "s/# registration_enabled: true/registration_enabled: true/" ${REPO_DIR}/docker-compose.yml
+          fi
+          if [[ $DOCKER_STATISTICS = "y" ]]; then
+            ${SUDO} sed -i "s/# statistics_enabled: false/statistics_enabled: true/" ${REPO_DIR}/docker-compose.yml
+          fi
+          if [[ $DOCKER_HTTPS_ONLY = "true" ]]; then
+            ${SUDO} sed -i "s/# https_only: false/https_only: true/" ${REPO_DIR}/docker-compose.yml
+            ${SUDO} sed -i "s/public_url: \"http:\/\/localhost:8282\"/public_url: \"https:\/\/$DOCKER_DOMAIN\"/" ${REPO_DIR}/docker-compose.yml
+            ${SUDO} sed -i "s/$DOCKER_IP:3000:3000/$DOCKER_PORT:3000/" ${REPO_DIR}/docker-compose.yml
+          else
+            ${SUDO} sed -i "s/$DOCKER_IP:3000:3000/$DOCKER_IP:$DOCKER_PORT:3000/" ${REPO_DIR}/docker-compose.yml
+          fi
+          # Generate secret keys
+          if [[ $(command -v 'openssl') ]]; then
+            hmac_key=$(openssl rand -base64 20 | tr -dc 'a-zA-Z0-9' | fold -w 20 | head -n 1)
+            hmac_key_companion=$(openssl rand -base64 20 | tr -dc 'a-zA-Z0-9' | fold -w 20 | head -n 1)
+          elif [[ $(command -v 'pwgen') ]]; then
+            hmac_key=$(pwgen 20 1)
+            hmac_key_companion=$(pwgen 20 1)
+          fi
+          # Add keys to config
+          ${SUDO} sed -i "s/invidious_companion_key:.*/invidious_companion_key: $hmac_key_companion/" ${REPO_DIR}/docker-compose.yml
+          ${SUDO} sed -i "s/hmac_key:.*/hmac_key: $hmac_key/" ${REPO_DIR}/docker-compose.yml
+          ${SUDO} sed -i "s/SERVER_SECRET_KEY=.*/SERVER_SECRET_KEY=$hmac_key/" ${REPO_DIR}/docker-compose.yml
+          # Bring up the containers
+          repoexit
+          docker compose up -d
+          echo -e "${GREEN}${DONE} Deployment done.${NC}"
+          read_sleep 5
+          indexit
         fi
         if [[ $BUILD_DOCKER = "n" ]]; then
           indexit
