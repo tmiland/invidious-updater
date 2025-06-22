@@ -46,6 +46,28 @@ services:
     depends_on:
       - invidious-db
 
+  companion:
+    image: quay.io/invidious/invidious-companion:latest
+    environment:
+    # Use the key generated in the 2nd step
+       - SERVER_SECRET_KEY=CHANGE_ME!!SAME_AS_INVIDIOUS_COMPANION_SECRET_KEY_FROM_INVIDIOUS_CONFIG 
+    restart: unless-stopped
+    # Remove "127.0.0.1:" if used from an external IP
+    ports:
+      - "127.0.0.1:8282:8282"
+    logging:
+      options:
+        max-size: "1G"
+        max-file: "4"
+    cap_drop:
+      - ALL
+    read_only: true
+    # cache for youtube library
+    volumes:
+      - companioncache:/var/tmp/youtubei.js:rw
+    security_opt:
+      - no-new-privileges:true
+
   invidious-db:
     image: docker.io/library/postgres:14
     restart: unless-stopped
