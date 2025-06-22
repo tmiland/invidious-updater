@@ -578,7 +578,7 @@ server {
 
     # ssl_certificate /etc/nginx/certs/invidious.domain.tld/invidious.domain.tld.cert;
   	# ssl_certificate_key /etc/nginx/certs/invidious.domain.tld/invidious.domain.tld.key;
-
+    # Invidious
   	location / {
   		proxy_pass http://127.0.0.1:3000;
   		proxy_set_header X-Forwarded-For $remote_addr;
@@ -586,7 +586,30 @@ server {
   		proxy_http_version 1.1;		# to keep alive
   		proxy_set_header Connection "";	# to keep alive
   	}
-
+    # Invidious Companion
+    location /latest_version {
+        proxy_pass http://127.0.0.1:8282;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header Host $host;    # so Invidious companion knows domain
+        proxy_http_version 1.1;     # to keep alive
+        proxy_set_header Connection ""; # to keep alive
+    }
+    # Invidious Companion
+    location /api/manifest/dash/id/ {
+        proxy_pass http://127.0.0.1:8282;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header Host $host;    # so Invidious companion knows domain
+        proxy_http_version 1.1;     # to keep alive
+        proxy_set_header Connection ""; # to keep alive
+    }
+    # Invidious Companion
+    location /videoplayback {
+        proxy_pass http://127.0.0.1:8282;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header Host $host;    # so Invidious companion knows domain
+        proxy_http_version 1.1;     # to keep alive
+        proxy_set_header Connection ""; # to keep alive
+    }
   }
 EOF
   ${SUDO} sed -i "s/127.0.0.1/${NGINX_HOST}/g" $NGINX_VHOST_DIR/$NGINX_VHOST
