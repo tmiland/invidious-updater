@@ -20,7 +20,7 @@ services:
           port: 5432
         check_tables: true
         invidious_companion:
-        - private_url: "http://companion:8282"
+        - private_url: "http://localhost:8282"
           public_url: "http://localhost:8282"
         invidious_companion_key: "CHANGE_ME!!"
         # external_port:
