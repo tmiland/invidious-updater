@@ -1957,9 +1957,15 @@ deploy_with_docker() {
           ${SUDO} sed -i "s/password: kemal/password: $DOCKER_PSQLPASS/" ${REPO_DIR}/docker-compose.yml
           ${SUDO} sed -i "s/POSTGRES_DB:.*/POSTGRES_DB: $DOCKER_PSQLDB/" ${REPO_DIR}/docker-compose.yml
           ${SUDO} sed -i "s/POSTGRES_PASSWORD:.*/POSTGRES_PASSWORD: $DOCKER_PSQLPASS/" ${REPO_DIR}/docker-compose.yml
-          ${SUDO} sed -i "s/# external_port:/external_port: $DOCKER_EXTERNAL_PORT/" ${REPO_DIR}/docker-compose.yml
-          ${SUDO} sed -i "s/# domain:/domain: $DOCKER_DOMAIN/" ${REPO_DIR}/docker-compose.yml
-          ${SUDO} sed -i "s/# admins: \[\"\"\]/admins: \[\"$DOCKER_ADMINS\"\]/" ${REPO_DIR}/docker-compose.yml
+          if [[ -n $DOCKER_EXTERNAL_PORT ]]; then
+            ${SUDO} sed -i "s/# external_port:/external_port: $DOCKER_EXTERNAL_PORT/" ${REPO_DIR}/docker-compose.yml
+          fi
+          if [[ -n $DOCKER_DOMAIN ]]; then
+            ${SUDO} sed -i "s/# domain:/domain: $DOCKER_DOMAIN/" ${REPO_DIR}/docker-compose.yml
+          fi
+          if [[ -n $DOCKER_ADMINS ]]; then
+            ${SUDO} sed -i "s/# admins: \[\"\"\]/admins: \[\"$DOCKER_ADMINS\"\]/" ${REPO_DIR}/docker-compose.yml
+          fi
           if [[ $DOCKER_CAPTCHA = "y" ]]; then
             ${SUDO} sed -i "s/# captcha_enabled: true/captcha_enabled: true/" ${REPO_DIR}/docker-compose.yml
           fi
@@ -1975,22 +1981,25 @@ deploy_with_docker() {
           if [[ $DOCKER_HTTPS_ONLY = "true" ]]; then
             ${SUDO} sed -i "s/# https_only: false/https_only: true/" ${REPO_DIR}/docker-compose.yml
             ${SUDO} sed -i "s/public_url: \"http:\/\/localhost:8282\"/public_url: \"https:\/\/$DOCKER_DOMAIN\"/" ${REPO_DIR}/docker-compose.yml
-            ${SUDO} sed -i "s/$DOCKER_IP:3000:3000/$DOCKER_PORT:3000/" ${REPO_DIR}/docker-compose.yml
+            ${SUDO} sed -i "s/127.0.0.1:3000:3000/$DOCKER_PORT:3000/" ${REPO_DIR}/docker-compose.yml
           else
-            ${SUDO} sed -i "s/$DOCKER_IP:3000:3000/$DOCKER_IP:$DOCKER_PORT:3000/" ${REPO_DIR}/docker-compose.yml
+            if [[ $DOCKER_IP == "localhost" ]]; then
+              DOCKER_IP=127.0.0.1
+            fi
+            ${SUDO} sed -i "s/127.0.0.1:3000:3000/$DOCKER_IP:$DOCKER_PORT:3000/" ${REPO_DIR}/docker-compose.yml
           fi
           # Generate secret keys
           if [[ $(command -v 'openssl') ]]; then
             hmac_key=$(openssl rand -base64 20 | tr -dc 'a-zA-Z0-9' | fold -w 20 | head -n 1)
-            hmac_key_companion=$(openssl rand -base64 20 | tr -dc 'a-zA-Z0-9' | fold -w 20 | head -n 1)
+            invidious_companion_key=$(openssl rand -base64 20 | tr -dc 'a-zA-Z0-9' | fold -w 20 | head -n 1)
           elif [[ $(command -v 'pwgen') ]]; then
             hmac_key=$(pwgen 20 1)
-            hmac_key_companion=$(pwgen 20 1)
+            invidious_companion_key=$(pwgen 20 1)
           fi
           # Add keys to config
-          ${SUDO} sed -i "s/invidious_companion_key:.*/invidious_companion_key: $hmac_key_companion/" ${REPO_DIR}/docker-compose.yml
+          ${SUDO} sed -i "s/invidious_companion_key:.*/invidious_companion_key: \"$invidious_companion_key\"/" ${REPO_DIR}/docker-compose.yml
           ${SUDO} sed -i "s/hmac_key:.*/hmac_key: $hmac_key/" ${REPO_DIR}/docker-compose.yml
-          ${SUDO} sed -i "s/SERVER_SECRET_KEY=.*/SERVER_SECRET_KEY=$hmac_key/" ${REPO_DIR}/docker-compose.yml
+          ${SUDO} sed -i "s/SERVER_SECRET_KEY=.*/SERVER_SECRET_KEY=$invidious_companion_key/" ${REPO_DIR}/docker-compose.yml
           # Bring up the containers
           repoexit
           docker compose up -d
