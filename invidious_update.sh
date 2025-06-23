@@ -495,17 +495,20 @@ install_certbot() {
   fi
 }
 
-NGINX_AUTOINSTALL_URL=https://github.com/angristan/nginx-autoinstall/raw/master/nginx-autoinstall.sh
+#NGINX_AUTOINSTALL_URL=https://github.com/angristan/nginx-autoinstall/raw/master/nginx-autoinstall.sh
+NGINX_AUTOINSTALL_URL=https://github.com/tmiland/nginx-autoinstall/raw/refs/heads/headless-arg/nginx-autoinstall.sh
 
 nginx-autoinstall() {
   shopt -s nocasematch
 if [[ $DISTRO_GROUP == "Debian" ]]; then
     if [[ $(command -v 'curl') ]]; then
       # shellcheck disable=SC1090
-      source <(curl -sSLf $NGINX_AUTOINSTALL_URL)
+      #source <(curl -sSLf $NGINX_AUTOINSTALL_URL)
+      curl -sSL $NGINX_AUTOINSTALL_URL | bash -s headless
     elif [[ $(command -v 'wget') ]]; then
       # shellcheck disable=SC1090
-      . <(wget -qO - $NGINX_AUTOINSTALL_URL)
+      #. <(wget -qO - $NGINX_AUTOINSTALL_URL)
+      wget -qO- $NGINX_AUTOINSTALL_URL | bash -s headless
     else
       echo -e "${RED}${ERROR} This script requires curl or wget.\nProcess aborted${NC}"
       exit 0
@@ -528,6 +531,32 @@ install_nginx_vhost() {
   #   echo $(sed -n 's/.*port *: *\([^ ]*.*\)/\2/p' "$1")
   # }
   NGINX_DOMAIN_NAME=$(get_domain "$IN_CONFIG")
+  if [[ -z $NGINX_DOMAIN_NAME ]]; then
+    NGINX_DOMAIN_NAME=invidious
+    echo ""
+    read -p "Looks like domain is empty, do you plan on using Invidious on localhost? [y/n/q]?" NGINX_DOMAIN_NAME_ANSWER
+    echo ""
+    case $NGINX_DOMAIN_NAME_ANSWER in
+      [Yy]* )
+      echo ""
+      echo "Info: This will make invidious accessible in your browser with http://$NGINX_DOMAIN_NAME"
+      read -p "Do you want to add $NGINX_DOMAIN_NAME to /etc/hosts? [y/n]?" NGINX_HOSTS_ANSWER
+      echo ""
+      if [[ $NGINX_HOSTS_ANSWER == "y" ]]; then
+        if grep "127.0.0.1       $NGINX_DOMAIN_NAME" /etc/hosts; then
+          echo "$NGINX_DOMAIN_NAME is already added to /etc/hosts"
+        else
+          ${SUDO} echo "127.0.0.1       $NGINX_DOMAIN_NAME" >> /etc/hosts
+        fi
+      fi
+      ;;
+      [Nn]* )
+        read_sleep 3
+        indexit
+        ;;
+      * ) echo "Enter Y, N or Q, please." ;;
+      esac
+  fi
   NGINX_HOST=$(get_host "$IN_CONFIG")
   #NGINX_PORT=$(get_port "$IN_CONFIG")
 
@@ -580,7 +609,7 @@ server {
   	# ssl_certificate_key /etc/nginx/certs/invidious.domain.tld/invidious.domain.tld.key;
     # Invidious
   	location / {
-  		proxy_pass http://127.0.0.1:3000;
+  		proxy_pass http://localhost:3000;
   		proxy_set_header X-Forwarded-For $remote_addr;
   		proxy_set_header Host $host;	# so Invidious knows domain
   		proxy_http_version 1.1;		# to keep alive
@@ -612,11 +641,13 @@ server {
     }
   }
 EOF
-  ${SUDO} sed -i "s/127.0.0.1/${NGINX_HOST}/g" $NGINX_VHOST_DIR/$NGINX_VHOST
+  if [[ ! $NGINX_HOST == "localhost" ]]; then
+    ${SUDO} sed -i "s/localhost/${NGINX_HOST}/g" $NGINX_VHOST_DIR/$NGINX_VHOST
+  fi
   ${SUDO} sed -i "s/invidious.domain.tld/${NGINX_DOMAIN_NAME}/g" $NGINX_VHOST_DIR/$NGINX_VHOST
   ${SUDO} ln -s $NGINX_VHOST_DIR/$NGINX_VHOST /etc/nginx/sites-enabled/$NGINX_VHOST
   ${SUDO} chown -R root:www-data /etc/nginx/html
-  nginx -t && $SYSTEM_CMD reload nginx && echo "Successfully installed nginx vhost $NGINX_VHOST_DIR/$NGINX_VHOST" || echo "Error installing nginx vhost!"
+  /usr/sbin/nginx -t && $SYSTEM_CMD reload nginx && echo "Successfully installed nginx vhost $NGINX_VHOST_DIR/$NGINX_VHOST" || echo "Error installing nginx vhost!"
   sleep 3
   indexit
   ;;
