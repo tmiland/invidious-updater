@@ -495,20 +495,17 @@ install_certbot() {
   fi
 }
 
-#NGINX_AUTOINSTALL_URL=https://github.com/angristan/nginx-autoinstall/raw/master/nginx-autoinstall.sh
-NGINX_AUTOINSTALL_URL=https://github.com/tmiland/nginx-autoinstall/raw/refs/heads/headless-arg/nginx-autoinstall.sh
+NGINX_AUTOINSTALL_URL=https://github.com/angristan/nginx-autoinstall/raw/master/nginx-autoinstall.sh
 
 nginx-autoinstall() {
   shopt -s nocasematch
 if [[ $DISTRO_GROUP == "Debian" ]]; then
     if [[ $(command -v 'curl') ]]; then
       # shellcheck disable=SC1090
-      #source <(curl -sSLf $NGINX_AUTOINSTALL_URL)
-      curl -sSL $NGINX_AUTOINSTALL_URL | bash -s headless
+      curl -sSLf $NGINX_AUTOINSTALL_URL | HEADLESS=y bash
     elif [[ $(command -v 'wget') ]]; then
       # shellcheck disable=SC1090
-      #. <(wget -qO - $NGINX_AUTOINSTALL_URL)
-      wget -qO- $NGINX_AUTOINSTALL_URL | bash -s headless
+      wget -qO - $NGINX_AUTOINSTALL_URL | HEADLESS=y bash
     else
       echo -e "${RED}${ERROR} This script requires curl or wget.\nProcess aborted${NC}"
       exit 0
