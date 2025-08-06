@@ -2407,7 +2407,7 @@ if [ $# != 0 ]; then
       --install-inv-companion | -iic)
         install_invidious_companion
         ;;
-      -*|--*)
+      --*|-*)
         echo -e "${RED}\n ${ERROR} Error! Invalid option: -$1${NC}" >&2
         usage
         exit 1
