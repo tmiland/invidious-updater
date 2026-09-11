@@ -916,7 +916,8 @@ show_update_banner() {
   echo -e "${GREEN}${DONE} New version:${NC} ""${RELEASE_TAG}"" - ${RELEASE_TITLE}"
   echo ""
   echo -e "${ORANGE}${ARROW} Notes:${NC}\n"
-  echo -e "${BLUE}${RELEASE_NOTE}${NC}"
+  # Fold notes at 80 cols before colorizing so escape codes don't count as width
+  echo -e "${BLUE}$(fold -s -w 80 <<< "${RELEASE_NOTE}")${NC}"
   echo ""
 }
 
