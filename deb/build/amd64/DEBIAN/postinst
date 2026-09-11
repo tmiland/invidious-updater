@@ -1,0 +1,5 @@
+#!/bin/bash
+DIR="invidious-updater-linux_amd64"
+# Add link in /usr/bin 
+ln -s /opt/$DIR/invidious_update.sh /usr/bin/invidious_update
+#bash invidious-updater

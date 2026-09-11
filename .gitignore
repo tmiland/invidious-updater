@@ -1,5 +1,9 @@
-deb/build
-img/Screenshot at 13-14-28.png
-img/Screenshot at 13-14-57.png
-img/Screenshot at 13-18-28.png
+# Built packages (binaries) — never commit, they are published via releases / APT repo
+deb/**/*.deb
+# Stray local screenshots / outdated version badges — not referenced by docs
+img/Screenshot*.png
+img/version_*.png
+img/exit.png
+# Stale sample install log (v1.4.4 era) — kept locally only
+log/
 old/scripts

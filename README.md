@@ -65,60 +65,30 @@ See [Install.md](./INSTALL.md)
 
 | Debian | Ubuntu |
 | ------ | ------ |
-| [<img src="https://tmiland.github.io/invidious-updater/img/Debian_12.png" height="140" width="280">](https://tmiland.github.io/invidious-updater/img/Debian_12.png) | [<img src="https://tmiland.github.io/invidious-updater/img/Ubuntu_24.png" height="140" width="280">](https://tmiland.github.io/invidious-updater/img/Ubuntu_24.png) 
+| [<img src="https://tmiland.github.io/invidious-updater/img/Debian_12.png" height="140" width="280">](https://tmiland.github.io/invidious-updater/img/Debian_12.png) | [<img src="https://tmiland.github.io/invidious-updater/img/Ubuntu_24.png" height="140" width="280">](https://tmiland.github.io/invidious-updater/img/Ubuntu_24.png)
 
-| CentOS | Fedora |
+| Fedora | Arch |
 | ------ | ------ |
-| [<img src="https://tmiland.github.io/invidious-updater/img/CentOS.png" height="140" width="280">](https://tmiland.github.io/invidious-updater/img/CentOS.png) | [<img src="https://tmiland.github.io/invidious-updater/img/Fedora_40.png" height="140" width="280">](https://tmiland.github.io/invidious-updater/img/Fedora_40.png)
+| [<img src="https://tmiland.github.io/invidious-updater/img/Fedora_40.png" height="140" width="280">](https://tmiland.github.io/invidious-updater/img/Fedora_40.png) | [<img src="https://tmiland.github.io/invidious-updater/img/Arch.png" height="140" width="280">](https://tmiland.github.io/invidious-updater/img/Arch.png)
 
-| Arch | PureOS |
+| Linux Mint | PureOS |
 | ------ | ------ |
-| [<img src="https://tmiland.github.io/invidious-updater/img/Arch.png" height="140" width="280">](https://tmiland.github.io/invidious-updater/img/Arch.png) | [<img src="https://tmiland.github.io/invidious-updater/img/PureOS.png" height="140" width="280">](https://tmiland.github.io/invidious-updater/img/PureOS.png)
-
-| Linux Mint |
-| ------ |
-| [<img src="https://tmiland.github.io/invidious-updater/img/Mint_22.png" height="140" width="280">](https://tmiland.github.io/invidious-updater/img/Mint_22.png)
+| [<img src="https://tmiland.github.io/invidious-updater/img/Mint_22.png" height="140" width="280">](https://tmiland.github.io/invidious-updater/img/Mint_22.png) | [<img src="https://tmiland.github.io/invidious-updater/img/PureOS.png" height="140" width="280">](https://tmiland.github.io/invidious-updater/img/PureOS.png)
 
 ## Recommendation
 
 ***It is recommended to use this script on a fresh installation to avoid unwanted complications.***
-  * I recommend a Debian 12 Droplet on [DigitalOcean](https://m.do.co/c/f1f2b475fca0)
 
 ## Testing
 
-Tested and working on:
+Tested and working on Debian 12, Ubuntu 24, Linux Mint 22, Fedora 40,
+Arch Linux and PureOS (see [Install.md](./INSTALL.md) for the APT repo +
+cron setup). Docker deploy tested on Debian, Fedora, Arch and Mint —
+see [#15](https://github.com/tmiland/Invidious-Updater/issues/15).
 
-| Debian | Ubuntu | CentOS | Fedora | Arch | PureOS |
-| ------ | ------ | ------ | ------ | ------ | ------ |
-| [<img src="https://tmiland.github.io/invidious-updater/img/os_icons/debian.svg?sanitize=true" height="128" width="128">](https://tmiland.github.io/invidious-updater/img/os_icons/debian.svg?sanitize=true) | [<img src="https://tmiland.github.io/invidious-updater/img/os_icons/ubuntu.svg?sanitize=true" height="128" width="128">](https://tmiland.github.io/invidious-updater/img/os_icons/ubuntu.svg?sanitize=true) | [<img src="https://tmiland.github.io/invidious-updater/img/os_icons/cent-os.svg?sanitize=true" height="128" width="128">](https://tmiland.github.io/invidious-updater/img/os_icons/cent-os.svg?sanitize=true) | [<img src="https://tmiland.github.io/invidious-updater/img/os_icons/fedora.svg?sanitize=true" height="128" width="128">](https://tmiland.github.io/invidious-updater/img/os_icons/fedora.svg?sanitize=true) | [<img src="https://tmiland.github.io/invidious-updater/img/os_icons/arch.svg?sanitize=true" height="128" width="128">](https://tmiland.github.io/invidious-updater/img/os_icons/arch.svg?sanitize=true) | [<img src="https://tmiland.github.io/invidious-updater/img/os_icons/pureos.svg?sanitize=true" height="128" width="128">](https://tmiland.github.io/invidious-updater/img/os_icons/pureos.svg?sanitize=true)
+#### SELinux will be set to permissive on Fedora
 
-- [X] Tested extensively on Debian 9/10/11/12
-  - [X] Docker option tested and working
-- [X] Tested on Ubuntu 16.04/18.10/24
-  - [X] Docker option tested, not working
-- [X] Tested on CentOS 8
-  - [ ] Docker option tested and working
-- [X] Tested on Fedora 40
-  - [X] Docker option tested and working
-- [X] On Bash on Debian on Windows (in Gnome-Boxes)
-  - [X] Systemd not working
-  - [X] Docker option not working
-- [X] Tested on Linux Mint 22
-  - [X] Docker option tested and working
-  - See [#15](https://github.com/tmiland/Invidious-Updater/issues/15)
-- [X] Tested on Arch Linux
-  - [X] Docker option tested and working
-  
-  ~~If you get permission issues, set selinux to permissive. 
-  See how to here: [How do I enable or disable SELinux ?](https://fedoraproject.org/wiki/SELinux_FAQ#How_do_I_enable_or_disable_SELinux_.3F)~~
-  #### SELinux will be set to permissive on Fedora and CentOS
-
-  ~~***Postgresql 11 will be installed by default in both Fedora and CentOS. (If not already installed)***~~
-  Postgresql will be default from repo on Fedora and CentOS
-  
-#### Latest install log - version: 1.4.4
-
-[install log Debian 10](https://tmiland.github.io/invidious-updater/log/install_log_debian.log)
+Postgresql will be default from repo on Fedora.
 
 ## Changelog
 
@@ -126,19 +96,26 @@ See [Changelog](https://tmiland.github.io/invidious-updater/CHANGELOG.md)
 
 ## Compatibility and Requirements
 
-- Debian 8 and later
-- Ubuntu 16.04 and later
-- Linux Mint 22
-- PureOS (Not tested)
-- CentOS 8
-- Fedora 40
+- Debian 11 and later
+- Ubuntu 22.04 and later
+- Linux Mint 21 and later
+- PureOS
+- Fedora 40 and later
   - Docker support
     - [OS requirements](https://docs.docker.com/install/linux/docker-ce/fedora/)
 - Arch Linux
 
+Unattended installs can pre-seed answers via environment variables
+(`DOMAIN`, `IP`, `PORT`, `PSQLDB`, `PSQLPASS`, `HTTPS_ONLY`,
+`EXTERNAL_PORT`, `ADMINS`, `SWAP_OPTIONS`) — see the CI workflow for an
+example. Docker deploys use the production `docker-compose.yml` in this
+repo (independent from upstream's dev-only compose file); Invidious
+Companion is included. Automated updates via cron are documented in
+[Install.md](./INSTALL.md).
+
 ## Credits
 - Code is mixed and customized from these sources:
-  - [Invidious](https://github.com/omarroth/invidious#linux)
+  - [Invidious](https://github.com/iv-org/invidious)
   - [Invidious companion](https://github.com/iv-org/invidious-companion)
   - [nginx-autoinstall](https://github.com/angristan/nginx-autoinstall)
   - [Git-Repo-Update](https://github.com/KillianKemps/Git-Repo-Update)
@@ -148,7 +125,6 @@ See [Changelog](https://tmiland.github.io/invidious-updater/CHANGELOG.md)
 ## Feature request and bug reports
 - [Bug report](https://github.com/tmiland/Invidious-Updater/issues/new?assignees=tmiland&labels=bug&template=bug_report.md&title=Bug-report:)
 - [Feature request](https://github.com/tmiland/Invidious-Updater/issues/new?assignees=tmiland&labels=enhancement&template=feature_request.md&title=Feature-request:)
-- [IRC Freenode: #InvidiousUpdater](irc://freenode.net/#InvidiousUpdater)
 
 ## Donations
 <a href="https://coindrop.to/tmiland" target="_blank"><img src="https://coindrop.to/embed-button.png" style="border-radius: 10px; height: 57px !important;width: 229px !important;" alt="Coindrop.to me"></img></a>
