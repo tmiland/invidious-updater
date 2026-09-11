@@ -132,3 +132,8 @@
       routes in the nginx vhost, Docker install flow update, headless nginx
       install, removal of youtube-trusted-session-generator
     - [2.2.5](https://github.com/tmiland/Invidious-Updater/releases/tag/v2.2.5) (2025)
+- [X] Modernization pass
+    - Script hardening (`-fsSL`, `ver_lt()` compare, redacted secrets,
+      ARM64, dnf, quoted uninstall), production docker-compose docs,
+      README cleanup, deb source sync, CI lint + 6-OS smoke gate
+    - [2.2.6](https://github.com/tmiland/Invidious-Updater/releases/tag/v2.2.6) (2026)
