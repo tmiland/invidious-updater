@@ -32,6 +32,8 @@ jobs:
         with:
           scandir: '.'
           severity: warning
+          # deb control file is Debian metadata, not shell
+          ignore_names: control
 
       - name: Validate docker-compose
         run: docker compose -f docker-compose.yml config --quiet
@@ -56,6 +58,11 @@ jobs:
             setup: pacman -Sy --noconfirm lsb-release curl git sudo
     container:
       image: ${{ matrix.image }}
+    # Container jobs default to sh (dash) — the smoke script uses
+    # bashisms (herestring <<<), so pin bash explicitly.
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v5
 

@@ -2,7 +2,7 @@
 # Builds the amd64 .deb from deb/build/ and optionally copies it into a
 # local APT repo checkout. Override the target with DEB_REPO_DIR.
 # Example: DEB_REPO_DIR=/path/to/deb.tmiland.com/debian ./package.sh
-version=$(echo $(sed -n '14 s/[^0-9.]*\([0-9.]*\).*/\1/p' "../../invidious_update.sh"))
+version=$(sed -n '14 s/[^0-9.]*\([0-9.]*\).*/\1/p' "../../invidious_update.sh")
 arch=$(uname -m)
 if [ "$arch" == "x86_64" ]; then
     arch="amd64"

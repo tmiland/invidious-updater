@@ -3,9 +3,9 @@
 # Run from deb/build/.
 
 # Returns the version number of invidious_update.sh file on line 14
-NEW_VERSION=$(echo $(sed -n '14 s/[^0-9.]*\([0-9.]*\).*/\1/p' "../../invidious_update.sh"))
+NEW_VERSION=$(sed -n '14 s/[^0-9.]*\([0-9.]*\).*/\1/p' "../../invidious_update.sh")
 # Returns the version number in control file
-OLD_VERSION=$(echo $(grep -Poh "(?<=Version: )([0-9]|\.)*(?=\s|$)" ./amd64/DEBIAN/*))
+OLD_VERSION=$(grep -Poh "(?<=Version: )([0-9]|\.)*(?=\s|$)" ./amd64/DEBIAN/*)
 # Only update number if version in invidious_update.sh is newer than control file
 # (plain string `<` misorders e.g. 2.2.5 vs 2.10.0 — always compare properly)
 if dpkg --compare-versions "${OLD_VERSION}" lt "${NEW_VERSION}"; then
