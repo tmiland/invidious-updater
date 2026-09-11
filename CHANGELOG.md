@@ -114,3 +114,21 @@
     - Added option to run database maintenance on Docker, and added docker-compose file from [iv-org/invidious#1895 (comment)](https://github.com/iv-org/invidious/issues/1895#issuecomment-812642053)
     - Turned all variables to uppercase as per bash recommendations.
     - Added in [1.5.9](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.5.9)
+- [X] Maintenance releases
+    - Install-process alignment with upstream docs, dependency updates,
+      empty-variable hiding, safe-directory fix
+    - [1.6.0](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.6.0) – [1.6.3](https://github.com/tmiland/Invidious-Updater/releases/tag/v1.6.3) (2022)
+- [X] Upstream-recommended fixes
+    - `-Ddisable_quic` crystal build flag, nginx `proxy_pass` trailing-slash
+      fix, docs-link updates (incl. [SamantazFox/upstream-recommendations](https://github.com/tmiland/Invidious-Updater/pull/99))
+    - [2.1.0](https://github.com/tmiland/Invidious-Updater/releases/tag/v2.1.0) – [2.1.3](https://github.com/tmiland/Invidious-Updater/releases/tag/v2.1.3) (2022–2024)
+- [X] Invidious Companion support
+    - Companion install option (deno build + systemd service), companion key
+      injection into `config.yml`, removal of legacy `inv_sig_helper` and
+      deprecated services, Ubuntu 24 Docker updates
+    - [2.2.0](https://github.com/tmiland/Invidious-Updater/releases/tag/v2.2.0) – [2.2.4](https://github.com/tmiland/Invidious-Updater/releases/tag/v2.2.4) (2024–2025)
+- [X] Companion in nginx + Docker refresh
+    - Companion `/videoplayback`, `/api/manifest/dash/id/`, `/latest_version`
+      routes in the nginx vhost, Docker install flow update, headless nginx
+      install, removal of youtube-trusted-session-generator
+    - [2.2.5](https://github.com/tmiland/Invidious-Updater/releases/tag/v2.2.5) (2025)

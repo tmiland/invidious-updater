@@ -1,0 +1,19 @@
+Package: Invidious-Updater
+Version: 2.2.5
+Architecture: amd64
+Maintainer: Tommy Miland (tmiland) <kontakt@tmiland.com>
+Installed-Size:
+Depends: bash, git, curl | wget
+Section: non-free/net
+Priority: optional
+Homepage: https://github.com/tmiland/Invidious-Updater
+Description: Script to install and update Invidious
+ Install invidious
+ Update git repo, rebuild and restart service
+ Update the Script
+ Install Invidious service
+ Run database maintenance
+ Run database migration
+ Uninstall Invidious
+ .
+ This package contains the invidious_update.sh installer/updater script.

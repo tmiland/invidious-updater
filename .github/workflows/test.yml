@@ -1,0 +1,81 @@
+name: OS tests
+
+# Smoke-tests invidious_update.sh on every supported distro family.
+# GitHub-hosted runners are Ubuntu-only, so non-Ubuntu distros run in
+# containers on ubuntu-latest. Linux Mint has no official image — it shares
+# the Debian code path, so the Ubuntu jobs cover it.
+#
+# What the smoke test proves per OS: distro detection accepts the OS
+# (no "unknown distro" exit), --help works, the interactive menu boots
+# and exits cleanly, and invalid flags fail. UPDATE_SCRIPT=no keeps the
+# runs hermetic (no GitHub API calls). Full installs stay opt-in in
+# install.yml (needs systemd + network + time).
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: bash syntax check
+        run: bash -n invidious_update.sh
+
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: '.'
+          severity: warning
+
+      - name: Validate docker-compose
+        run: docker compose -f docker-compose.yml config --quiet
+
+  smoke:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: debian:12-slim
+            setup: apt-get update -qq && apt-get install -y -qq lsb-release curl git sudo
+          - image: ubuntu:22.04
+            setup: apt-get update -qq && apt-get install -y -qq lsb-release curl git sudo
+          - image: ubuntu:24.04
+            setup: apt-get update -qq && apt-get install -y -qq lsb-release curl git sudo
+          - image: pureos/byzantium:latest
+            setup: apt-get update -qq && apt-get install -y -qq lsb-release curl git sudo
+          - image: fedora:40
+            setup: dnf install -y -q redhat-lsb-core curl git sudo
+          - image: archlinux:latest
+            setup: pacman -Sy --noconfirm lsb-release curl git sudo
+    container:
+      image: ${{ matrix.image }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install test deps
+        run: ${{ matrix.setup }}
+
+      - name: Smoke test
+        run: |
+          set -u
+          echo "--- lsb_release: $(lsb_release -si) ($(lsb_release -sr))"
+          echo "--- --help (expect exit 0)"
+          UPDATE_SCRIPT=no bash invidious_update.sh --help | tee /tmp/help.txt
+          echo "--- menu boot + exit (expect exit 0)"
+          UPDATE_SCRIPT=no bash invidious_update.sh <<< '11' | tee /tmp/menu.txt
+          echo "--- invalid flag (expect exit 1)"
+          if UPDATE_SCRIPT=no bash invidious_update.sh --bogus-flag > /tmp/bogus.txt 2>&1; then
+            echo "ERROR: invalid flag exited 0"; cat /tmp/bogus.txt; exit 1
+          fi
+          echo "--- assert no distro errors"
+          if grep -qi "unknown distro\|not supported" /tmp/help.txt /tmp/menu.txt; then
+            echo "ERROR: distro not accepted on ${{ matrix.image }}"; exit 1
+          fi
+          echo "SMOKE OK on ${{ matrix.image }}"
