@@ -3,7 +3,7 @@ version='2.2.5'
 DIR="invidious-updater-linux_amd64"
 SH="invidious_update.sh"
 mkdir -p /tmp/$DIR
-cd /tmp/$DIR
+cd /tmp/$DIR || exit 1
 wget https://github.com/tmiland/Invidious-Updater/releases/download/v$version/$SH
 mv /tmp/$DIR /opt/$DIR
 chmod +x /opt/$DIR/$SH
