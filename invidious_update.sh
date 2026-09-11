@@ -137,10 +137,12 @@ indexit() {
 repoexit() {
   cd ${REPO_DIR} || exit 1
 }
-# Distro support
+# Distro support: x86_64 is the tested arch; ARM64 (aarch64) is supported
+# for Docker deploys (see the latest-arm64 image hint in docker-compose.yml)
+# and best-effort for native builds.
 ARCH_CHK=$(uname -m)
-if [ ! ${ARCH_CHK} == 'x86_64' ]; then
-  echo -e "${RED}${ERROR} Error: Sorry, your OS ($ARCH_CHK) is not supported.${NC}"
+if [[ ${ARCH_CHK} != 'x86_64' && ${ARCH_CHK} != 'aarch64' && ${ARCH_CHK} != 'arm64' ]]; then
+  echo -e "${RED}${ERROR} Error: Sorry, your arch ($ARCH_CHK) is not supported.${NC}"
   exit 1;
 fi
 shopt -s nocasematch
@@ -230,8 +232,9 @@ if [[ $DISTRO_GROUP == "Debian" ]]; then
   PKGCHK="dpkg -s"
   # Pre-install packages
   PRE_INSTALL_PKGS="apt-transport-https git curl sudo gnupg"
-  # Install packages
-  INSTALL_PKGS="crystal make libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-bin postgresql libsqlite3-dev zlib1g-dev libpcre3-dev libevent-dev"
+  # NOTE: native-install dependency lists live in the external
+  # invidious-installer (sourced at install time); only the uninstall
+  # list is kept here.
   #Uninstall packages
   UNINSTALL_PKGS="crystal make libssl-dev libxml2-dev libyaml-dev libgmp-dev libreadline-dev librsvg2-bin libsqlite3-dev zlib1g-dev libpcre3-dev libevent-dev"
   # PostgreSQL Service
@@ -244,17 +247,15 @@ if [[ $DISTRO_GROUP == "Debian" ]]; then
   pgsql_config_folder=$(if [[ -d "/etc/postgresql/" ]]; then find "/etc/postgresql/" -maxdepth 1 -type d -name "*" | sort -V | tail -1; fi)
 elif [[ $(lsb_release -si) == "CentOS" ]]; then
   SUDO="sudo"
-  UPDATE="yum update -q"
-  UPGRADE="yum upgrade -q"
-  INSTALL="yum install -y -q"
-  UNINSTALL="yum remove -y -q"
-  PURGE="yum purge -y -q"
-  CLEAN="yum clean all -y -q"
+  UPDATE="dnf update -q"
+  UPGRADE="dnf upgrade -q"
+  INSTALL="dnf install -y -q"
+  UNINSTALL="dnf remove -y -q"
+  PURGE="dnf remove -y -q"
+  CLEAN="dnf clean all -y -q"
   PKGCHK="rpm --quiet --query"
   # Pre-install packages
   PRE_INSTALL_PKGS="epel-release git curl sudo dnf-plugins-core"
-  # Install packages
-  INSTALL_PKGS="crystal make openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-tools sqlite-devel postgresql postgresql-server zlib-devel gcc libevent-devel"
   #Uninstall packages
   UNINSTALL_PKGS="crystal make openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-tools sqlite-devel zlib-devel gcc libevent-devel"
 # PostgreSQL Service
@@ -276,8 +277,6 @@ elif [[ $(lsb_release -si) == "Fedora" ]]; then
   PKGCHK="rpm --quiet --query"
   # Pre-install packages
   PRE_INSTALL_PKGS="git curl sudo"
-  # Install packages
-  INSTALL_PKGS="crystal make openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-tools sqlite-devel postgresql postgresql-server zlib-devel gcc libevent-devel"
   #Uninstall packages
   UNINSTALL_PKGS="crystal make openssl-devel libxml2-devel libyaml-devel gmp-devel readline-devel librsvg2-tools sqlite-devel zlib-devel gcc libevent-devel"
   # PostgreSQL Service
@@ -298,8 +297,6 @@ elif [[ $DISTRO_GROUP == "Arch" ]]; then
   PKGCHK="pacman -Qs"
   # Pre-install packages
   PRE_INSTALL_PKGS="git curl sudo"
-  # Install packages
-  INSTALL_PKGS="make base-devel librsvg postgresql ttf-opensans"
   #Uninstall packages
   UNINSTALL_PKGS="make base-devel librsvg postgresql ttf-opensans"
   # PostgreSQL Service
@@ -682,11 +679,11 @@ download_file() {
   declare -r TF=$(mktemp)
   local DLCMD=''
 
-  #if [ $DOWNLOAD_METHOD = 'curl' ]; then
-  #  DLCMD="curl -o $TF"
-  #else
-  DLCMD="wget -O $TF"
-  #fi
+  if [ $DOWNLOAD_METHOD = 'curl' ]; then
+    DLCMD="curl -fsSL -o $TF"
+  else
+    DLCMD="wget -O $TF"
+  fi
 
   $DLCMD "${URL}" &>/dev/null && echo "$TF" || echo '' # return the temp-filename (or empty string on error)
 }
@@ -734,6 +731,18 @@ get_release_info() {
   RELEASE_TITLE=$(get_latest_release_title ${REPO_NAME})
 }
 
+# Compare two X.Y.Z versions: returns 0 (true) if $1 < $2.
+# Uses dpkg when available (Debian family), sort -V fallback elsewhere —
+# plain string `<` misorders e.g. 2.2.5 vs 2.10.0, so never use that.
+ver_lt() {
+  local cur="$1" latest="$2"
+  if command -v dpkg >/dev/null 2>&1; then
+    dpkg --compare-versions "$cur" lt "$latest"
+  else
+    [ "$cur" != "$latest" ] && \
+    [ "$(printf '%s\n%s\n' "$cur" "$latest" | sort -V | head -n1)" = "$cur" ]
+  fi
+}
 # Returns the version number of invidious_update.sh file on line 14
 get_updater_version() {
   # shellcheck disable=SC2046
@@ -782,7 +791,7 @@ show_status() {
   echo -e "$line"
 }
 
-if ( $SYSTEM_CMD -q is-active ${SERVICE_NAME}); then
+if ( $SYSTEM_CMD -q is-active ${SERVICE_NAME} 2>/dev/null); then
   SHOW_STATUS=$(show_status)
 fi
 
@@ -814,7 +823,7 @@ show_docker_status() {
   for i in "${!status[@]}"
   do
     # shellcheck disable=SC2128
-    if [[ "$status"  = "1" ]] ; then
+    if [[ "${status[$i]}"  = "1" ]] ; then
       line+="${containerName[$i]}: ${GREEN}● running${NC} "
     else
       line+="${containerName[$i]}: ${RED}▲ stopped${NC} "
@@ -823,7 +832,7 @@ show_docker_status() {
 
   echo -e "$line"
 }
-if ( ! $SYSTEM_CMD -q is-active ${SERVICE_NAME}); then
+if ( ! $SYSTEM_CMD -q is-active ${SERVICE_NAME} 2>/dev/null); then
   if docker ps >/dev/null 2>&1; then
     SHOW_DOCKER_STATUS=$(show_docker_status)
   fi
@@ -1055,7 +1064,7 @@ install_docker() {
       gnupg2 \
       software-properties-common
     # Add Docker’s official GPG key:
-    curl -fsSLk https://download.docker.com/linux/debian/gpg |
+    curl -fsSL https://download.docker.com/linux/debian/gpg |
     ${SUDO} gpg --dearmor -o /usr/share/keyrings/docker.gpg >/dev/null
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker.gpg] https://download.docker.com/linux/$DISTRO_TO_LOWER $CODENAME stable" |
     ${SUDO} tee /etc/apt/sources.list.d/docker.list > /dev/null
@@ -1090,7 +1099,7 @@ install_docker() {
       gnupg2 \
       software-properties-common
     # Add Docker’s official GPG key:
-    curl -fsSLk https://download.docker.com/linux/ubuntu/gpg |
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg |
     ${SUDO} gpg --dearmor -o /usr/share/keyrings/docker.gpg >/dev/null
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $CODENAME stable" |
     ${SUDO} tee /etc/apt/sources.list.d/docker.list > /dev/null
@@ -1102,15 +1111,15 @@ install_docker() {
     ${SUDO} docker run hello-world
   elif [[ $(lsb_release -si) == "CentOS" ]]; then
     # Install required packages.
-    ${SUDO} ${INSTALL} yum-utils \
+    ${SUDO} ${INSTALL} dnf-plugins-core \
       device-mapper-persistent-data \
       lvm2
     # Set up the repository.
-    ${SUDO} yum-config-manager \
+    ${SUDO} dnf config-manager \
       --add-repo \
       https://download.docker.com/linux/centos/docker-ce.repo
     # Enable the repository.
-    ${SUDO} yum-config-manager --enable docker-ce-${DOCKER_VER}
+    ${SUDO} dnf config-manager --set-enabled docker-ce-${DOCKER_VER}
     # Update the apt package index:
     ${SUDO} ${UPDATE}
     # Install the latest version of Docker CE, containerd and docker-compose
@@ -1382,9 +1391,6 @@ UpdateMaster() {
       echo -e "${ORANGE}${ARROW} Not up to date, Pulling Invidious from GitHub${NC}"
       echo ""
       backupConfig
-    if [[ $(lsb_release -rs) == "16.04" ]]; then
-      mv ${IN_CONFIG} /tmp
-    fi
       # Update the apt package index and upgrade packages:
       if [[ $DISTRO_GROUP == "Arch" ]]; then
         ${SUDO} ${UPDATE}
@@ -1396,9 +1402,6 @@ UpdateMaster() {
       for i in `git rev-list --abbrev-commit $currentVersion..HEAD` ; do file=${REPO_DIR}/config/migrate-scripts/migrate-db-$i.sh ; [ -f $file ] && $file ; done
       git stash
       git checkout origin/${IN_BRANCH} -B ${IN_BRANCH}
-    if [[ $(lsb_release -rs) == "16.04" ]]; then
-      mv /tmp/config.yml ${REPO_DIR}/config
-    fi
     rebuild
     ${SUDO} chown -R $USER_NAME:$USER_NAME ${REPO_DIR}
     restart
@@ -1419,7 +1422,7 @@ update_updater() {
   TMPFILE="$(download_file "$LATEST_RELEASE")"
   # Do the work
   # New function, fetch latest release from GitHub
-  if [[ $(get_updater_version "${SCRIPT_DIR}/$SCRIPT_FILENAME") < "${RELEASE_TAG}" ]]; then
+  if ver_lt "$(get_updater_version "${SCRIPT_DIR}/$SCRIPT_FILENAME")" "${RELEASE_TAG}"; then
     #if [[ $(get_updater_version "${SCRIPT_DIR}/${SCRIPT_FILENAME}") < $(get_updater_version "${TMPFILE}") ]]; then
     #LV=$(get_updater_version "${TMPFILE}")
     if [ $UPDATE_SCRIPT = 'yes' ]; then
@@ -1758,13 +1761,13 @@ install_invidious() {
     echo -e " ${DONE} external port : $EXTERNAL_PORT"
   fi
   echo -e " ${DONE} dbname        : $PSQLDB"
-  echo -e " ${DONE} dbpass        : $PSQLPASS"
+  echo -e " ${DONE} dbpass        : (hidden)"
   echo -e " ${DONE} https only    : $HTTPS_ONLY"
   if [ ! -z "$ADMINS" ]; then
     echo -e " ${DONE} admins        : $ADMINS"
   fi
   if [ ! -z "$CAPTCHA_KEY" ]; then
-    echo -e " ${DONE} captcha key   : $CAPTCHA_KEY"
+    echo -e " ${DONE} captcha key   : (hidden)"
   fi
   echo -e " ${NC}"
   echo ""
@@ -1803,7 +1806,7 @@ update_invidious() {
 
 download_docker_compose_file() {
   if [[ $(command -v 'curl') ]]; then
-    curl -fsSLk https://github.com/tmiland/invidious-updater/raw/master/docker-compose.yml > ${REPO_DIR}/docker-compose.yml
+    curl -fsSL https://github.com/tmiland/invidious-updater/raw/master/docker-compose.yml > ${REPO_DIR}/docker-compose.yml
   elif [[ $(command -v 'wget') ]]; then
     wget -q https://github.com/tmiland/invidious-updater/raw/master/docker-compose.yml -O ${REPO_DIR}/docker-compose.yml
   else
@@ -1961,7 +1964,7 @@ deploy_with_docker() {
             echo -e " ${DONE} external port : $DOCKER_EXTERNAL_PORT"
           fi
           echo -e " ${DONE} dbname        : $DOCKER_PSQLDB"
-          echo -e " ${DONE} dbpass        : $DOCKER_PSQLPASS"
+          echo -e " ${DONE} dbpass        : (hidden)"
           echo -e " ${DONE} https only    : $DOCKER_HTTPS_ONLY"
           if [ ! -z "$DOCKER_ADMINS" ]; then
             echo -e " ${DONE} admins        : $DOCKER_ADMINS"
@@ -1984,11 +1987,6 @@ deploy_with_docker() {
           read -n1 -r -p "Invidious is ready to be installed, press any key to continue..."
           echo ""
           download_docker_compose_file
-          # Remove version from docker-compose.yml (to remove warning in docker)
-          if grep -q 'version: "3"' ${REPO_DIR}/docker-compose.yml
-          then
-            ${SUDO} sed -i '1d' ${REPO_DIR}/docker-compose.yml
-          fi
           # Add options to docker-compose.yml
           ${SUDO} sed -i "s/image: quay.io\/invidious\/invidious:master/image: quay.io\/invidious\/invidious:$DOCKER_IN_BRANCH/" ${REPO_DIR}/docker-compose.yml
           ${SUDO} sed -i "s/dbname: invidious/dbname: $DOCKER_PSQLDB/" ${REPO_DIR}/docker-compose.yml
@@ -2299,12 +2297,12 @@ fi
     echo -e "${ORANGE}${ARROW} Removing invidious files and modules files.${NC}"
     echo ""
     if [[ $DISTRO_GROUP == "Debian" ]]; then
-      rm -r \
-        /lib/systemd/system/${SERVICE_NAME} \
+      rm -rf \
+        "/lib/systemd/system/${SERVICE_NAME}" \
         /etc/apt/sources.list.d/crystal.list
     elif [[ $DISTRO_GROUP == "RHEL" ]]; then
-      rm -r \
-        /usr/lib/systemd/system/${SERVICE_NAME} \
+      rm -rf \
+        "/usr/lib/systemd/system/${SERVICE_NAME}" \
         /etc/yum.repos.d/crystal.repo
     fi
 
@@ -2330,7 +2328,7 @@ fi
     # If directory is present, remove
     if [[ -d ${REPO_DIR} ]]; then
       echo -e "${ORANGE}${ARROW} Folder Found, removing folder${NC}"
-      rm -r ${REPO_DIR}
+      rm -rf "${REPO_DIR}"
     fi
   fi
 

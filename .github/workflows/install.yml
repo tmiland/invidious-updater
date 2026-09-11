@@ -1,0 +1,34 @@
+name: Install Invidious
+
+# Full install test is opt-in only (slow, heavy, needs systemd + network).
+# Trigger via "Run workflow" with run_install=true.
+# Fast per-push checks (lint + multi-OS smoke tests) live in test.yml.
+
+on:
+  workflow_dispatch:  # Allow manual trigger
+    inputs:
+      run_install:
+        description: 'Run full install test on ubuntu-latest (slow)'
+        type: boolean
+        default: false
+
+jobs:
+  install:
+    if: ${{ inputs.run_install == true }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install Invidious
+        env:
+          DOMAIN:
+          IP: localhost
+          PORT: 3000
+          PSQLDB: invidious
+          HTTPS_ONLY: n
+          EXTERNAL_PORT:
+          ADMINS:
+          SWAP_OPTIONS: n
+        run: sudo bash invidious_update.sh -i
