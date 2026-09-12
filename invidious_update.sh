@@ -1207,47 +1207,58 @@ update_config() {
 
   # Update config.yml with new info from user input
   BAKPATH="/home/backup/$USER_NAME/config"
-  # Lets change the default password
-  OLDPASS="password: kemal"
-  NEWPASS="password: $PSQLPASS"
-  # Lets change the default database name
-  OLDDBNAME="dbname: invidious"
-  NEWDBNAME="dbname: $PSQLDB"
-  # Lets change the default domain
-  OLDDOMAIN="domain:"
-  NEWDOMAIN="domain: $DOMAIN"
-  # Lets change https_only value
-  OLDHTTPS="https_only: false"
-  NEWHTTPS="https_only: $HTTPS_ONLY"
-  # Lets change external_port
-  OLDEXTERNAL="external_port:"
-  NEWEXTERNAL="external_port: $EXTERNAL_PORT"
   DPATH="${IN_CONFIG}"
   BPATH="$BAKPATH"
   TFILE="/tmp/config.yml"
-  [ ! -d $BPATH ] && mkdir -p $BPATH || :
+  if [ ! -d "$BPATH" ]; then
+    mkdir -p "$BPATH"
+  fi
   for f in $DPATH
-  do # shellcheck disable=SC2166
-    if [ -f $f -a -r $f ]; then
-      /bin/cp -f $f $BPATH
+  do
+    if [ -f "$f" ] && [ -r "$f" ]; then
+      /bin/cp -f "$f" "$BPATH"
       echo -e "${GREEN}${ARROW} Updating config.yml with new info...${NC}"
-      # Add external_port: to config on line 13
-      sed -i "11i\external_port:" "$f" > $TFILE
-      sed -i "12i\check_tables: true" "$f" > $TFILE
-      sed -i "13i\port: $PORT" "$f" > $TFILE
-      sed -i "14i\host_binding: $IP" "$f" > $TFILE
-      sed -i "15i\admins: \n- $ADMINS" "$f" > $TFILE
-      sed -i "17i\captcha_key: $CAPTCHA_KEY" "$f" > $TFILE
-      sed -i "18i\captcha_api_url: https://api.anti-captcha.com" "$f" > $TFILE
-      sed "s/$OLDPASS/$NEWPASS/g; s/$OLDDBNAME/$NEWDBNAME/g; s/$OLDDOMAIN/$NEWDOMAIN/g; s/$OLDHTTPS/$NEWHTTPS/g; s/$OLDEXTERNAL/$NEWEXTERNAL/g;" "$f" > $TFILE &&
-      mv $TFILE "$f"
+      # Insert the install-time keys before line 11 and fill the default
+      # values. awk string replace (index/substr) is fully literal — no
+      # regex escaping, so values with / or & survive untouched.
+      awk \
+        -v npass="$PSQLPASS" -v ndb="$PSQLDB" -v ndom="$DOMAIN" \
+        -v nhttps="$HTTPS_ONLY" -v nxport="$EXTERNAL_PORT" \
+        -v nport="$PORT" -v nhost="$IP" -v nadm="$ADMINS" \
+        -v ncap="$CAPTCHA_KEY" '
+        function rep(s, pat, repl,   i) {
+          i = index(s, pat)
+          if (i == 0) return s
+          return substr(s, 1, i-1) repl substr(s, i+length(pat))
+        }
+        {
+          line = $0
+          line = rep(line, "password: kemal",   "password: " npass)
+          line = rep(line, "dbname: invidious", "dbname: " ndb)
+          line = rep(line, "domain:",           "domain: " ndom)
+          line = rep(line, "https_only: false", "https_only: " nhttps)
+          line = rep(line, "external_port:",    "external_port: " nxport)
+          if (NR == 11) {
+            print "external_port: " nxport
+            print "check_tables: true"
+            print "port: " nport
+            print "host_binding: " nhost
+            print "admins: "
+            print "- " nadm
+            print "captcha_key: " ncap
+            print "captcha_api_url: https://api.anti-captcha.com"
+          }
+          print line
+        }
+      ' "$f" > "$TFILE"
+      mv "$TFILE" "$f"
     else
       echo -e "${RED}${ERROR} Error: Cannot read $f"
     fi
   done
 
   if [[ -e $TFILE ]]; then
-    /bin/rm $TFILE
+    /bin/rm "$TFILE"
   else
     echo -e "${GREEN}${DONE} Done.${NC}"
   fi

@@ -38,6 +38,65 @@ jobs:
       - name: Validate docker-compose
         run: docker compose -f docker-compose.yml config --quiet
 
+      - name: update_config() + pg_hba unit tests
+        run: |
+          # Run the REAL update_config() function pulled from the script
+          # (sudo: it writes to /home/backup/$USER_NAME).
+          sudo bash <<'TEST'
+          set -euo pipefail
+          GREEN= ARROW= DONE= ERROR= RED= NC=
+          fn=$(awk '/^update_config\(\)/,/^}/' invidious_update.sh)
+          eval "$fn"
+          cat > /tmp/sample.yml <<'YML'
+          # Invidious config for https://invidious.example.com
+          dbname: invidious
+          password: kemal
+          domain: invidious.example.com
+          port: 3000
+          https_only: false
+          external_port:
+          dbinstance:
+          youtube_api_key:
+          youtube_api_key3:
+          obs_url:
+          logs:
+          YML
+          USER_NAME=ci PSQLPASS='p/a&ss 2' PSQLDB='inv_main' DOMAIN='video.example.org' \
+          HTTPS_ONLY='true' EXTERNAL_PORT='8443' PORT='3000' IP='0.0.0.0' \
+          ADMINS='alice' CAPTCHA_KEY='cap/key&1' IN_CONFIG=/tmp/sample.yml \
+          update_config
+          echo "--- resulting config ---"
+          cat /tmp/sample.yml
+          # inserted keys present, landed immediately before the original 11th line (obs_url:)
+          grep -q 'check_tables: true' /tmp/sample.yml
+          grep -q 'captcha_api_url: https://api.anti-captcha.com' /tmp/sample.yml
+          grep -q 'admins: ' /tmp/sample.yml
+          grep -q -- '- alice' /tmp/sample.yml
+          # default values replaced; / and & values stayed literal
+          grep -q 'password: p/a&ss 2' /tmp/sample.yml
+          grep -q 'dbname: inv_main' /tmp/sample.yml
+          grep -q 'domain: video.example.org' /tmp/sample.yml
+          test "$(grep -c '^obs_url:' /tmp/sample.yml)" -eq 1
+          echo "update_config OK"
+
+          # pgbackup() pg_hba transform keeps other rules intact
+          f=$(mktemp)
+          cat > "$f" <<'HBA'
+          # TYPE  DATABASE        USER            ADDRESS                 METHOD
+          local   all             postgres                                peer
+          local   all             all                                     peer
+          host    all             all             127.0.0.1/32            scram-sha-256
+          host    all             all             ::1/128                 scram-sha-256
+          host    replication     all             127.0.0.1/32            scram-sha-256
+          HBA
+          cp "$f" "$f.bak"
+          sed -i -E 's/^(\s*local\s+all\s+postgres\s+)\S+.*/\1trust/' "$f"
+          grep -q 'local   all             postgres                                trust' "$f"
+          grep -q 'local   all             all                                     peer' "$f"
+          grep -q 'host    all             all             127.0.0.1/32            scram-sha-256' "$f"
+          grep -q 'host    replication     all             127.0.0.1/32            scram-sha-256' "$f"
+          echo "pg_hba OK"
+
   smoke:
     runs-on: ubuntu-latest
     strategy:
